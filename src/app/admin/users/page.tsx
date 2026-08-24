@@ -11,9 +11,8 @@ export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      _count: { select: { orders: true, referrals: true } },
+      _count: { select: { orders: true, referralsMade: true } },
       wallet: { select: { balance: true } },
-      referralCode: { select: { code: true } },
     },
   });
 
@@ -55,7 +54,7 @@ export default async function AdminUsersPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-xs">
-                          {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                          {user.name?.charAt(0) || (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
                         </div>
                         <div>
                           <span className="font-medium text-zinc-100 block text-sm">{user.name || 'Unnamed'}</span>
@@ -82,11 +81,11 @@ export default async function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700/50 text-zinc-300 font-mono text-xs">
-                        {user.referralCode?.code || '—'}
+                        {user.referralCode || '—'}
                       </span>
                     </td>
                     <td className="px-6 py-4 font-mono text-amber-400">
-                      {user._count.referrals}
+                      {user._count.referralsMade}
                     </td>
                     <td className="px-6 py-4">
                       <span

@@ -3,6 +3,16 @@
 import { useState } from 'react';
 import { Save, Loader2, Shield, Truck, CreditCard, Gift, Globe, Bell } from 'lucide-react';
 
+type SelectFieldOptions = string[];
+
+function isSelectField(field: { type: string; options?: unknown }): field is { type: 'select'; options: SelectFieldOptions } {
+  return field.type === 'select' && Array.isArray(field.options);
+}
+
+function isNumberField(field: { type: string; step?: unknown }): field is { type: 'number'; step: string | number } {
+  return field.type === 'number' && field.step != null;
+}
+
 export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -119,9 +129,9 @@ export default function AdminSettingsPage() {
                         className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 focus:border-amber-500/60 focus:outline-none min-h-[80px] resize-y"
                         rows={3}
                       />
-                    ) : field.type === 'select' ? (
+                    ) : isSelectField(field) ? (
                       <select className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 focus:border-amber-500/60 focus:outline-none">
-                        {field.options?.map((opt) => (
+                        {field.options.map((opt) => (
                           <option key={opt} value={opt}>{opt}</option>
                         ))}
                       </select>
@@ -137,7 +147,7 @@ export default function AdminSettingsPage() {
                       <input
                         type={field.type}
                         placeholder={field.placeholder}
-                        step={field.step}
+                        step={isNumberField(field) ? field.step : undefined}
                         className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 font-mono focus:border-amber-500/60 focus:outline-none"
                       />
                     )}
