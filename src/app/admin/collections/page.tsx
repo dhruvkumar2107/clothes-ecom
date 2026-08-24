@@ -59,10 +59,10 @@ export default async function AdminCollectionsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {collection.image && (
+                        {collection.heroImage && (
                           <div className="relative w-10 h-10 rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/60 shrink-0">
                             <img
-                              src={collection.image}
+                              src={collection.heroImage}
                               alt={collection.name}
                               className="w-full h-full object-cover"
                             />
@@ -85,12 +85,12 @@ export default async function AdminCollectionsPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          collection.status === 'active'
+                          collection.active
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
                         }`}
                       >
-                        {collection.status}
+                        {collection.active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-6 py-4">

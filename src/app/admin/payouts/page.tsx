@@ -9,11 +9,11 @@ export const revalidate = 0;
 
 export default async function AdminPayoutsPage() {
   const [withdrawals, bankAccounts] = await Promise.all([
-    prisma.withdrawal.findMany({
+    prisma.withdrawalRequest.findMany({
       orderBy: { requestedAt: 'desc' },
       include: {
         user: { select: { name: true, email: true, phone: true } },
-        bankAccount: { select: { accountName: true, accountNumber: true, ifsc: true, bankName: true } },
+        bankAccount: { select: { accountHolderName: true, accountNumberLast4: true, ifsc: true, bankName: true, verificationStatus: true } },
       },
     }),
     prisma.bankAccount.findMany({
@@ -139,9 +139,9 @@ export default async function AdminPayoutsPage() {
                     <td className="px-6 py-4 text-zinc-300 text-sm">
                       {w.bankAccount ? (
                         <>
-                          {w.bankAccount.accountName} • {w.bankAccount.bankName}
+                          {w.bankAccount.accountHolderName} • {w.bankAccount.bankName}
                           <span className="block text-[10px] text-zinc-500 font-mono">
-                            {w.bankAccount.accountNumber.slice(-4)} / {w.bankAccount.ifsc}
+                            **** {w.bankAccount.accountNumberLast4} / {w.bankAccount.ifsc}
                           </span>
                         </>
                       ) : (
@@ -164,7 +164,7 @@ export default async function AdminPayoutsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-mono text-zinc-400 text-[11px]">
-                      {w.providerRef || '—'}
+                      {w.providerPayoutId || '—'}
                     </td>
                     <td className="px-6 py-4 text-zinc-400 font-mono text-[11px]">
                       {new Date(w.requestedAt).toLocaleString()}
@@ -186,7 +186,7 @@ export default async function AdminPayoutsPage() {
                             <Loader2 className="w-3 h-3 animate-spin" /> Processing
                           </button>
                         )}
-                        {w.status === 'completed' && w.providerRef && (
+                        {w.status === 'completed' && w.providerPayoutId && (
                           <button className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded transition-colors" title="View on Provider">
                             <ExternalLink className="w-4 h-4" />
                           </button>
@@ -236,25 +236,25 @@ export default async function AdminPayoutsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-zinc-300 text-sm">
-                      {ba.accountName} • {ba.bankName}
+                      {ba.accountHolderName} • {ba.bankName}
                       <span className="block text-[10px] text-zinc-500 font-mono">
-                        {ba.accountNumber.slice(-4)} / {ba.ifsc}
+                        {ba.accountNumberLast4} / {ba.ifsc}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700/50 text-zinc-300 font-mono text-[10px]">
-                        {ba.verificationMethod || 'penny_drop'}
+                        penny_drop
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          ba.verified
+                          ba.verifiedStatus === 'verified'
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                         }`}
                       >
-                        {ba.verified ? 'Verified' : 'Pending'}
+                        {ba.verifiedStatus ? 'Verified' : 'Pending'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-zinc-400 font-mono text-[11px]">

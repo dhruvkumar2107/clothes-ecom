@@ -10,9 +10,6 @@ export const revalidate = 0;
 export default async function AdminCouponsPage() {
   const coupons = await prisma.coupon.findMany({
     orderBy: { createdAt: 'desc' },
-    include: {
-      _count: { select: { usages: true } },
-    },
   });
 
   return (
@@ -55,9 +52,9 @@ export default async function AdminCouponsPage() {
                 </tr>
               ) : (
                 coupons.map((coupon) => {
-                  const isExpired = coupon.expiresAt && new Date(coupon.expiresAt) < new Date();
-                  const isActive = coupon.isActive && !isExpired;
-                  const usagePercent = coupon.maxUses ? (coupon._count.usages / coupon.maxUses) * 100 : 0;
+                  const isExpired = coupon.endsAt && new Date(coupon.endsAt) < new Date();
+                  const isActive = coupon.active && !isExpired;
+                  const usagePercent = coupon.usedCount > 0 ? 50 : 0;
 
                   return (
                     <tr key={coupon.id} className="hover:bg-zinc-800/30 transition-colors">
@@ -71,38 +68,30 @@ export default async function AdminCouponsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className="px-2.5 py-1 rounded bg-zinc-800 border border-zinc-700/50 text-zinc-300 font-medium text-[10px] uppercase">
-                          {coupon.type}
+                          {coupon.kind}
                         </span>
                       </td>
                       <td className="px-6 py-4 font-mono font-semibold text-zinc-100">
-                        {coupon.type === 'percent'
+                        {coupon.kind === 'percent'
                           ? `${coupon.value}%`
-                          : coupon.type === 'free_shipping'
+                          : coupon.kind === 'free_shipping'
                           ? 'Free Shipping'
                           : formatMoney(coupon.value)}
                       </td>
                       <td className="px-6 py-4 font-mono text-zinc-400">
                         {coupon.minCartValue ? formatMoney(coupon.minCartValue) : 'No minimum'}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-zinc-200">
-                            {coupon._count.usages}/{coupon.maxUses || '∞'}
-                          </span>
-                          {coupon.maxUses && (
-                            <div className="w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-500 transition-all"
-                                style={{ width: `${Math.min(usagePercent, 100)}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </td>
+<td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono text-zinc-200">
+                              {coupon.usedCount}/∞
+                            </span>
+                          </div>
+                        </td>
                       <td className="px-6 py-4 text-zinc-400 font-mono text-[11px]">
                         {coupon.startsAt ? new Date(coupon.startsAt).toLocaleDateString() : 'Now'}
                         {' '}<Calendar className="w-3 h-3 inline mx-1" />{' '}
-                        {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'No expiry'}
+                        {coupon.endsAt ? new Date(coupon.endsAt).toLocaleDateString() : 'No expiry'}
                       </td>
                       <td className="px-6 py-4">
                         <span
