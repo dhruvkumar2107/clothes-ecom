@@ -35,6 +35,11 @@ RUN npm ci --only=production --ignore-scripts
 # ─────────────────────────────────────────────────────────────────────────────
 FROM base AS builder
 
+# Accept DATABASE_URL as build argument (Supabase PostgreSQL)
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+ENV NEXT_TELEMETRY_DISABLED=1
+
 # Copy package files
 COPY package.json package-lock.json* ./
 
@@ -51,7 +56,6 @@ RUN npx prisma generate
 COPY . .
 
 # Build the application
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
