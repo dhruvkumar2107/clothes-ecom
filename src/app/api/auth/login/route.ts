@@ -4,6 +4,8 @@ import { loginWithPassword, startOtpLogin, type LoginResult } from '@/lib/auth';
 import { authRateLimit } from '@/lib/rate-limit';
 import { apiError, apiOk } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const LoginSchema = z.object({
   identifier: z.string().min(1, 'Email or phone is required'),
   password: z.string().min(1, 'Password is required'),

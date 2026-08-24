@@ -5,7 +5,7 @@ import { Wallet, Banknote, CheckCircle, XCircle, Clock, Loader2, Shield, AlertTr
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminPayoutsPage() {
   const [withdrawals, bankAccounts] = await Promise.all([

@@ -5,7 +5,7 @@ import { Plus, TicketPercent, Edit, Trash2, Eye, Calendar, Package, Truck } from
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminCouponsPage() {
   const coupons = await prisma.coupon.findMany({

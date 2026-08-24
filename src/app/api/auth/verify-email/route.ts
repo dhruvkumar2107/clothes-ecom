@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { authRateLimit } from '@/lib/rate-limit';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const VerifyEmailSchema = z.object({
   email: z.string().email('Invalid email address'),
   code: z.string().length(6, 'Code must be 6 digits'),

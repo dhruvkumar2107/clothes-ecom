@@ -8,6 +8,8 @@ import { createPaymentIntent } from '@/lib/orders/payments';
 import { apiOk, apiError } from '@/lib/api';
 import { getPaymentAdapter } from '@/lib/adapters/registry';
 
+export const dynamic = 'force-dynamic';
+
 const CheckoutSchema = z.object({
   addressId: z.string().cuid(),
   billingAddressId: z.string().cuid().optional().nullable(),

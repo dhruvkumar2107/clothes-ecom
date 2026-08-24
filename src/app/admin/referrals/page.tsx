@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Gift, Users, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default function AdminReferralsPage() {
   return (

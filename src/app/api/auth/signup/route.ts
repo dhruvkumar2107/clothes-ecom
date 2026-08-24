@@ -4,6 +4,8 @@ import { signup, AccountError } from '@/lib/auth';
 import { authRateLimit } from '@/lib/rate-limit';
 import { apiError, apiOk } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const SignupSchema = z.object({
   email: z.string().email('Invalid email address').optional(),
   phone: z.string().regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone number').optional(),

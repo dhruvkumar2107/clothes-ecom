@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
 import webpush from 'web-push';
 
+export const dynamic = 'force-dynamic';
+
 function getWebpush() {
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
     throw new Error('VAPID keys not configured');

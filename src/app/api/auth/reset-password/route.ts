@@ -4,6 +4,8 @@ import { resetPasswordWithToken, resetPasswordWithOtp } from '@/lib/auth/account
 import { authRateLimit } from '@/lib/rate-limit';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const ResetTokenSchema = z.object({
   token: z.string().min(1),
   password: z.string().min(8, 'Password must be at least 8 characters'),

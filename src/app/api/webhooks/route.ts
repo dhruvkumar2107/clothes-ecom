@@ -6,6 +6,8 @@ import { verifyWebhookSignature } from '@/lib/api';
 import { getPaymentAdapter } from '@/lib/adapters/registry';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const provider = request.nextUrl.searchParams.get('provider') || 'razorpay';

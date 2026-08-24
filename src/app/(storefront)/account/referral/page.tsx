@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Share2, Users, Gift, TrendingUp, ExternalLink, Copy, Check } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Refer & Earn',
   description: 'Share LUMEN&CO with friends and earn rewards',

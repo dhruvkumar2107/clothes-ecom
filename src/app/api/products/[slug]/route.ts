@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const QuerySchema = z.object({
   includeReviews: z.coerce.boolean().default(false),
   includeQuestions: z.coerce.boolean().default(false),

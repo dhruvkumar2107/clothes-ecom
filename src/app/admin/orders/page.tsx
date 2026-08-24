@@ -5,7 +5,7 @@ import { ShoppingBag, Eye, RotateCcw, Truck, CheckCircle2, Clock } from 'lucide-
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminOrdersPage() {
   const orders = await prisma.order.findMany({

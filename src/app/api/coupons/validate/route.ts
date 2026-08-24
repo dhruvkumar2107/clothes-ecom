@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
 import { validateCouponForCheckout } from '@/lib/coupons';
 
+export const dynamic = 'force-dynamic';
+
 const ValidateCouponSchema = z.object({
   code: z.string().min(3).max(20).toUpperCase(),
   cartValue: z.number().int().min(0),

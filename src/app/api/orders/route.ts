@@ -6,6 +6,8 @@ import { createOrder, CreateOrderInput } from '@/lib/orders/create';
 import { apiOk, apiError } from '@/lib/api';
 import { getCartView } from '@/lib/cart';
 
+export const dynamic = 'force-dynamic';
+
 const CreateOrderSchema = z.object({
   addressId: z.string().cuid(),
   billingAddressId: z.string().cuid().optional().nullable(),

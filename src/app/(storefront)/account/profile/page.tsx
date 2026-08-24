@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { Input, Select, RadioGroup, RadioGroupItem, Label, Textarea } from '@/components/ui';
 import { User, Mail, Phone, Calendar, Camera, Save, AlertCircle, CheckCircle } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Profile Settings',
   description: 'Update your personal information and preferences',

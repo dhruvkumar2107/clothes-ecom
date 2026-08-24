@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { getCustomerSession } from '@/lib/auth/session';
 import { SignupForm } from '@/components/auth/SignupForm';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Create Account',
   description: 'Join LUMEN&CO and start shopping',

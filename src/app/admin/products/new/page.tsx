@@ -3,7 +3,7 @@ import { ProductForm } from '@/components/admin/ProductForm';
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function NewProductPage() {
   const categories = await prisma.category.findMany({

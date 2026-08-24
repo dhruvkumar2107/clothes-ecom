@@ -4,6 +4,8 @@ import { getCustomerSession, requireCustomer } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const AddressSchema = z.object({
   label: z.enum(['home', 'work', 'other']).default('home'),
   name: z.string().min(1),

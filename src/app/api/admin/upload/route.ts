@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { apiOk, apiError } from '@/lib/api';
 import { getUploadSignedUrl, deleteFile } from '@/lib/storage';
 
+export const dynamic = 'force-dynamic';
+
 const UploadSchema = {
   fileName: { type: 'string', min: 1, max: 255 },
   contentType: { type: 'string', enum: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] },

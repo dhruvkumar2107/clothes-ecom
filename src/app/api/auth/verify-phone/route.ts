@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { authRateLimit } from '@/lib/rate-limit';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const VerifyPhoneSchema = z.object({
   phone: z.string().regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone number'),
   code: z.string().length(6, 'Code must be 6 digits'),

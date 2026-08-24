@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Input, Textarea, Select, RadioGroup, RadioGroupItem, Label } from '@/components/ui';
 import { Plus, MapPin, Trash2, Edit, Check } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Addresses',
   description: 'Manage your delivery addresses',

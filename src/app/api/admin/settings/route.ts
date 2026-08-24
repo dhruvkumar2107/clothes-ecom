@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const SettingUpdateSchema = z.object({
   key: z.string().min(1).max(100),
   value: z.string(),

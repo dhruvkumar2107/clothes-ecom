@@ -6,6 +6,8 @@ import { apiOk, apiError } from '@/lib/api';
 import { getPaymentAdapter } from '@/lib/adapters/registry';
 import { confirmOrderPaid } from '@/lib/orders/create';
 
+export const dynamic = 'force-dynamic';
+
 const VerifySchema = z.object({
   orderId: z.string().cuid(),
   paymentId: z.string(),

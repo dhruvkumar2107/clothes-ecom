@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ChevronRight, Sparkles, Truck, Shield, RotateCcw, Heart } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'LUMEN&CO — Light as couture',
   description: 'Future-facing luxury fashion. Engineered fabrics, sculptural silhouettes, and limited drops — shipped across India.',

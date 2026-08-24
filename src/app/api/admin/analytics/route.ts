@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 import { startOfDay, subDays, subMonths, format } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 const AnalyticsSchema = z.object({
   range: z.enum(['7d', '30d', '90d', '1y', 'all']).default('30d'),
   metric: z.enum(['revenue', 'orders', 'users', 'conversion', 'aov', 'all']).default('all'),

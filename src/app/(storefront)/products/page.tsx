@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import ProductsClient from './ProductsClient';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   searchParams: Promise<{
     page?: string;

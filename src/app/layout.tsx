@@ -3,6 +3,8 @@ import { getSetting, getSettings } from '@/lib/settings';
 import { Providers } from '@/app/providers';
 import './globals.css';
 
+export const dynamic = 'force-dynamic';
+
 const MainContentId = 'main-content';
 
 export const viewport: Viewport = {

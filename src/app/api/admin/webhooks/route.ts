@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
 import { getPaymentGateway, getPayoutGateway, getBankVerifier, getShippingProvider } from '@/lib/adapters/registry';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();

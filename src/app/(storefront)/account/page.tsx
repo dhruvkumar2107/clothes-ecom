@@ -5,6 +5,8 @@ import { getCustomerSession } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { formatCurrency } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'My Account',
   description: 'Manage your account, orders, and preferences',

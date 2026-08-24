@@ -4,6 +4,8 @@ import { apiOk, apiError } from '@/lib/api';
 import { getMailer, getSmsSender } from '@/lib/adapters/registry';
 import { formatMoney, INR } from '@/lib/money';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');

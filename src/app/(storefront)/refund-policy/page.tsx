@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Return & Refund Policy | LUMEN&CO',
   description: 'Our return and refund policy governing returns, exchanges, and refunds for purchases made on LUMEN&CO.',

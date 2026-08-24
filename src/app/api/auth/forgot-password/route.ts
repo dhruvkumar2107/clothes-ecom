@@ -4,6 +4,8 @@ import { requestPasswordReset, requestPasswordResetOtp } from '@/lib/auth/accoun
 import { authRateLimit } from '@/lib/rate-limit';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const ForgotSchema = z.object({
   identifier: z.string().min(1, 'Email or phone is required'),
   channel: z.enum(['email', 'sms']).optional(),

@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const CouponCreateSchema = z.object({
   code: z.string().min(3).max(20).regex(/^[A-Z0-9]+$/),
   name: z.string().min(1).max(100),

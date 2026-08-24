@@ -4,6 +4,8 @@ import { getCustomerSession, requireCustomer } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const BankAccountSchema = z.object({
   accountHolderName: z.string().min(2),
   accountNumber: z.string().min(9).max(18),

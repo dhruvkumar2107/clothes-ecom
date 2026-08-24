@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const ReviewUpdateSchema = z.object({
   status: z.enum(['approved', 'rejected']).optional(),
   adminReply: z.string().max(2000).optional().nullable(),

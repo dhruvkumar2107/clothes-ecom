@@ -6,7 +6,7 @@ import { Plus, Package, Edit, ExternalLink, Search, Trash2 } from 'lucide-react'
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({

@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 import { confirmOrderPaid, cancelOrder } from '@/lib/orders/create';
 
+export const dynamic = 'force-dynamic';
+
 const OrderListSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

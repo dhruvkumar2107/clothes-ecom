@@ -3,6 +3,8 @@ import { CartPageClient } from '@/components/cart/CartPageClient';
 import { getCartView } from '@/lib/cart';
 import { getCustomerSession } from '@/lib/auth/session';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Shopping Bag',
   description: 'Review and manage your shopping bag',

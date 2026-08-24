@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Privacy Policy | LUMEN&CO',
   description: 'How LUMEN&CO collects, uses, and protects your personal data.',

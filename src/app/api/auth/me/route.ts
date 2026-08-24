@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getCustomerSession } from '@/lib/auth/session';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const session = await getCustomerSession();
   if (!session) {

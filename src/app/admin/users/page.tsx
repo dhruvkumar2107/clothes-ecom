@@ -5,7 +5,7 @@ import { Users, Search, Filter, ChevronLeft, ChevronRight, ExternalLink, Flag, A
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({

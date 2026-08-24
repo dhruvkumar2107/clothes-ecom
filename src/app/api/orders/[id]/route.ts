@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
 import { readJson } from '@/lib/json';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

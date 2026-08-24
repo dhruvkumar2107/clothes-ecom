@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Referral Program Terms & Conditions | LUMEN&CO',
   description: 'Terms and conditions governing the LUMEN&CO referral program.',

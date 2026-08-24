@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
 import { cancelOrder } from '@/lib/orders/create';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');

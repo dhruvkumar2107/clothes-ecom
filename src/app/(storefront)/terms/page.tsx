@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Terms of Service | LUMEN&CO',
   description: 'Terms and conditions governing the use of LUMEN&CO platform and services.',

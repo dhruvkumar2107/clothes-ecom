@@ -1,0 +1,93 @@
+# Render blueprint — https://render.com/docs/blueprint-spec
+#
+# The database is Supabase (external), so no Render database is declared here.
+# Values marked `sync: false` are NOT stored in this file — set them in the
+# Render dashboard under the service's Environment tab.
+#
+# Note: Render injects service env vars as Docker build args for every ARG
+# declared in the Dockerfile. NEXT_PUBLIC_* must be set before the first build,
+# because Next inlines those values at build time.
+
+services:
+  - type: web
+    name: lumen-and-co
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+
+    envVars:
+      # ── Required ──────────────────────────────────────────────────────────
+      # Supabase connection string. Use the POOLER URI (port 6543) with
+      # ?pgbouncer=true&connection_limit=1 — Render containers are short-lived
+      # and the direct 5432 connection will exhaust Supabase's limit.
+      - key: DATABASE_URL
+        sync: false
+
+      # Public origin of the deployed service, e.g. https://lumen-and-co.onrender.com
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEBHOOK_SECRET
+        generateValue: true
+
+      # ── App ───────────────────────────────────────────────────────────────
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_NAME
+        value: LUMEN&CO
+      - key: SESSION_COOKIE_NAME
+        value: lmn_session
+      - key: SESSION_MAX_AGE
+        value: "2592000"
+
+      # ── Providers — default to mock; switch once real keys are in place ────
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: SMS_PROVIDER
+        value: mock
+      - key: BANK_VERIFICATION_PROVIDER
+        value: mock
+
+      # ── Referral ──────────────────────────────────────────────────────────
+      - key: REFERRAL_WELCOME_COUPON
+        value: WELCOME10
+      - key: REFERRAL_COMMISSION_PERCENT
+        value: "7.5"
+      - key: REFERRAL_HOLD_DAYS
+        value: "14"
+
+      # ── Feature flags ─────────────────────────────────────────────────────
+      - key: ENABLE_GRAIN
+        value: "true"
+      - key: ENABLE_AR
+        value: "false"
+      - key: ENABLE_360
+        value: "false"
+
+      # ── Optional secrets — set in the dashboard when you wire providers up ─
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAYX_KEY_ID
+        sync: false
+      - key: RAZORPAYX_KEY_SECRET
+        sync: false

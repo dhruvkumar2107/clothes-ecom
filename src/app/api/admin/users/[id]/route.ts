@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const UserUpdateSchema = z.object({
   status: z.enum(['active', 'flagged', 'banned']).optional(),
   banReason: z.string().optional().nullable(),

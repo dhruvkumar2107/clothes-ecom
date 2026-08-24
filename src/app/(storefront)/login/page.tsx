@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { getCustomerSession } from '@/lib/auth/session';
 import { LoginForm } from '@/components/auth/LoginForm';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Login',
   description: 'Sign in to your LUMEN&CO account',

@@ -8,7 +8,7 @@ import { ArrowLeft, User, MapPin, CreditCard, RotateCcw, Package } from 'lucide-
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminOrderDetailPage({
   params,

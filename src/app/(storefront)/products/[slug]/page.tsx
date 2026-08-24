@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { ProductDetailClient } from '@/components/products/ProductDetailClient';
 import { getProductBySlug, getCategories, getCollections } from '@/lib/api-server';
 
+export const dynamic = 'force-dynamic';
+
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }

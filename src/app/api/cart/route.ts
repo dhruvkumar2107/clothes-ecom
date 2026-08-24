@@ -4,6 +4,8 @@ import { getCustomerSession } from '@/lib/auth/session';
 import { resolveCart, findCart, getCartView, cartCount, addToCart, updateQty, removeFromCart, setSavedForLater, clearCart, applyCouponToCart, setCartNote } from '@/lib/cart';
 import { apiOk, apiError } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const session = await getCustomerSession();
   const userId = session?.userId ?? null;

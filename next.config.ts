@@ -1,6 +1,15 @@
+import path from 'path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Emits .next/standalone — a self-contained server bundle the Docker runner copies.
+  output: 'standalone',
+
+  // Pin the tracing root to this project. Without it Next walks up looking for a
+  // lockfile and can pick an ancestor directory, which nests server.js under a
+  // deep subpath inside .next/standalone and breaks `node server.js`.
+  outputFileTracingRoot: path.resolve(__dirname),
+
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',

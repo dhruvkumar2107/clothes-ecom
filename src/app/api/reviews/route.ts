@@ -4,6 +4,8 @@ import { requireCustomer } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { apiOk, apiError, parseQuery } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 const ReviewCreateSchema = z.object({
   productId: z.string().cuid(),
   orderId: z.string().cuid().optional(),

@@ -1,24 +1,35 @@
 import { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lumenandco.com';
 
-  const [products, categories, collections] = await Promise.all([
-    db.product.findMany({
-      where: { status: 'active' },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' },
-    }),
-    db.category.findMany({
-      where: { active: true },
-      select: { slug: true, createdAt: true },
-    }),
-    db.collection.findMany({
-      where: { active: true },
-      select: { slug: true, createdAt: true },
-    }),
-  ]);
+  let products: { slug: string; updatedAt: Date }[] = [];
+  let categories: { slug: string; createdAt: Date }[] = [];
+  let collections: { slug: string; createdAt: Date }[] = [];
+
+  try {
+    [products, categories, collections] = await Promise.all([
+      db.product.findMany({
+        where: { status: 'active' },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      db.category.findMany({
+        where: { active: true },
+        select: { slug: true, createdAt: true },
+      }),
+      db.collection.findMany({
+        where: { active: true },
+        select: { slug: true, createdAt: true },
+      }),
+    ]);
+  } catch (err) {
+    // Sitemap is best-effort: serve the static routes rather than a 500.
+    console.error('sitemap: database unreachable, serving static routes only', err);
+  }
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },

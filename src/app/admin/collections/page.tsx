@@ -4,7 +4,7 @@ import { Plus, Layers, GripVertical, Edit, Trash2, Eye, Shield } from 'lucide-re
 
 const prisma = new PrismaClient();
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminCollectionsPage() {
   const collections = await prisma.collection.findMany({
