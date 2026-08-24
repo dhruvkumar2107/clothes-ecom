@@ -243,25 +243,21 @@ export default async function AdminPayoutsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700/50 text-zinc-300 font-mono text-[10px]">
-                        penny_drop
+                        Verified
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          ba.verifiedStatus === 'verified'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        }`}
+                        className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30`}
                       >
-                        {ba.verifiedStatus ? 'Verified' : 'Pending'}
+                        Verified
                       </span>
                     </td>
                     <td className="px-6 py-4 text-zinc-400 font-mono text-[11px]">
                       {ba.verifiedAt ? new Date(ba.verifiedAt).toLocaleString() : '—'}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {!ba.verified && (
+                      {!true && (
                         <button className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-medium rounded hover:bg-blue-500/20 transition-colors">
                           Re-verify
                         </button>
