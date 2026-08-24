@@ -55,7 +55,8 @@ RUN npx prisma generate
 COPY . .
 
 # Build the application (skip DB-dependent static generation)
-RUN npm run build
+# Unset DATABASE_URL so Next.js build doesn't try to connect to Supabase
+RUN DATABASE_URL="postgresql://user:pass@localhost:5432/build_db" npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Runner stage — production runtime
