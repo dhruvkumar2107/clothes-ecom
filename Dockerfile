@@ -35,9 +35,8 @@ RUN npm ci --only=production --ignore-scripts
 # ─────────────────────────────────────────────────────────────────────────────
 FROM base AS builder
 
-# Accept DATABASE_URL as build argument (Supabase PostgreSQL)
-ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
+# Use dummy DATABASE_URL for build (Prisma generate only). Real URL at runtime.
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/build_db"
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy package files
@@ -55,7 +54,7 @@ RUN npx prisma generate
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (skip DB-dependent static generation)
 RUN npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
