@@ -1,0 +1,29 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+*.log
+npm-debug.log*
+
+# Environment — .env holds real gateway keys once you add them.
+.env
+.env.local
+.env*.local
+!.env.example
+
+# SQLite dev database
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
+prisma/migrations/dev.db*
+
+# Generated
+next-env.d.ts
+.tsbuildinfo
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db

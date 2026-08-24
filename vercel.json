@@ -1,0 +1,91 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm ci",
+  "regions": ["bom1"],
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/expire-orders",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/abandoned-carts",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/release-commissions",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-inventory",
+      "schedule": "0 3 * * *"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "@lumen-app-url",
+    "NEXT_PUBLIC_APP_NAME": "LUMEN&CO",
+    "DATABASE_URL": "@lumen-db-url",
+    "JWT_SECRET": "@lumen-jwt-secret",
+    "SESSION_COOKIE_NAME": "lmn_session",
+    "SESSION_MAX_AGE": "2592000",
+    "SMTP_HOST": "@lumen-smtp-host",
+    "SMTP_PORT": "@lumen-smtp-port",
+    "SMTP_USER": "@lumen-smtp-user",
+    "SMTP_PASSWORD": "@lumen-smtp-password",
+    "SMTP_FROM": "@lumen-smtp-from",
+    "SMS_PROVIDER": "twilio",
+    "TWILIO_ACCOUNT_SID": "@lumen-twilio-sid",
+    "TWILIO_AUTH_TOKEN": "@lumen-twilio-token",
+    "TWILIO_MESSAGING_SERVICE_SID": "@lumen-twilio-messaging-sid",
+    "PAYMENT_PROVIDER": "razorpay",
+    "RAZORPAY_KEY_ID": "@lumen-razorpay-key-id",
+    "RAZORPAY_KEY_SECRET": "@lumen-razorpay-key-secret",
+    "RAZORPAY_WEBHOOK_SECRET": "@lumen-razorpay-webhook-secret",
+    "RAZORPAYX_KEY_ID": "@lumen-razorpayx-key-id",
+    "RAZORPAYX_KEY_SECRET": "@lumen-razorpayx-key-secret",
+    "BANK_VERIFICATION_PROVIDER": "razorpay",
+    "WEBHOOK_SECRET": "@lumen-webhook-secret",
+    "REFERRAL_WELCOME_COUPON": "WELCOME200",
+    "REFERRAL_COMMISSION_PERCENT": "7.5",
+    "REFERRAL_HOLD_DAYS": "14",
+    "ENABLE_GRAIN": "true",
+    "ENABLE_AR": "false",
+    "ENABLE_360": "false"
+  }
+}

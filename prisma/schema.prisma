@@ -1,0 +1,1841 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// LUMEN&CO — data model
+//
+// Provider is SQLite so `npm run setup` works with zero infrastructure. The
+// schema is deliberately Postgres-portable: swap the datasource block and it
+// migrates cleanly. Two conventions make that possible:
+//
+//   1. MONEY IS INTEGER PAISE. Never float. `12345` == ₹123.45. All arithmetic
+//      happens in paise via src/lib/money.ts; formatting is display-only.
+//   2. NO NATIVE ENUMS / JSON COLUMNS. SQLite supports neither in Prisma, so
+//      status fields are String constrained by TS const unions in
+//      src/lib/enums.ts, and structured payloads are `*Json String` written
+//      through the codecs in src/lib/json.ts. This keeps one source of truth
+//      for validation instead of splitting it between DB and app.
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IDENTITY & ACCESS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model User {
+  id             String    @id @default(cuid())
+  email          String?   @unique
+  emailVerifiedAt DateTime?
+  phone          String?   @unique
+  phoneVerifiedAt DateTime?
+  passwordHash   String?
+  name           String
+  photoUrl       String?
+  gender         String? // men | women | unisex — drives recommendations
+  dateOfBirth    DateTime?
+
+  status String @default("active") // active | flagged | banned
+  banReason String?
+  flagNote  String?
+
+  locale   String @default("en")
+  currency String @default("INR")
+
+  // Referral identity. Every user gets a code at signup; referredById is set
+  // once and never mutated, so the chain is append-only and auditable.
+  referralCode String  @unique
+  referredById String?
+  referredBy   User?   @relation("ReferralChain", fields: [referredById], references: [id], onDelete: SetNull)
+  referredUsers User[] @relation("ReferralChain")
+
+  // Fraud signals captured at signup, compared against future signups.
+  signupIp         String?
+  signupDeviceHash String?
+  signupUserAgent  String?
+
+  loyaltyTier   String @default("bronze") // bronze | silver | gold
+  loyaltyPoints Int    @default(0)
+  lifetimeSpend Int    @default(0) // paise
+  orderCount    Int    @default(0)
+
+  segmentsCsv String? // denormalised segment slugs for fast admin filtering
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  addresses       Address[]
+  carts           Cart[]
+  orders          Order[]
+  wishlist        WishlistItem[]
+  reviews         Review[]
+  questions       Question[]
+  answers         Answer[]
+  wallet          Wallet?
+  walletTxns      WalletTransaction[]
+  bankAccounts    BankAccount[]
+  bankVerifications BankVerification[]
+  withdrawals     WithdrawalRequest[]
+  savedMethods    SavedPaymentMethod[]
+  referralsMade   Referral[]          @relation("Referrer")
+  referralReceived Referral?          @relation("ReferredUser")
+  commissions     ReferralCommission[]
+  fraudFlags      ReferralFraudFlag[]
+  couponRedemptions CouponRedemption[]
+  loyaltyTxns     LoyaltyTransaction[]
+  returns         Return[]
+  quizResponses   StyleQuizResponse[]
+  pushSubs        PushSubscription[]
+  refunds         Refund[]
+
+  @@index([status])
+  @@index([referredById])
+  @@index([loyaltyTier])
+  @@index([createdAt])
+}
+
+/// Social login linkage (Google / Apple). Kept separate from User so a customer
+/// can attach several providers to one identity without duplicate accounts.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String // google | apple
+  providerAccountId String
+  email             String?
+  displayName       String?
+  avatarUrl         String?
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique // raw JWT never stored
+  ip        String?
+  userAgent String?
+  deviceHash String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// One row per OTP issued. Codes are stored hashed, attempts are counted, and
+/// rows are single-use — see src/lib/auth/otp.ts for the throttle rules.
+model OtpChallenge {
+  id          String    @id @default(cuid())
+  channel     String // sms | email | whatsapp
+  destination String // phone or email
+  purpose     String // login | signup | reset | verify_phone | verify_email
+  codeHash    String
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  resendCount Int       @default(0)
+  consumedAt  DateTime?
+  expiresAt   DateTime
+  ip          String?
+  createdAt   DateTime  @default(now())
+
+  @@index([destination, purpose])
+  @@index([expiresAt])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STAFF, ROLES & AUDIT
+// ══════════════════════════════════════════════════════════════════════════════
+
+model StaffRole {
+  id             String  @id @default(cuid())
+  name           String  @unique
+  slug           String  @unique
+  description    String?
+  permissionsCsv String // granular perms, e.g. "orders.read,orders.write,payouts.approve"
+  isSystem       Boolean @default(false) // system roles cannot be deleted
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  staff StaffUser[]
+}
+
+model StaffUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String?
+  photoUrl     String?
+  roleId       String
+  role         StaffRole @relation(fields: [roleId], references: [id])
+  status       String    @default("active") // active | suspended
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions          StaffSession[]
+  auditLogs         AuditLog[]
+  reviewedWithdrawals WithdrawalRequest[]
+  answers           Answer[]
+
+  @@index([roleId])
+}
+
+model StaffSession {
+  id        String    @id @default(cuid())
+  staffId   String
+  staff     StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  ip        String?
+  userAgent String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([staffId])
+}
+
+/// Append-only trail for every privileged mutation. Money-moving actions
+/// (payout approval, commission override, refund) always write here.
+model AuditLog {
+  id         String     @id @default(cuid())
+  actorType  String // staff | customer | system | webhook
+  staffId    String?
+  staff      StaffUser? @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  actorLabel String?
+  action     String // e.g. "payout.approve"
+  entity     String // e.g. "WithdrawalRequest"
+  entityId   String?
+  summary    String?
+  diffJson   String?
+  ip         String?
+  createdAt  DateTime   @default(now())
+
+  @@index([entity, entityId])
+  @@index([staffId])
+  @@index([createdAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ADDRESSES & SERVICEABILITY
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String  @default("home") // home | work | other
+  name      String
+  phone     String
+  line1     String
+  line2     String?
+  landmark  String?
+  city      String
+  state     String
+  stateCode String? // GST place-of-supply code
+  pincode   String
+  country   String  @default("IN")
+  lat       Float?
+  lng       Float?
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([pincode])
+}
+
+/// Pincode-level serviceability. Drives the checkout COD toggle, delivery ETA,
+/// and the PDP "deliver to" widget. Admin-editable and CSV-importable.
+model Pincode {
+  id               String  @id @default(cuid())
+  pincode          String  @unique
+  city             String
+  state            String
+  stateCode        String?
+  zone             String  @default("metro") // metro | tier1 | tier2 | remote
+  prepaidAvailable Boolean @default(true)
+  codAvailable     Boolean @default(true)
+  codLimit         Int     @default(500000) // paise; 0 = no cap
+  deliveryDays     Int     @default(4)
+  returnAvailable  Boolean @default(true)
+  expressAvailable Boolean @default(false)
+  active           Boolean @default(true)
+  updatedAt        DateTime @updatedAt
+
+  @@index([state])
+  @@index([codAvailable])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CATALOGUE
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Category {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  name           String
+  description    String?
+  heroImage      String?
+  parentId       String?
+  parent         Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Category[] @relation("CategoryTree")
+  sortOrder      Int        @default(0)
+  active         Boolean    @default(true)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime   @default(now())
+
+  products   Product[]
+  sizeGuides SizeGuide[]
+
+  @@index([parentId])
+}
+
+model Collection {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  kind           String   @default("seasonal") // seasonal | editorial | lookbook | drop
+  tagline        String?
+  description    String?
+  heroImage      String?
+  accentHex      String? // per-collection neon accent for the landing page
+  startsAt       DateTime?
+  endsAt         DateTime?
+  featured       Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+
+  products ProductCollection[]
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  subtitle    String?
+  description String
+  story       String? // editorial long-form for the PDP
+  careJson    String? // string[] of care instructions
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  basePrice      Int // paise — variants adjust via priceDelta
+  compareAtPrice Int?
+  costPrice      Int? // admin-only, powers margin reporting
+
+  fabric   String?
+  occasion String? // casual | party | formal | festive | resort
+  fit      String? // slim | regular | oversized | relaxed
+  gender   String  @default("unisex")
+
+  hsnCode String @default("6109") // GST classification
+  gstRate Int    @default(5) // whole percent
+
+  status    String  @default("draft") // draft | active | archived
+  featured  Boolean @default(false)
+  spin360   Boolean @default(false) // renders the 360° viewer
+  arReady   Boolean @default(false) // renders the virtual try-on entry point
+
+  ratingAvg   Float @default(0)
+  ratingCount Int   @default(0)
+  soldCount   Int   @default(0)
+  viewCount   Int   @default(0)
+
+  seoTitle       String?
+  seoDescription String?
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  images      ProductImage[]
+  variants    ProductVariant[]
+  collections ProductCollection[]
+  tags        ProductTag[]
+  reviews     Review[]
+  questions   Question[]
+  wishlistedBy WishlistItem[]
+  orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([featured])
+  @@index([occasion])
+  @@index([gender])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String
+  kind      String  @default("gallery") // gallery | spin | lookbook | swatch
+  colorKey  String? // ties gallery images to a colour variant
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku       String  @unique
+  size      String
+  color     String
+  colorHex  String  @default("#111111")
+  priceDelta Int    @default(0) // paise, added to Product.basePrice
+
+  stock             Int @default(0)
+  reserved          Int @default(0) // held by in-flight checkouts
+  lowStockThreshold Int @default(3)
+
+  weightGrams Int     @default(350)
+  barcode     String?
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  ledger        InventoryLedger[]
+  wishlistedBy  WishlistItem[]
+
+  @@unique([productId, size, color])
+  @@index([productId])
+  @@index([stock])
+}
+
+/// Every stock movement, with a reason and a back-reference. Stock is never
+/// silently mutated — see src/lib/inventory.ts.
+model InventoryLedger {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  delta     Int // signed
+  stockAfter Int
+  reason    String // purchase | sale | return | cancel | manual | csv_import | correction
+  refType   String?
+  refId     String?
+  note      String?
+  actorType String  @default("system")
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  @@index([variantId])
+  @@index([createdAt])
+}
+
+model Tag {
+  id       String       @id @default(cuid())
+  slug     String       @unique
+  name     String
+  kind     String       @default("style") // style | fabric | trend | occasion
+  products ProductTag[]
+}
+
+model ProductTag {
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+  @@index([tagId])
+}
+
+model ProductCollection {
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  sortOrder    Int        @default(0)
+
+  @@id([productId, collectionId])
+  @@index([collectionId])
+}
+
+model SizeGuide {
+  id         String    @id @default(cuid())
+  name       String
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  unit       String    @default("in") // in | cm
+  columnsJson String // string[] — e.g. ["Size","Chest","Length","Sleeve"]
+  rowsJson    String // string[][]
+  notes      String?
+
+  @@index([categoryId])
+}
+
+model WishlistItem {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+
+  @@unique([userId, productId, variantId])
+  @@index([userId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CART
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Cart {
+  id         String  @id @default(cuid())
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionKey String? @unique // guest carts, merged into the user cart on login
+  currency   String  @default("INR")
+  couponCode String?
+  note       String?
+  status     String  @default("active") // active | converted | abandoned
+  convertedOrderId String?
+  lastActivityAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  items    CartItem[]
+  abandoned AbandonedCart?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model CartItem {
+  id             String         @id @default(cuid())
+  cartId         String
+  cart           Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variantId      String
+  variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  qty            Int            @default(1)
+  savedForLater  Boolean        @default(false)
+  priceSnapshot  Int // paise at add-to-cart time; re-validated at checkout
+  addedAt        DateTime       @default(now())
+
+  @@unique([cartId, variantId])
+  @@index([cartId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ORDERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Order {
+  id          String @id @default(cuid())
+  orderNumber String @unique
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
+
+  status            String @default("pending") // pending | confirmed | packed | shipped | delivered | cancelled | returned
+  paymentStatus     String @default("unpaid") // unpaid | authorized | paid | partially_paid | failed | refunded | partially_refunded
+  fulfillmentStatus String @default("unfulfilled") // unfulfilled | partial | fulfilled
+
+  currency String @default("INR")
+  fxRate   Float  @default(1) // display currency conversion at order time
+
+  // All paise. subtotal - discountTotal + shippingTotal + codFee + taxTotal
+  //   = grandTotal;  walletApplied + gateway capture = amountPaid
+  subtotal      Int
+  discountTotal Int @default(0)
+  shippingTotal Int @default(0)
+  codFee        Int @default(0)
+  taxTotal      Int @default(0)
+  walletApplied Int @default(0)
+  grandTotal    Int
+  amountPaid    Int @default(0)
+  amountDue     Int @default(0)
+
+  paymentMethod    String? // cod | card | upi | netbanking | wallet | emi | bnpl
+  couponCode       String?
+  referralCodeUsed String?
+
+  shippingAddressJson String // frozen snapshot — addresses may change later
+  billingAddressJson  String?
+
+  customerNote String?
+  adminNote    String?
+  giftWrap     Boolean @default(false)
+
+  placedAt          DateTime  @default(now())
+  confirmedAt       DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  cancelledBy       String? // customer | admin | system
+  deliveredAt       DateTime?
+  returnWindowEndsAt DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  items      OrderItem[]
+  events     OrderEvent[]
+  shipments  Shipment[]
+  invoices   Invoice[]
+  intents    PaymentIntent[]
+  refunds    Refund[]
+  returns    Return[]
+  commissions ReferralCommission[]
+  redemptions CouponRedemption[]
+  loyaltyTxns LoyaltyTransaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([placedAt])
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+
+  // Snapshots — the catalogue may change, historical orders may not.
+  name     String
+  sku      String
+  size     String
+  color    String
+  imageUrl String?
+  hsnCode  String  @default("6109")
+
+  unitPrice Int // paise, pre-discount
+  qty       Int
+  discount  Int @default(0)
+  taxRate   Int @default(5)
+  taxAmount Int @default(0)
+  lineTotal Int // (unitPrice * qty) - discount + taxAmount
+
+  fulfillmentStatus String @default("unfulfilled")
+  returnedQty       Int    @default(0)
+  cancelledQty      Int    @default(0)
+
+  returnItems ReturnItem[]
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+/// Customer-visible order timeline. One row per state change, rendered as the
+/// live tracking timeline on /account/orders/[id].
+model OrderEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status      String
+  title       String
+  description String?
+  location    String?
+  actorType   String   @default("system")
+  actorId     String?
+  customerVisible Boolean @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model Shipment {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  courier     String // shiprocket | delhivery | bluedart | manual
+  courierName String?
+  awb         String? @unique
+  trackingUrl String?
+  labelUrl    String?
+  manifestUrl String?
+  status      String  @default("created") // created | pickup_scheduled | in_transit | out_for_delivery | delivered | rto | lost
+  weightGrams Int     @default(500)
+  charges     Int     @default(0)
+  providerShipmentId String?
+  pickupScheduledAt DateTime?
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events ShipmentEvent[]
+
+  @@index([orderId])
+}
+
+model ShipmentEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status     String
+  message    String
+  location   String?
+  occurredAt DateTime @default(now())
+
+  @@index([shipmentId])
+}
+
+/// GST tax invoice / credit note. Numbering is gapless per financial year —
+/// see src/lib/invoice.ts.
+model Invoice {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  invoiceNumber String   @unique
+  kind          String   @default("tax") // tax | credit_note
+  financialYear String
+
+  sellerName    String
+  sellerGstin   String
+  sellerAddress String
+  sellerStateCode String
+
+  buyerName     String
+  buyerGstin    String?
+  buyerAddress  String
+  placeOfSupply String // state code — decides CGST+SGST vs IGST
+
+  taxableValue Int
+  cgst         Int @default(0)
+  sgst         Int @default(0)
+  igst         Int @default(0)
+  cess         Int @default(0)
+  roundOff     Int @default(0)
+  total        Int
+
+  linesJson String // frozen line items with per-line tax split
+  notes     String?
+  issuedAt  DateTime @default(now())
+
+  @@index([orderId])
+  @@index([financialYear])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RETURNS, EXCHANGES & REFUNDS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Return {
+  id           String @id @default(cuid())
+  returnNumber String @unique
+  orderId      String
+  order        Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+
+  kind   String @default("return") // return | exchange
+  status String @default("requested") // requested | approved | rejected | pickup_scheduled | in_transit | received | qc_passed | qc_failed | refunded | completed
+
+  reason   String
+  comments String?
+  mediaJson String? // customer-uploaded proof URLs
+
+  pickupAddressJson String?
+  awb               String?
+  courier           String?
+
+  refundMode   String @default("source") // source | wallet
+  refundAmount Int    @default(0)
+
+  exchangeVariantId String?
+
+  qcNote     String?
+  adminNote  String?
+
+  requestedAt DateTime  @default(now())
+  approvedAt  DateTime?
+  receivedAt  DateTime?
+  refundedAt  DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  items   ReturnItem[]
+  refunds Refund[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+}
+
+model ReturnItem {
+  id          String    @id @default(cuid())
+  returnId    String
+  return      Return    @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  qty         Int
+  reason      String?
+  conditionNote String?
+
+  @@index([returnId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAYMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// One intent per checkout attempt on an order. Retries add PaymentAttempts
+/// rather than new intents, so the funnel stays legible in the admin.
+model PaymentIntent {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider String // razorpay | stripe | mock | cod | wallet
+  providerOrderId String?
+
+  amount        Int // paise to collect via gateway (grandTotal - walletApplied)
+  walletApplied Int @default(0)
+  currency      String @default("INR")
+  method        String // cod | card | upi | netbanking | wallet | emi | bnpl
+  status        String @default("created") // created | pending | authorized | captured | failed | cancelled | expired
+
+  emiBank      String?
+  emiTenure    Int?
+  attemptCount Int     @default(0)
+  notesJson    String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime?
+
+  attempts PaymentAttempt[]
+  refunds  Refund[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([providerOrderId])
+}
+
+model PaymentAttempt {
+  id       String        @id @default(cuid())
+  intentId String
+  intent   PaymentIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+  provider String
+  providerPaymentId String? @unique
+  providerSignature String?
+
+  amount Int
+  status String // created | pending | authorized | captured | failed | cancelled
+  method String
+  methodDetail String? // "HDFC •••• 4242" | "user@ybl" | "PhonePe" | "Net Banking — ICICI"
+
+  bank    String?
+  wallet  String?
+  vpa     String?
+  cardLast4 String?
+  cardNetwork String?
+
+  errorCode        String?
+  errorDescription String?
+  errorSource      String?
+  errorReason      String?
+
+  rawPayloadJson String?
+  capturedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  refunds Refund[]
+
+  @@index([intentId])
+  @@index([status])
+}
+
+model Refund {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  returnId String?
+  return   Return? @relation(fields: [returnId], references: [id], onDelete: SetNull)
+  intentId String?
+  intent   PaymentIntent? @relation(fields: [intentId], references: [id], onDelete: SetNull)
+  attemptId String?
+  attempt   PaymentAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  amount Int
+  mode   String @default("source") // source | wallet
+  status String @default("pending") // pending | processing | completed | failed
+  provider String?
+  providerRefundId String?
+  speed  String  @default("normal") // normal | instant
+
+  reason      String?
+  initiatedBy String @default("system") // system | admin | customer
+  failureReason String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+}
+
+/// Tokenised payment instruments only. We persist a gateway token plus display
+/// metadata — never a PAN, CVV, or full card number. PCI scope stays with the
+/// gateway.
+model SavedPaymentMethod {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind   String // card | upi
+  provider String @default("razorpay")
+  token  String // gateway token / customer-instrument id
+
+  network     String? // visa | mastercard | rupay | amex
+  last4       String?
+  issuer      String?
+  expiryMonth Int?
+  expiryYear  Int?
+  cardType    String? // credit | debit
+
+  vpa String?
+
+  label     String?
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+}
+
+model EmiPlan {
+  id            String  @id @default(cuid())
+  bank          String
+  bankLogo      String?
+  tenureMonths  Int
+  interestRate  Float // annual %
+  minAmount     Int // paise
+  processingFee Int     @default(0)
+  noCostEmi     Boolean @default(false)
+  kind          String  @default("emi") // emi | bnpl
+  active        Boolean @default(true)
+  sortOrder     Int     @default(0)
+
+  @@index([active])
+}
+
+/// Gateway settlement records for reconciliation reporting.
+model Settlement {
+  id           String   @id @default(cuid())
+  provider     String
+  settlementId String   @unique
+  amount       Int
+  fees         Int      @default(0)
+  tax          Int      @default(0)
+  netAmount    Int
+  utr          String?
+  status       String   @default("processed")
+  periodFrom   DateTime
+  periodTo     DateTime
+  settledAt    DateTime?
+  createdAt    DateTime @default(now())
+}
+
+/// Every inbound webhook, stored before processing. Gives us idempotency
+/// (unique eventId) and a replay trail when a handler regresses.
+model WebhookEvent {
+  id             String    @id @default(cuid())
+  provider       String
+  eventId        String
+  eventType      String
+  payloadJson    String
+  signature      String?
+  signatureValid Boolean   @default(false)
+  processedAt    DateTime?
+  error          String?
+  attempts       Int       @default(0)
+  createdAt      DateTime  @default(now())
+
+  @@unique([provider, eventId])
+  @@index([eventType])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WALLET, BANK VERIFICATION & PAYOUTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Balance is a cached projection of WalletTransaction rows; every mutation goes
+/// through src/lib/wallet.ts inside a transaction so the two cannot drift.
+///   balance       — spendable now
+///   lockedBalance — commission inside its hold window, or reserved by a
+///                   pending withdrawal
+model Wallet {
+  id            String @id @default(cuid())
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance       Int    @default(0)
+  lockedBalance Int    @default(0)
+  currency      String @default("INR")
+  totalEarned   Int    @default(0)
+  totalWithdrawn Int   @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id       String @id @default(cuid())
+  walletId String
+  wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String // referral_commission | cashback | refund | order_payment | withdrawal | withdrawal_reversal | adjustment | signup_bonus
+  direction String // credit | debit
+  amount    Int
+  status    String @default("completed") // pending | held | completed | failed | reversed
+
+  balanceAfter Int
+  lockedAfter  Int @default(0)
+
+  refType String? // Order | Return | Referral | WithdrawalRequest
+  refId   String?
+
+  description String
+  availableAt DateTime? // set for held commission; null = immediately spendable
+  metaJson    String?
+
+  createdAt  DateTime  @default(now())
+  releasedAt DateTime?
+
+  commission ReferralCommission?
+  withdrawal WithdrawalRequest?
+
+  @@index([userId])
+  @@index([walletId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Payout destination. The full account number is stored encrypted (AES-256-GCM
+/// via src/lib/crypto.ts) and only the last 4 are ever returned to a client.
+/// A destination is only payable once verificationStatus == "verified".
+model BankAccount {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind   String @default("bank") // bank | upi
+
+  accountHolderName String
+  accountNumberEnc  String? // AES-GCM ciphertext
+  accountNumberLast4 String?
+  ifsc              String?
+  bankName          String?
+  branch            String?
+  accountType       String? @default("savings")
+  vpa               String?
+
+  verificationStatus String @default("unverified") // unverified | pending | verified | failed
+  nameMatchScore     Float?
+  registeredName     String? // name the bank returned
+  verifiedAt         DateTime?
+  failureReason      String?
+  verificationAttempts Int @default(0)
+
+  provider      String?
+  providerRefId String? // fund_account_id / beneficiary_id
+
+  isDefault Boolean @default(false)
+  archivedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  verifications BankVerification[]
+  withdrawals   WithdrawalRequest[]
+
+  @@index([userId])
+  @@index([verificationStatus])
+}
+
+/// One row per verification attempt — the real ₹1 penny-drop or VPA validate.
+/// Request/response payloads are retained for dispute handling and are visible
+/// in /admin/payouts/verifications.
+model BankVerification {
+  id            String      @id @default(cuid())
+  bankAccountId String
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider String // razorpay | cashfree | decentro | mock
+  mode     String // penny_drop | ifsc_name_match | vpa_validate
+  status   String @default("pending") // pending | processing | verified | failed
+
+  providerRefId    String?
+  requestPayloadJson  String?
+  responsePayloadJson String?
+
+  registeredName  String?
+  nameMatchScore  Float?
+  nameMatchResult String? // exact | partial | mismatch
+  amountDeposited Int?    @default(100) // ₹1 penny-drop
+  utr             String?
+
+  failureReason String?
+  attemptNo     Int      @default(1)
+  triggeredBy   String   @default("customer") // customer | admin | system
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([bankAccountId])
+  @@index([userId])
+  @@index([status])
+}
+
+model WithdrawalRequest {
+  id            String @id @default(cuid())
+  requestNumber String @unique
+  userId        String
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankAccountId String
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id])
+
+  walletTxnId String?            @unique
+  walletTxn   WalletTransaction? @relation(fields: [walletTxnId], references: [id], onDelete: SetNull)
+
+  amount    Int
+  fee       Int @default(0)
+  netAmount Int
+
+  status String @default("pending") // pending | approved | rejected | processing | completed | failed | cancelled
+  mode   String @default("IMPS") // IMPS | NEFT | RTGS | UPI
+
+  autoApproved     Boolean @default(false)
+  reviewedByStaffId String?
+  reviewedByStaff   StaffUser? @relation(fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
+  reviewNote       String?
+  rejectionReason  String?
+
+  provider        String?
+  providerPayoutId String?
+  utr             String?
+  failureReason   String?
+  retryCount      Int      @default(0)
+
+  requestedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  processedAt DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  attempts PayoutAttempt[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+model PayoutAttempt {
+  id           String            @id @default(cuid())
+  withdrawalId String
+  withdrawal   WithdrawalRequest @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  provider     String
+  providerPayoutId String?
+  status       String // queued | processing | processed | reversed | failed
+  amount       Int
+  mode         String?
+  utr          String?
+  requestPayloadJson  String?
+  responsePayloadJson String?
+  error        String?
+  attemptNo    Int      @default(1)
+  createdAt    DateTime @default(now())
+  completedAt  DateTime?
+
+  @@index([withdrawalId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REFERRALS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// The referral edge. Distinct lifecycle states let the dashboard separate
+/// "invited" from "converted" without inferring it from order history.
+model Referral {
+  id             String @id @default(cuid())
+  referrerId     String
+  referrer       User   @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUserId String @unique
+  referredUser   User   @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  code   String
+  status String @default("signed_up") // invited | signed_up | converted | rejected
+
+  signupIp         String?
+  signupDeviceHash String?
+  signupUserAgent  String?
+  fraudFlagsCsv    String?
+  riskScore        Int     @default(0)
+
+  firstOrderId String?
+  convertedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  commissions ReferralCommission[]
+  flags       ReferralFraudFlag[]
+
+  @@index([referrerId])
+  @@index([status])
+}
+
+/// Commission ledger, decoupled from the wallet. A commission only becomes a
+/// wallet credit once its hold window expires and the source order is past its
+/// return window — see src/lib/referral/release.ts.
+model ReferralCommission {
+  id         String   @id @default(cuid())
+  referralId String
+  referral   Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  referrerId String
+  referrer   User     @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ruleId     String?
+  rule       ReferralRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  orderAmount      Int // eligible base (net of discounts/tax per rule)
+  kind             String // percent | flat
+  rateApplied      Float
+  commissionAmount Int
+  tierBonus        Int    @default(0)
+
+  status String @default("pending") // pending | held | available | paid | reversed | rejected
+
+  holdUntil DateTime?
+  walletTransactionId String? @unique
+  walletTransaction   WalletTransaction? @relation(fields: [walletTransactionId], references: [id], onDelete: SetNull)
+
+  isManualOverride Boolean @default(false)
+  overrideNote     String?
+  overriddenBy     String?
+
+  reversalReason String?
+  createdAt      DateTime  @default(now())
+  releasedAt     DateTime?
+  reversedAt     DateTime?
+
+  @@unique([referralId, orderId])
+  @@index([referrerId])
+  @@index([status])
+  @@index([holdUntil])
+}
+
+/// Admin-configurable commission engine. Highest `priority` matching rule wins.
+model ReferralRule {
+  id     String  @id @default(cuid())
+  name   String
+  active Boolean @default(true)
+
+  kind  String // percent | flat
+  value Float // percent (e.g. 7.5) or flat paise
+
+  minOrderValue  Int     @default(0)
+  maxCommission  Int? // cap on percent rules
+  firstOrderOnly Boolean @default(true)
+  recurring      Boolean @default(false)
+  maxPerReferral Int? // cap on recurring payouts per referred user
+
+  holdDays          Int     @default(14) // return-window hold before release
+  refereeCouponCode String? // auto-applied welcome coupon for the invitee
+
+  priority  Int       @default(0)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  commissions ReferralCommission[]
+  tiers       ReferralTier[]
+}
+
+/// Performance slabs. A referrer crossing minConversions earns a bonus on top
+/// of the base rule.
+model ReferralTier {
+  id     String        @id @default(cuid())
+  ruleId String?
+  rule   ReferralRule? @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  name   String
+  minConversions Int
+  bonusKind      String  @default("percent") // percent | flat
+  bonusValue     Float
+  badgeHex       String?
+  active         Boolean @default(true)
+  sortOrder      Int     @default(0)
+}
+
+model ReferralFraudFlag {
+  id         String    @id @default(cuid())
+  referralId String?
+  referral   Referral? @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String // self_referral | same_device | same_ip | velocity | disposable_email | payout_abuse
+  severity   String    @default("medium") // low | medium | high
+  detail     String
+  autoBlocked Boolean  @default(false)
+  resolved   Boolean   @default(false)
+  resolvedBy String?
+  resolution String?
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([userId])
+  @@index([type])
+  @@index([resolved])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DISCOUNTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Coupon {
+  id   String @id @default(cuid())
+  code String @unique
+  name String
+  description String?
+
+  kind  String // percent | flat | free_shipping
+  value Int // percent whole number, or flat paise
+  maxDiscount Int? // cap for percent coupons
+
+  minCartValue   Int     @default(0)
+  firstOrderOnly Boolean @default(false)
+  autoApply      Boolean @default(false)
+  stackable      Boolean @default(false)
+
+  perUserLimit Int?
+  totalLimit   Int?
+  usedCount    Int  @default(0)
+
+  appliesTo    String  @default("all") // all | category | collection | product
+  targetIdsCsv String?
+
+  isReferralWelcome Boolean @default(false)
+
+  startsAt  DateTime?
+  endsAt    DateTime?
+  active    Boolean   @default(true)
+  createdBy String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  redemptions CouponRedemption[]
+
+  @@index([active])
+  @@index([autoApply])
+}
+
+model CouponRedemption {
+  id       String @id @default(cuid())
+  couponId String
+  coupon   Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  discountAmount Int
+  createdAt DateTime @default(now())
+
+  @@unique([couponId, orderId])
+  @@index([userId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LOYALTY
+// ══════════════════════════════════════════════════════════════════════════════
+
+model LoyaltyTierDef {
+  id               String  @id @default(cuid())
+  slug             String  @unique // bronze | silver | gold
+  name             String
+  minSpend         Int // paise lifetime
+  pointsMultiplier Float   @default(1)
+  perksJson        String // string[]
+  colorHex         String  @default("#B08D57")
+  gradientCss      String?
+  freeShipping     Boolean @default(false)
+  earlyAccessHours Int     @default(0)
+  sortOrder        Int     @default(0)
+}
+
+model LoyaltyTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points    Int
+  direction String // credit | debit
+  reason    String // order | review | referral | redemption | expiry | adjustment
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  refType   String?
+  refId     String?
+  balanceAfter Int
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REVIEWS & Q&A
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Review {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   String?
+
+  rating Int // 1..5
+  title  String?
+  body   String
+
+  fitFeedback String? // small | true_to_size | large
+  sizePurchased String?
+
+  status           String  @default("pending") // pending | approved | rejected
+  rejectionReason  String?
+  verifiedPurchase Boolean @default(false)
+  helpfulCount     Int     @default(0)
+
+  adminReply     String?
+  adminRepliedAt DateTime?
+  adminRepliedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  media ReviewMedia[]
+
+  @@unique([productId, userId, orderId])
+  @@index([productId])
+  @@index([status])
+}
+
+model ReviewMedia {
+  id        String @id @default(cuid())
+  reviewId  String
+  review    Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  url       String
+  kind      String @default("image") // image | video
+  thumbUrl  String?
+  sortOrder Int    @default(0)
+
+  @@index([reviewId])
+}
+
+model Question {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  authorName String?
+  body      String
+  status    String  @default("pending") // pending | approved | rejected
+  upvotes   Int     @default(0)
+  createdAt DateTime @default(now())
+
+  answers Answer[]
+
+  @@index([productId])
+  @@index([status])
+}
+
+model Answer {
+  id         String     @id @default(cuid())
+  questionId String
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  staffId    String?
+  staff      StaffUser? @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  body       String
+  isOfficial Boolean    @default(false)
+  status     String     @default("approved")
+  upvotes    Int        @default(0)
+  createdAt  DateTime   @default(now())
+
+  @@index([questionId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Banner {
+  id        String    @id @default(cuid())
+  name      String
+  placement String    @default("home_hero") // home_hero | strip | category | plp | checkout
+  imageUrl  String?
+  mobileImageUrl String?
+  eyebrow   String?
+  headline  String
+  subhead   String?
+  ctaLabel  String?
+  ctaHref   String?
+  accentHex String?
+  theme     String    @default("dark")
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  impressions Int     @default(0)
+  clicks    Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([placement, active])
+}
+
+/// Drag-and-drop homepage builder. `configJson` shape is validated per `kind`
+/// by the zod schemas in src/lib/cms/sections.ts.
+model HomepageSection {
+  id        String  @id @default(cuid())
+  kind      String // hero | collection_strip | product_carousel | editorial | lookbook | marquee | quiz_cta | usp_row | testimonial | newsletter
+  title     String?
+  subtitle  String?
+  configJson String
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, sortOrder])
+}
+
+model BlogPost {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  title    String
+  excerpt  String
+  coverImage String?
+  body     String // markdown
+  author   String
+  authorRole String?
+  tagsCsv  String?
+  category String  @default("editorial")
+  status   String  @default("draft") // draft | published
+  featured Boolean @default(false)
+  readMinutes Int  @default(4)
+  views    Int     @default(0)
+  seoTitle String?
+  seoDescription String?
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Page {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  title    String
+  body     String
+  status   String  @default("published")
+  seoTitle String?
+  seoDescription String?
+  updatedAt DateTime @updatedAt
+}
+
+model SeoMeta {
+  id          String  @id @default(cuid())
+  path        String  @unique
+  title       String
+  description String
+  ogImage     String?
+  keywordsCsv String?
+  noindex     Boolean @default(false)
+  updatedAt   DateTime @updatedAt
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MARKETING
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Campaign {
+  id      String @id @default(cuid())
+  name    String
+  channel String // email | push | whatsapp
+  subject String?
+  body    String
+  ctaLabel String?
+  ctaHref String?
+  audienceFilterJson String?
+  audienceSize Int   @default(0)
+
+  status      String    @default("draft") // draft | scheduled | sending | sent | failed
+  scheduledAt DateTime?
+  sentAt      DateTime?
+
+  sentCount    Int @default(0)
+  openCount    Int @default(0)
+  clickCount   Int @default(0)
+  orderCount   Int @default(0)
+  revenueAttributed Int @default(0)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model AbandonedCart {
+  id      String @id @default(cuid())
+  cartId  String @unique
+  cart    Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  userId  String?
+  email   String?
+  phone   String?
+  value   Int
+  itemCount Int  @default(0)
+  stage   Int    @default(0) // 0=none, 1..3 nudges sent
+  lastNudgeAt DateTime?
+  recoveredOrderId String?
+  recoveredAt DateTime?
+  recoveredValue Int @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([stage])
+}
+
+model PushSubscription {
+  id       String  @id @default(cuid())
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint String  @unique
+  keysJson String
+  userAgent String?
+  active   Boolean @default(true)
+  createdAt DateTime @default(now())
+}
+
+model RateLimitBucket {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  count     Int      @default(0)
+  windowStart DateTime
+  windowEnd   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([windowEnd])
+}
+
+model NewsletterSubscriber {
+  id     String  @id @default(cuid())
+  email  String? @unique
+  phone  String? @unique
+  name   String?
+  source String  @default("popup") // popup | footer | exit_intent | whatsapp | checkout
+  consentEmail    Boolean @default(true)
+  consentWhatsapp Boolean @default(false)
+  status String  @default("subscribed") // subscribed | unsubscribed
+  couponIssued String?
+  createdAt DateTime @default(now())
+  unsubscribedAt DateTime?
+}
+
+/// Sink for the mock mail/SMS drivers, and the delivery log for real ones.
+/// Nothing is ever silently dropped — browse it at /admin/marketing/outbox.
+model Outbox {
+  id       String    @id @default(cuid())
+  channel  String // email | sms | whatsapp | push
+  provider String    @default("mock")
+  to       String
+  subject  String?
+  body     String
+  template String?
+  status   String    @default("queued") // queued | sent | failed
+  error    String?
+  metaJson String?
+  campaignId String?
+  createdAt DateTime @default(now())
+  sentAt   DateTime?
+
+  @@index([channel, status])
+  @@index([createdAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ANALYTICS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  kind       String // page_view | product_view | add_to_cart | begin_checkout | purchase | search | quiz_complete
+  path       String?
+  referrer   String?
+  source     String? // utm_source, normalised
+  medium     String?
+  campaign   String?
+  userId     String?
+  sessionKey String?
+  deviceType String? // desktop | mobile | tablet
+  country    String?
+  valuePaise Int?
+  metaJson   String?
+  createdAt  DateTime @default(now())
+
+  @@index([kind])
+  @@index([createdAt])
+  @@index([sessionKey])
+}
+
+/// Pre-aggregated daily rollup so the admin dashboard never scans the raw
+/// event table. Recomputed by src/lib/analytics/rollup.ts.
+model DailyMetric {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYY-MM-DD
+  revenue   Int      @default(0)
+  orders    Int      @default(0)
+  units     Int      @default(0)
+  visitors  Int      @default(0)
+  sessions  Int      @default(0)
+  productViews Int   @default(0)
+  addToCarts Int     @default(0)
+  checkouts Int      @default(0)
+  refunds   Int      @default(0)
+  refundAmount Int   @default(0)
+  newCustomers Int   @default(0)
+  returningCustomers Int @default(0)
+  codOrders Int      @default(0)
+  onlineOrders Int   @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SETTINGS & CONFIG
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Key/value store for runtime configuration, editable in /admin/settings.
+/// `isSecret` values are masked in API responses and never sent to the client.
+model Setting {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  value       String
+  valueType   String  @default("string") // string | number | boolean | json
+  group       String  @default("general") // general | payments | payouts | shipping | tax | seo | theme | referral | marketing
+  label       String
+  description String?
+  isSecret    Boolean @default(false)
+  updatedAt   DateTime @updatedAt
+
+  @@index([group])
+}
+
+model TaxRule {
+  id       String  @id @default(cuid())
+  name     String
+  hsnCode  String?
+  gstRate  Int
+  cessRate Int     @default(0)
+  category String?
+  priceThreshold Int? // e.g. apparel 5% under ₹1000, 12% above
+  aboveThresholdRate Int?
+  active   Boolean @default(true)
+  createdAt DateTime @default(now())
+}
+
+model ShippingZone {
+  id        String  @id @default(cuid())
+  name      String
+  statesCsv String?
+  pincodePrefixCsv String?
+  rate      Int     @default(0)
+  freeAbove Int? // free shipping above this cart value
+  codFee    Int     @default(0)
+  etaMinDays Int    @default(2)
+  etaMaxDays Int    @default(6)
+  expressRate Int?
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model Currency {
+  id        String  @id @default(cuid())
+  code      String  @unique // INR | USD | AED | GBP | EUR
+  symbol    String
+  name      String
+  rate      Float   @default(1) // units per 1 INR
+  precision Int     @default(2)
+  isBase    Boolean @default(false)
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model Translation {
+  id     String @id @default(cuid())
+  locale String // en | hi
+  key    String
+  value  String
+
+  @@unique([locale, key])
+  @@index([locale])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STYLE QUIZ / RECOMMENDER
+// ══════════════════════════════════════════════════════════════════════════════
+
+model StyleQuizResponse {
+  id         String  @id @default(cuid())
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionKey String?
+  answersJson String
+  profileSlug String // minimalist | maximalist | street | classic | avant_garde
+  profileName String
+  scoresJson  String // per-profile score breakdown, for explainability
+  recommendedIdsCsv String?
+  couponIssued String?
+  completedAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([profileSlug])
+}
