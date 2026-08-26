@@ -1,13 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // LUMEN&CO — data model
 //
-// Provider is SQLite so `npm run setup` works with zero infrastructure. The
-// schema is deliberately Postgres-portable: swap the datasource block and it
-// migrates cleanly. Two conventions make that possible:
+// Provider is PostgreSQL (Supabase). The schema keeps the portable conventions it
+// was first written with under SQLite, so it migrates cleanly either way. Two
+// conventions carry over:
 //
 //   1. MONEY IS INTEGER PAISE. Never float. `12345` == ₹123.45. All arithmetic
 //      happens in paise via src/lib/money.ts; formatting is display-only.
-//   2. NO NATIVE ENUMS / JSON COLUMNS. SQLite supports neither in Prisma, so
+//   2. NO NATIVE ENUMS / JSON COLUMNS. Held over from the SQLite origin, so
 //      status fields are String constrained by TS const unions in
 //      src/lib/enums.ts, and structured payloads are `*Json String` written
 //      through the codecs in src/lib/json.ts. This keeps one source of truth
@@ -22,7 +22,13 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Runtime goes through the Supavisor transaction pooler (IPv4, port 6543).
+  // Render has no outbound IPv6 and db.<ref>.supabase.co is AAAA-only, so the
+  // direct host is unreachable from the container — the pooler is mandatory there.
+  url       = env("DATABASE_URL")
+  // Migrations and `db push` need a session connection; DDL over a transaction
+  // pooler is unreliable. Falls back to DATABASE_URL when DIRECT_URL is unset.
+  directUrl = env("DIRECT_URL")
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -438,16 +438,37 @@ type ValueOf<K extends SettingKey> = (typeof SETTING_DEFS)[K]['type'] extends 'n
 // only matters for multi-instance deployments.
 
 const CACHE_TTL_MS = 30_000;
+/** Retry window after a failed read — short, so the app recovers as soon as the DB does. */
+const CACHE_ERROR_TTL_MS = 5_000;
 let cache: Map<string, string> | null = null;
 let cacheExpiresAt = 0;
 
+/**
+ * Load the Setting table into the process cache.
+ *
+ * Fails soft. An unreachable database or a missing `Setting` table yields an
+ * empty map, so every reader falls back to its declared `default`. This matters
+ * because the root layout awaits settings on every request: letting the error
+ * propagate turns one DB fault into a 500 on *every* route, including the 404
+ * page — which is why a missing /favicon.ico returned 500 instead of 404.
+ * Serving default theme colours is strictly better than serving nothing.
+ *
+ * Writes (`setSetting`, `seedSettings`) deliberately still throw: an admin save
+ * that silently did nothing would be worse than an error.
+ */
 async function loadCache(): Promise<Map<string, string>> {
   const now = Date.now();
   if (cache && now < cacheExpiresAt) return cache;
 
-  const rows = await db.setting.findMany({ select: { key: true, value: true } });
-  cache = new Map(rows.map((r) => [r.key, r.value]));
-  cacheExpiresAt = now + CACHE_TTL_MS;
+  try {
+    const rows = await db.setting.findMany({ select: { key: true, value: true } });
+    cache = new Map(rows.map((r) => [r.key, r.value]));
+    cacheExpiresAt = now + CACHE_TTL_MS;
+  } catch (err) {
+    console.error('[settings] read failed — falling back to declared defaults:', err);
+    cache = new Map();
+    cacheExpiresAt = now + CACHE_ERROR_TTL_MS;
+  }
   return cache;
 }
 
