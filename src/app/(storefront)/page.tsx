@@ -6,6 +6,7 @@ import { Rating } from '@/components/ui/Rating';
 import { ProductCard } from '@/components/products/ProductCard';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 import { UGCWall } from '@/components/marketing/UGCWall';
+import { CountdownDrop } from '@/components/products/CountdownDrop';
 import { getHomepage } from '@/lib/api-server';
 import { ChevronRight, Truck, Shield, RotateCcw, Heart, Quote, ArrowRight, Play } from 'lucide-react';
 
@@ -230,6 +231,18 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * COUNTDOWN DROP — Limited-time drop with countdown timer
+       * ═══════════════════════════════════════════════════════════════════ */}
+      <CountdownDrop
+        id="winter-capsule"
+        name="Winter Capsule"
+        tagline="A 12-piece collection of engineered warmth. Available for 48 hours only."
+        heroImage=""
+        launchAt={new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()}
+        slug="winter-capsule"
+      />
 
       {/* ═══════════════════════════════════════════════════════════════════
        * OCCASION SHOPPING — Curated collections by occasion

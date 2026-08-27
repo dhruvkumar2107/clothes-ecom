@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '@/lib/utils';
 import { useCartStore, useToast } from '@/app/providers';
 import { apiPost } from '@/lib/api-client';
+import { FabricSwipe } from './FabricSwipe';
+import { HangerToModel } from './HangerToModel';
 
 interface ProductCardProps {
   id: string;
@@ -138,33 +140,43 @@ export function ProductCard({
         className="block relative aspect-[3/4] overflow-hidden bg-paper-2"
         aria-label={`View ${name}`}
       >
-        {/* Main product image */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${displayImage?.url}-${viewMode}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0"
-          >
-            {displayImage ? (
-              <Image
-                src={displayImage.url}
-                alt={displayImage.alt || name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                loading="lazy"
-                onLoad={() => setImageLoaded(true)}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted">
-                <ShoppingBag className="w-12 h-12" aria-hidden="true" />
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+        {/* Main product image with Fabric Swipe on color change */}
+        <div className="absolute inset-0">
+          {activeColor && images.some((img) => img.colorKey) ? (
+            <FabricSwipe
+              images={images}
+              selectedColor={activeColor}
+              productName={name}
+            />
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${displayImage?.url}-${viewMode}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0"
+              >
+                {displayImage ? (
+                  <Image
+                    src={displayImage.url}
+                    alt={displayImage.alt || name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    loading="lazy"
+                    onLoad={() => setImageLoaded(true)}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted">
+                    <ShoppingBag className="w-12 h-12" aria-hidden="true" />
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </div>
 
         {/* Model/Flat-lay toggle */}
         {flatLayImage && (

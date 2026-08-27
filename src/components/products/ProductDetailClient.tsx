@@ -14,7 +14,12 @@ import { ToastProvider, useToast } from '@/app/providers';
 import { apiPost } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/utils';
 import { InteractiveSizeChart } from './InteractiveSizeChart';
+import { AnimatedSizeSlider } from './AnimatedSizeSlider';
 import { FabricZoomViewer } from './FabricZoomViewer';
+import { ShopTheLook } from './ShopTheLook';
+import { SustainabilityTags } from './SustainabilityTags';
+import { AIStylist } from './AIStylist';
+import { FitPredictor } from './FitPredictor';
 
 interface SizeOption {
   id: string;
@@ -461,7 +466,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                 </div>
               </div>
 
-              {/* Fabric Zoom + Size Guide buttons */}
+              {/* Interactive tools row */}
               <div className="flex flex-wrap gap-3">
                 <FabricZoomViewer
                   images={product.images}
@@ -469,11 +474,25 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                   productName={product.name}
                 />
                 {product.sizeGuide && (
-                  <InteractiveSizeChart
+                  <AnimatedSizeSlider
                     chart={product.sizeGuide}
                     productName={product.name}
                   />
                 )}
+                <FitPredictor
+                  productId={product.id}
+                  productName={product.name}
+                  sizeChart={product.sizeGuide}
+                />
+                <AIStylist
+                  currentProduct={{
+                    id: product.id,
+                    name: product.name,
+                    category: product.gender,
+                    color: selectedColor,
+                    imageUrl: product.images[0]?.url || '',
+                  }}
+                />
               </div>
 
               {/* Accordion Details */}
@@ -564,6 +583,24 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
               </Accordion>
             </div>
           </div>
+
+              {/* Sustainability Info */}
+          {product.sustainability && (
+            <div className="mt-12 border-t border-line pt-12">
+              <SustainabilityTags data={product.sustainability} />
+            </div>
+          )}
+
+          {/* Shop the Look */}
+          {product.shopTheLook && product.shopTheLook.items.length > 0 && (
+            <div className="mt-12 border-t border-line pt-12">
+              <ShopTheLook
+                outfitName={product.shopTheLook.name}
+                items={product.shopTheLook.items}
+                heroImage={product.images[0]?.url || ''}
+              />
+            </div>
+          )}
         </div>
       </ToastProvider>
     </div>

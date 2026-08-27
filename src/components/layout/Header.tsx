@@ -54,6 +54,12 @@ export function Header() {
             <Link href="/products?featured=true" className="u-label hover:text-ink transition-colors u-focus">
               Bestsellers
             </Link>
+            <Link href="/creators" className="u-label hover:text-ink transition-colors u-focus">
+              Creators
+            </Link>
+            <Link href="/virtual-try-on" className="u-label hover:text-ink transition-colors u-focus">
+              Try-On
+            </Link>
           </nav>
 
           {/* Actions */}

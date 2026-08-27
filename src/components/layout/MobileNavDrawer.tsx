@@ -10,6 +10,10 @@ const MOBILE_NAV = [
   { label: 'New Arrivals', href: '/products?new=true', icon: null },
   { label: 'Bestsellers', href: '/products?featured=true', icon: null },
   { label: 'Collections', href: '/collections', icon: null },
+  { label: 'Creator Storefronts', href: '/creators', icon: null },
+  { label: 'Virtual Try-On', href: '/virtual-try-on', icon: null },
+  { label: 'Virtual Wardrobe', href: '/wardrobe', icon: null },
+  { label: 'Style Quiz', href: '/style-quiz', icon: null },
   { label: 'Sale', href: '/products?sale=true', icon: null },
 ];
 
