@@ -6,9 +6,12 @@ import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { Share2, Users, Gift, TrendingUp, ExternalLink, Copy, Check } from 'lucide-react';
+import { Share2, Users, Gift, TrendingUp, Send, Mail } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+
+const REFERRAL_PITCH =
+  'Check out LUMEN&CO — use my link and get ₹200 off your first order.';
 
 export const metadata: Metadata = {
   title: 'Refer & Earn',
@@ -58,7 +61,11 @@ export default async function ReferralPage() {
     _sum: { commissionAmount: true },
   });
 
-  const referralLink = `${process.env.NEXT_PUBLIC_APP_URL}/signup?ref=${session.referralCode}`;
+  // A missing NEXT_PUBLIC_APP_URL would otherwise ship a link that literally
+  // starts with "undefined/".
+  const origin = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://clothes-ecom.onrender.com').replace(/\/$/, '');
+  const referralLink = `${origin}/signup?ref=${session.referralCode}`;
+  const shareText = `${REFERRAL_PITCH} ${referralLink}`;
 
   const tierThresholds = [0, 5, 15, 50];
   const currentTier = tierThresholds.findLast(t => totalConversions >= t) || 0;
@@ -84,22 +91,36 @@ export default async function ReferralPage() {
               />
               <CopyButton value={referralLink} label="Copy" />
             </div>
+            {/*
+              Share targets are links, not click handlers — this is a server
+              component, and every one of these is a plain URL anyway.
+            */}
             <div className="flex flex-wrap gap-3">
-              <button
-                className="px-4 py-2 bg-ink text-paper rounded-md text-sm font-medium hover:bg-ink-2 transition-colors flex items-center gap-2"
-                onClick={() => {
-                  const text = 'Check out LUMEN&CO! Use my referral code for ₹200 off your first order.';
-                  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-                  window.open(url, '_blank', 'noopener,noreferrer');
-                }}
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-ink text-paper rounded-md text-sm font-medium hover:bg-ink-2 transition-colors flex items-center gap-2 u-focus"
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-4 h-4" aria-hidden="true" />
                 Share via WhatsApp
-              </button>
-              <button className="px-4 py-2 border border-line rounded-md text-sm font-medium hover:bg-ink-2 transition-colors flex items-center gap-2">
-                <ExternalLink className="w-4 h-4" />
-                Copy Link
-              </button>
+              </a>
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(REFERRAL_PITCH)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 border border-line rounded-md text-sm font-medium hover:bg-paper-3 transition-colors flex items-center gap-2 u-focus"
+              >
+                <Send className="w-4 h-4" aria-hidden="true" />
+                Telegram
+              </a>
+              <a
+                href={`mailto:?subject=${encodeURIComponent('₹200 off at LUMEN&CO')}&body=${encodeURIComponent(shareText)}`}
+                className="px-4 py-2 border border-line rounded-md text-sm font-medium hover:bg-paper-3 transition-colors flex items-center gap-2 u-focus"
+              >
+                <Mail className="w-4 h-4" aria-hidden="true" />
+                Email
+              </a>
             </div>
             <p className="text-sm text-muted mt-4">Your code: <strong className="text-ink">{session.referralCode}</strong> — Friends get ₹200 off their first order.</p>
           </div>

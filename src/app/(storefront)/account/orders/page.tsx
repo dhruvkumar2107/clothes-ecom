@@ -12,6 +12,25 @@ export const metadata: Metadata = {
   description: 'View and track your orders',
 };
 
+const STATUSES = [
+  'all',
+  'pending',
+  'confirmed',
+  'packed',
+  'shipped',
+  'delivered',
+  'cancelled',
+  'returned',
+] as const;
+
+/** Up to five page numbers centred on the current page. */
+function pageWindow(page: number, totalPages: number): number[] {
+  const size = Math.min(5, totalPages);
+  const start =
+    totalPages <= 5 ? 1 : page <= 3 ? 1 : page >= totalPages - 2 ? totalPages - 4 : page - 2;
+  return Array.from({ length: size }, (_, i) => start + i);
+}
+
 interface OrdersPageProps {
   searchParams: Promise<{ page?: string; status?: string }>;
 }
@@ -70,6 +89,11 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   ]);
 
   const totalPages = Math.ceil(total / limit);
+  const pageHref = (p: number) =>
+    `/account/orders?${new URLSearchParams({
+      ...(p > 1 ? { page: String(p) } : {}),
+      ...(status ? { status } : {}),
+    }).toString()}`;
 
   return (
     <div className="py-8 md:py-12">
@@ -84,24 +108,27 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
           </Link>
         </div>
 
-        {/* Status Filter */}
-        <div className="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="Order status filter">
-          {['all', 'pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled', 'returned'].map((s) => (
-            <button
-              key={s}
-              onClick={() => window.location.href = s === 'all' ? '/account/orders' : `/account/orders?status=${s}`}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                status === s || (!status && s === 'all')
-                  ? 'bg-ink text-paper'
-                  : 'bg-paper border border-line text-ink hover:bg-ink-2'
-              }`}
-              role="tab"
-              aria-selected={status === s || (!status && s === 'all')}
-            >
-              {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
+        {/* Status filter. Links, not click handlers — this is a server component,
+            and every filtered view gets a shareable URL for free. */}
+        <nav className="flex flex-wrap gap-2 mb-6" aria-label="Filter orders by status">
+          {STATUSES.map((s) => {
+            const active = status === s || (!status && s === 'all');
+            return (
+              <Link
+                key={s}
+                href={s === 'all' ? '/account/orders' : `/account/orders?status=${s}`}
+                aria-current={active ? 'page' : undefined}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors u-focus ${
+                  active
+                    ? 'bg-ink text-paper'
+                    : 'bg-paper border border-line text-ink hover:bg-paper-3'
+                }`}
+              >
+                {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+              </Link>
+            );
+          })}
+        </nav>
 
         {orders.length === 0 ? (
           <div className="text-center py-16">
@@ -185,43 +212,34 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
             {/* Pagination */}
             {totalPages > 1 && (
               <nav className="mt-8 flex items-center justify-center gap-2" aria-label="Pagination">
-                <button
-                  onClick={() => window.location.href = `/account/orders?page=${page - 1}${status ? `&status=${status}` : ''}`}
-                  disabled={page <= 1}
-                  className="w-10 h-10 rounded-md border border-line flex items-center justify-center hover:bg-ink-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Previous page"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum: number;
-                  if (totalPages <= 5) pageNum = i + 1;
-                  else if (page <= 3) pageNum = i + 1;
-                  else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
-                  else pageNum = page - 2 + i;
-
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => window.location.href = `/account/orders?page=${pageNum}${status ? `&status=${status}` : ''}`}
-                      className={`w-10 h-10 rounded-md flex items-center justify-center font-medium transition-colors ${
-                        page === pageNum ? 'bg-ink text-paper' : 'text-ink hover:bg-ink-2'
-                      }`}
-                      aria-label={`Page ${pageNum}`}
-                      aria-current={page === pageNum ? 'page' : undefined}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() => window.location.href = `/account/orders?page=${page + 1}${status ? `&status=${status}` : ''}`}
-                  disabled={page >= totalPages}
-                  className="w-10 h-10 rounded-md border border-line flex items-center justify-center hover:bg-ink-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Next page"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </button>
+                {page > 1 ? (
+                  <Link
+                    href={pageHref(page - 1)}
+                    className="px-4 py-2 rounded-md border border-line text-sm hover:bg-paper-3 u-focus"
+                  >
+                    Previous
+                  </Link>
+                ) : null}
+                {pageWindow(page, totalPages).map((n) => (
+                  <Link
+                    key={n}
+                    href={pageHref(n)}
+                    aria-current={page === n ? 'page' : undefined}
+                    className={`w-10 h-10 rounded-md flex items-center justify-center font-medium transition-colors u-focus ${
+                      page === n ? 'bg-ink text-paper' : 'text-ink hover:bg-paper-3'
+                    }`}
+                  >
+                    {n}
+                  </Link>
+                ))}
+                {page < totalPages ? (
+                  <Link
+                    href={pageHref(page + 1)}
+                    className="px-4 py-2 rounded-md border border-line text-sm hover:bg-paper-3 u-focus"
+                  >
+                    Next
+                  </Link>
+                ) : null}
               </nav>
             )}
           </>

@@ -127,6 +127,18 @@ export async function generateWithdrawalNumber(client: DbClient = db): Promise<s
   return `WDL-${fy}-${String(seq).padStart(5, '0')}`;
 }
 
+/**
+ * `TKT-2627-00318`
+ *
+ * A support reference short enough for a customer to read out over the phone.
+ * Sequential, because support staff sort by it constantly.
+ */
+export async function generateTicketRef(client: DbClient = db): Promise<string> {
+  const fy = fyToken();
+  const seq = await nextSequence(client, `seq:ticket:${fy}`, 1);
+  return `TKT-${fy}-${String(seq).padStart(5, '0')}`;
+}
+
 /** Gateway-facing receipt id for a payment intent. Must be ≤ 40 chars for Razorpay. */
 export function generateReceiptId(orderNumber: string, attempt: number): string {
   return `rcpt_${orderNumber.replace(/[^A-Za-z0-9]/g, '')}_${attempt}`.slice(0, 40);

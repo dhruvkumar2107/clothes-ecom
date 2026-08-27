@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 import { Facebook, Instagram, Twitter, Youtube, Mail, Truck, Shield, RotateCcw, Headphones } from 'lucide-react';
 
 const FOOTER_LINKS = {
@@ -134,20 +135,7 @@ export function Footer() {
             <p className="text-paper/70 text-sm mb-4 max-w-md">
               Early access to drops, exclusive previews, and styling inspiration — delivered weekly.
             </p>
-            <form className="flex gap-2 max-w-xs" action="/api/newsletter" method="POST">
-              <label htmlFor="footer-email" className="sr-only">Email address</label>
-              <input
-                type="email"
-                id="footer-email"
-                name="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-ink-3 border border-ink-2 rounded-md text-paper placeholder:text-muted-2 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
-                required
-              />
-              <button type="submit" className="px-6 py-3 bg-accent text-paper font-medium rounded-md hover:bg-accent/90 transition-colors u-focus">
-                Subscribe
-              </button>
-            </form>
+            <NewsletterForm id="footer-email" source="footer" variant="dark" className="max-w-sm" />
             <p className="text-xs text-muted-2 mt-3">By subscribing you agree to our Privacy Policy.</p>
           </div>
 

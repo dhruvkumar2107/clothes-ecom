@@ -21,7 +21,14 @@ const nextConfig: NextConfig = {
       { protocol: 'http', hostname: 'localhost' },
     ],
     formats: ['image/avif', 'image/webp'],
+    // Product and banner art is content-addressed by the CDN that serves it, so
+    // an optimized variant can be reused for a long time. The default 60s makes
+    // the server re-encode the same photo all day.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
   },
+
+  // Nothing downstream reads it and it advertises the framework version.
+  poweredByHeader: false,
   async headers() {
     return [
       {

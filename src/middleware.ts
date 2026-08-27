@@ -38,11 +38,11 @@ export async function middleware(request: NextRequest) {
 
   // Admin routes — require staff session
   if (isAdmin) {
-    const staffToken = request.cookies.get('lmn_staff_session')?.value;
+    const staffToken = request.cookies.get('lmn_staff')?.value;
     const staffSession = await verifySessionToken(staffToken, 'staff');
     if (!staffSession) {
-      // Not authenticated as staff → redirect to login
-      const url = new URL('/login', request.url);
+      // Not authenticated as staff → redirect to admin login
+      const url = new URL('/admin/login', request.url);
       url.searchParams.set('redirect', pathname);
       return NextResponse.redirect(url);
     }

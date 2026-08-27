@@ -102,6 +102,7 @@ model User {
   quizResponses   StyleQuizResponse[]
   pushSubs        PushSubscription[]
   refunds         Refund[]
+  supportTickets  SupportTicket[]
 
   @@index([status])
   @@index([referredById])
@@ -208,6 +209,8 @@ model StaffUser {
   auditLogs         AuditLog[]
   reviewedWithdrawals WithdrawalRequest[]
   answers           Answer[]
+  supportTickets    SupportTicket[]
+  supportMessages   SupportMessage[]
 
   @@index([roleId])
 }
@@ -1508,6 +1511,54 @@ model Answer {
   createdAt  DateTime   @default(now())
 
   @@index([questionId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUPPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Anything a customer sends through the contact form, plus the staff reply
+/// thread. Guests can open one, so userId is optional and email is not.
+model SupportTicket {
+  id      String  @id @default(cuid())
+  ref     String  @unique /// Short human-quotable reference, e.g. "TKT-7F3K2A".
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name    String
+  email   String
+  phone   String?
+  orderNumber String?
+  topic   String  @default("general") // general | order | return | product | wholesale | press | payment
+  subject String
+  body    String
+  status  String  @default("open") // open | pending | resolved | closed
+  priority String @default("normal") // low | normal | high
+  assignedToId String?
+  assignedTo   StaffUser? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  /// Staff-only, never shown to the customer.
+  internalNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+
+  messages SupportMessage[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model SupportMessage {
+  id       String        @id @default(cuid())
+  ticketId String
+  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  /// Who wrote it: customer | staff. Staff messages are emailed out.
+  author   String        @default("customer")
+  staffId  String?
+  staff    StaffUser?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  body     String
+  createdAt DateTime     @default(now())
+
+  @@index([ticketId, createdAt])
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
