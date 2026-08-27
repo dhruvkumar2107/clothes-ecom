@@ -48,11 +48,11 @@ const QUIZ_STEPS: QuizStep[] = [
     icon: Palette,
     multi: true,
     options: [
-      { value: 'neutrals', label: 'Neutrals', emoji: '🤍', description: 'Black, white, beige, grey' },
+      { value: 'neutrals', label: 'Neutrals', emoji: '🤍', description: 'Grey, white, beige, cream' },
       { value: 'earth-tones', label: 'Earth Tones', emoji: '🪨', description: 'Rust, olive, terracotta' },
       { value: 'pastels', label: 'Pastels', emoji: '🌸', description: 'Soft pinks, blues, greens' },
       { value: 'bold', label: 'Bold & Bright', emoji: '🔥', description: 'Red, cobalt, emerald' },
-      { value: 'monochrome', label: 'All Black', emoji: '🖤', description: 'Head-to-toe noir' },
+      { value: 'monochrome', label: 'All Grey', emoji: '🖤', description: 'Head-to-toe neutral' },
     ],
   },
   {

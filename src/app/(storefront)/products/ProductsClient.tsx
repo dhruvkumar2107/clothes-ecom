@@ -36,12 +36,19 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
   useEffect(() => {
     setMounted(true);
     async function loadData() {
-      const [categoriesData, collectionsData] = await Promise.all([
-        fetch('/api/categories').then(r => r.json()).then(d => d.data),
-        fetch('/api/collections').then(r => r.json()).then(d => d.data),
-      ]);
-      setCategories(categoriesData);
-      setCollections(collectionsData);
+      try {
+        const [catRes, colRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/collections'),
+        ]);
+        const catJson = catRes.ok ? await catRes.json() : { data: [] };
+        const colJson = colRes.ok ? await colRes.json() : { data: [] };
+        setCategories(Array.isArray(catJson.data) ? catJson.data : []);
+        setCollections(Array.isArray(colJson.data) ? colJson.data : []);
+      } catch {
+        setCategories([]);
+        setCollections([]);
+      }
     }
     loadData();
   }, []);

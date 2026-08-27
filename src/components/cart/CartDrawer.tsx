@@ -74,7 +74,6 @@ export function CartDrawer() {
 
   const getColorHex = (color: string): string => {
     const colorMap: Record<string, string> = {
-      'black': '#000000',
       'white': '#ffffff',
       'navy': '#1a237e',
       'charcoal': '#36454f',

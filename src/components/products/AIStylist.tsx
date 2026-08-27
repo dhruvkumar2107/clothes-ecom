@@ -64,7 +64,7 @@ export function AIStylist({ currentProduct, className }: AIStylistProps) {
           items: [
             { id: '1', name: currentProduct.name, imageUrl: currentProduct.imageUrl, slug: '', price: 4999, category: currentProduct.category, color: currentProduct.color },
             { id: '2', name: 'Tailored Trousers', imageUrl: '/placeholder-trousers.jpg', slug: 'tailored-trousers', price: 3499, category: 'bottoms', color: 'Navy' },
-            { id: '3', name: 'Structured Blazer', imageUrl: '/placeholder-blazer.jpg', slug: 'structured-blazer', price: 6999, category: 'outerwear', color: 'Black' },
+            { id: '3', name: 'Structured Blazer', imageUrl: '/placeholder-blazer.jpg', slug: 'structured-blazer', price: 6999, category: 'outerwear', color: 'Grey' },
             { id: '4', name: 'Leather Oxford Shoes', imageUrl: '/placeholder-shoes.jpg', slug: 'leather-oxford', price: 5499, category: 'shoes', color: 'Brown' },
           ],
           total: 20996,
@@ -86,7 +86,7 @@ export function AIStylist({ currentProduct, className }: AIStylistProps) {
           name: 'Evening Statement',
           items: [
             { id: '1', name: currentProduct.name, imageUrl: currentProduct.imageUrl, slug: '', price: 4999, category: currentProduct.category, color: currentProduct.color },
-            { id: '2', name: 'Silk Midi Skirt', imageUrl: '/placeholder-skirt.jpg', slug: 'silk-midi-skirt', price: 4999, category: 'bottoms', color: 'Black' },
+            { id: '2', name: 'Silk Midi Skirt', imageUrl: '/placeholder-skirt.jpg', slug: 'silk-midi-skirt', price: 4999, category: 'bottoms', color: 'Grey' },
             { id: '3', name: 'Strappy Heels', imageUrl: '/placeholder-heels.jpg', slug: 'strappy-heels', price: 5999, category: 'shoes', color: 'Gold' },
             { id: '4', name: 'Statement Earrings', imageUrl: '/placeholder-earrings.jpg', slug: 'statement-earrings', price: 1999, category: 'accessories', color: 'Gold' },
           ],

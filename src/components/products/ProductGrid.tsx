@@ -50,8 +50,8 @@ export function ProductGrid({ initialParams }: ProductGridProps) {
     try {
       const searchParams = new URLSearchParams(params);
       const data = await apiGet<{ data: Product[]; meta: any }>(`/api/products?${searchParams.toString()}`);
-      setProducts(data.data);
-      setMeta(data.meta);
+      setProducts(Array.isArray(data?.data) ? data.data : []);
+      setMeta(data?.meta ?? { page: 1, totalPages: 1, total: 0 });
     } catch (error) {
       console.error('Failed to load products:', error);
       setProducts([]);

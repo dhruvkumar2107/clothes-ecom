@@ -300,7 +300,7 @@ export function ProductCard({
                       ? 'border-ink scale-110 ring-2 ring-ink/20'
                       : 'border-line/50 hover:scale-110 hover:border-ink/50'
                   }`}
-                  style={{ backgroundColor: opt.colorHex || '#111' }}
+                  style={{ backgroundColor: opt.colorHex || '#808080' }}
                   aria-pressed={isActive}
                   aria-label={opt.color}
                 >

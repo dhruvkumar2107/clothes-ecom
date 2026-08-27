@@ -91,7 +91,7 @@ export function ProductForm({
   };
 
   const addVariant = () => {
-    setVariants((prev) => [...prev, { size: 'M', color: 'Black', colorHex: '#111111', stock: '15' }]);
+    setVariants((prev) => [...prev, { size: 'M', color: 'Grey', colorHex: '#808080', stock: '15' }]);
   };
 
   const removeVariant = (index: number) => {

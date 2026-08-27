@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         items: [
           { id: productId, name: 'Selected Item', imageUrl: '', slug: '', price: 4999, category, color },
           { id: 'acc-1', name: 'Tailored Trousers', imageUrl: '', slug: 'tailored-trousers', price: 3499, category: 'bottoms', color: 'Navy' },
-          { id: 'acc-2', name: 'Structured Blazer', imageUrl: '', slug: 'structured-blazer', price: 6999, category: 'outerwear', color: 'Black' },
+          { id: 'acc-2', name: 'Structured Blazer', imageUrl: '', slug: 'structured-blazer', price: 6999, category: 'outerwear', color: 'Grey' },
           { id: 'acc-3', name: 'Leather Oxford Shoes', imageUrl: '', slug: 'leather-oxford', price: 5499, category: 'shoes', color: 'Brown' },
         ],
         total: 20996,
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         name: 'Evening Statement',
         items: [
           { id: productId, name: 'Selected Item', imageUrl: '', slug: '', price: 4999, category, color },
-          { id: 'acc-6', name: 'Silk Midi Skirt', imageUrl: '', slug: 'silk-midi-skirt', price: 4999, category: 'bottoms', color: 'Black' },
+          { id: 'acc-6', name: 'Silk Midi Skirt', imageUrl: '', slug: 'silk-midi-skirt', price: 4999, category: 'bottoms', color: 'Grey' },
           { id: 'acc-7', name: 'Strappy Heels', imageUrl: '', slug: 'strappy-heels', price: 5999, category: 'shoes', color: 'Gold' },
           { id: 'acc-8', name: 'Statement Earrings', imageUrl: '', slug: 'statement-earrings', price: 1999, category: 'accessories', color: 'Gold' },
         ],

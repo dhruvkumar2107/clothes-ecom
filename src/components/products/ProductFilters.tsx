@@ -15,10 +15,9 @@ interface ProductFiltersProps {
 const OCCASIONS = ['casual', 'party', 'formal', 'festive', 'resort'];
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const COLORS = [
-  { name: 'Black', hex: '#111111' },
+  { name: 'Grey', hex: '#808080' },
   { name: 'White', hex: '#FFFFFF' },
   { name: 'Navy', hex: '#1B2A4A' },
-  { name: 'Grey', hex: '#808080' },
   { name: 'Beige', hex: '#F5F0E1' },
   { name: 'Brown', hex: '#8B6B4A' },
   { name: 'Green', hex: '#2D5A3D' },
@@ -86,7 +85,7 @@ export function ProductFilters({ categories, collections, initialParams, onChang
         onToggle={() => setExpanded(p => ({ ...p, category: !p.category }))}
       >
         <div className="space-y-2">
-          {categories.map((cat) => (
+          {(categories || []).map((cat) => (
             <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
               <Checkbox
                 checked={initialParams.category === cat.slug}
@@ -106,7 +105,7 @@ export function ProductFilters({ categories, collections, initialParams, onChang
         onToggle={() => setExpanded(p => ({ ...p, collection: !p.collection }))}
       >
         <div className="space-y-2">
-          {collections.map((col) => (
+          {(collections || []).map((col) => (
             <label key={col.id} className="flex items-center gap-2 cursor-pointer">
               <Checkbox
                 checked={initialParams.collection === col.slug}
