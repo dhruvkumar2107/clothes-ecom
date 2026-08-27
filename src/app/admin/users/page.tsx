@@ -1,14 +1,12 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { Users, Search, Filter, ChevronLeft, ChevronRight, ExternalLink, Flag, Activity } from 'lucide-react';
-
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminUsersPage() {
-  const users = await prisma.user.findMany({
+  const users = await db.user.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
       _count: { select: { orders: true, referralsMade: true } },

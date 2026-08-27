@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
     if (params.gender) where.gender = params.gender;
     if (params.occasion) where.occasion = params.occasion;
     if (params.featured) where.featured = true;
+    if (params.new) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      where.createdAt = { gte: thirtyDaysAgo };
+    }
 
     if (params.minPrice !== undefined || params.maxPrice !== undefined) {
       where.basePrice = {};

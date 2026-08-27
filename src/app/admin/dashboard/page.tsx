@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import {
   TrendingUp,
@@ -12,8 +12,6 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 
-const prisma = new PrismaClient();
-
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
@@ -25,11 +23,11 @@ export default async function AdminDashboardPage() {
     recentOrders,
     completedOrders,
   ] = await Promise.all([
-    prisma.product.count(),
-    prisma.order.count(),
-    prisma.user.count(),
-    prisma.return.count({ where: { status: { in: ['requested', 'approved'] } } }),
-    prisma.order.findMany({
+    db.product.count(),
+    db.order.count(),
+    db.user.count(),
+    db.return.count({ where: { status: { in: ['requested', 'approved'] } } }),
+    db.order.findMany({
       take: 6,
       orderBy: { placedAt: 'desc' },
       include: {
@@ -37,7 +35,7 @@ export default async function AdminDashboardPage() {
         items: { select: { name: true, qty: true } },
       },
     }),
-    prisma.order.findMany({
+    db.order.findMany({
       select: { grandTotal: true },
     }),
   ]);

@@ -1,14 +1,12 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { Plus, TicketPercent, Edit, Trash2, Eye, Calendar, Package, Truck } from 'lucide-react';
-
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCouponsPage() {
-  const coupons = await prisma.coupon.findMany({
+  const coupons = await db.coupon.findMany({
     orderBy: { createdAt: 'desc' },
   });
 

@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { OrderActionDetails } from '@/components/admin/OrderActionDetails';
 import { ArrowLeft, User, MapPin, CreditCard, RotateCcw, Package } from 'lucide-react';
-
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +14,7 @@ export default async function AdminOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = await prisma.order.findUnique({
+  const order = await db.order.findUnique({
     where: { id },
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },

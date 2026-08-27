@@ -1,14 +1,12 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { ShoppingBag, Eye, RotateCcw, Truck, CheckCircle2, Clock } from 'lucide-react';
-
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOrdersPage() {
-  const orders = await prisma.order.findMany({
+  const orders = await db.order.findMany({
     orderBy: { placedAt: 'desc' },
     include: {
       user: { select: { name: true, email: true, phone: true } },

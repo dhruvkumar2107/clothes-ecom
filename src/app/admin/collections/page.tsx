@@ -1,13 +1,11 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { Plus, Layers, GripVertical, Edit, Trash2, Eye, Shield } from 'lucide-react';
-
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCollectionsPage() {
-  const collections = await prisma.collection.findMany({
+  const collections = await db.collection.findMany({
     orderBy: { sortOrder: 'asc' },
     include: {
       _count: { select: { products: true } },

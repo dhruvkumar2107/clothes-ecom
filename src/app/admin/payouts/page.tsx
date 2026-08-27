@@ -1,22 +1,20 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { Wallet, Banknote, CheckCircle, XCircle, Clock, Loader2, Shield, AlertTriangle, ExternalLink } from 'lucide-react';
-
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPayoutsPage() {
   const [withdrawals, bankAccounts] = await Promise.all([
-    prisma.withdrawalRequest.findMany({
+    db.withdrawalRequest.findMany({
       orderBy: { requestedAt: 'desc' },
       include: {
         user: { select: { name: true, email: true, phone: true } },
         bankAccount: { select: { accountHolderName: true, accountNumberLast4: true, ifsc: true, bankName: true, verificationStatus: true } },
       },
     }),
-    prisma.bankAccount.findMany({
+    db.bankAccount.findMany({
       orderBy: { createdAt: 'desc' },
       include: { user: { select: { name: true, email: true } } },
     }),
