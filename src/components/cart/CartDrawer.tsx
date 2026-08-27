@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCartStore, useToast } from '@/app/providers';
 import { Button } from '@/components/ui/Button';
-import { X, Plus, Minus, Trash2, Heart, ChevronRight, Loader2 } from 'lucide-react';
+import { X, Plus, Minus, Trash2, Heart, ChevronRight, Loader2, Palette } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '@/lib/utils';
 import { apiGet, apiDelete } from '@/lib/api-client';
 import type { CartView } from '@/lib/cart';
@@ -177,9 +178,14 @@ export function CartDrawer() {
               )}
 
               <ul className="space-y-4" role="list" aria-label="Cart items">
-                {cart.lines.map((item) => (
-                  <li
+                <AnimatePresence>
+                {cart.lines.map((item, index) => (
+                  <motion.li
                     key={item.cartItemId ?? item.key}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20, height: 0 }}
+                    transition={{ delay: index * 0.05 }}
                     className="flex gap-3 pb-4 border-b border-line last:border-0"
                   >
                     <Link
@@ -219,8 +225,14 @@ export function CartDrawer() {
                       <div className="flex items-center gap-2 text-xs text-muted mt-1 flex-wrap">
                         <span>Size: {item.size}</span>
                         <span>•</span>
-                        <span style={{ color: getColorHex(item.color) }}>●</span>
-                        <span>{item.color}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="w-4 h-4 rounded-full border border-line/50 inline-block"
+                            style={{ backgroundColor: getColorHex(item.color) }}
+                            aria-hidden="true"
+                          />
+                          <span>{item.color}</span>
+                        </div>
                       </div>
                       {item.priceChanged && item.priceWas !== null && (
                         <p className="text-xs text-danger mt-1">
@@ -278,8 +290,9 @@ export function CartDrawer() {
                         </button>
                       </div>
                     </div>
-                  </li>
+                  </motion.li>
                 ))}
+                </AnimatePresence>
               </ul>
             </>
           )}

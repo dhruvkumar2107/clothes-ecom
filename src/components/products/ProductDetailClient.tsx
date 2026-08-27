@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Heart, ShoppingBag, Truck, RotateCcw, Shield, ChevronRight, Minus, Plus, Share2, Eye, Loader2, X } from 'lucide-react';
+import { Heart, ShoppingBag, Truck, RotateCcw, Shield, ChevronRight, Minus, Plus, Share2, Eye, Loader2, X, Shirt, Camera } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { QtyStepper } from '@/components/ui/QtyStepper';
@@ -12,6 +13,8 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { ToastProvider, useToast } from '@/app/providers';
 import { apiPost } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/utils';
+import { InteractiveSizeChart } from './InteractiveSizeChart';
+import { FabricZoomViewer } from './FabricZoomViewer';
 
 interface SizeOption {
   id: string;
@@ -47,6 +50,29 @@ interface ProductData {
   sizeGuide: { id: string; name: string; unit: string; columns: string[]; rows: string[][]; notes: string | null } | null;
   ratingAvg: number;
   ratingCount: number;
+  sustainability?: {
+    fabricOrigin?: string;
+    certifications?: string[];
+    organicContent?: number;
+    recycledContent?: number;
+    recyclable?: boolean;
+    biodegradable?: boolean;
+    ethicalFactory?: string;
+    waterUsage?: string;
+    carbonFootprint?: string;
+  } | null;
+  shopTheLook?: {
+    name: string;
+    items: {
+      id: string;
+      slug: string;
+      name: string;
+      basePrice: number;
+      imageUrl: string | null;
+      color: string;
+      position: { x: number; y: number };
+    }[];
+  } | null;
 }
 
 interface ProductDetailClientProps {
@@ -63,6 +89,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const [wishlisted, setWishlisted] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [showZoom, setShowZoom] = useState(false);
+  const [viewMode, setViewMode] = useState<'model' | 'flat'>('model');
 
   const currentColor = product.colors.find(c => c.color === selectedColor);
   const availableSizes = currentColor?.sizes.filter(s => s.stock > 0) || [];
@@ -82,6 +109,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     img => img.kind === 'gallery' && (!img.colorKey || img.colorKey.toLowerCase() === selectedColor.toLowerCase())
   );
   const displayImages = colorImages.length > 0 ? colorImages : product.images.filter(img => img.kind === 'gallery');
+  const flatLayImage = product.images.find(img => img.kind === 'flat') || null;
+  const currentDisplayImages = viewMode === 'flat' && flatLayImage ? [flatLayImage, ...displayImages.filter(img => img.id !== flatLayImage.id)] : displayImages;
 
   const handleAddToCart = async () => {
     if (!selectedSizeData) {
@@ -163,18 +192,53 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             {/* Image Gallery */}
             <div className="relative">
               <div className="aspect-[3/4] rounded-lg overflow-hidden bg-paper-2 relative">
-                {displayImages[activeImage] ? (
-                  <Image
-                    src={displayImages[activeImage].url}
-                    alt={displayImages[activeImage].alt || product.name}
-                    fill
-                    priority
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted">
-                    <ShoppingBag className="w-16 h-16" aria-hidden="true" />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${currentDisplayImages[activeImage]?.id}-${viewMode}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0"
+                  >
+                    {currentDisplayImages[activeImage] ? (
+                      <Image
+                        src={currentDisplayImages[activeImage].url}
+                        alt={currentDisplayImages[activeImage].alt || product.name}
+                        fill
+                        priority
+                        className="object-cover"
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted">
+                        <ShoppingBag className="w-16 h-16" aria-hidden="true" />
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Model/Flat-lay toggle */}
+                {flatLayImage && (
+                  <div className="absolute top-4 left-16 z-10 flex bg-paper/80 backdrop-blur-sm rounded-full p-0.5">
+                    <button
+                      onClick={() => setViewMode('model')}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        viewMode === 'model' ? 'bg-ink text-paper' : 'text-ink hover:bg-ink/10'
+                      }`}
+                      aria-label="View on model"
+                    >
+                      <Camera className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('flat')}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        viewMode === 'flat' ? 'bg-ink text-paper' : 'text-ink hover:bg-ink/10'
+                      }`}
+                      aria-label="View flat lay"
+                    >
+                      <Shirt className="w-4 h-4" aria-hidden="true" />
+                    </button>
                   </div>
                 )}
 
@@ -209,9 +273,9 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
               </div>
 
               {/* Thumbnails */}
-              {displayImages.length > 1 && (
+              {currentDisplayImages.length > 1 && (
                 <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-                  {displayImages.map((img, i) => (
+                  {currentDisplayImages.map((img, i) => (
                     <button
                       key={img.id}
                       onClick={() => setActiveImage(i)}
@@ -242,19 +306,19 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                 </button>
                 <div className="max-w-5xl max-h-[90vh] relative">
                   <Image
-                    src={displayImages[activeImage].url}
-                    alt={displayImages[activeImage].alt || product.name}
+                    src={currentDisplayImages[activeImage].url}
+                    alt={currentDisplayImages[activeImage].alt || product.name}
                     width={1200}
                     height={1600}
                     className="max-w-full max-h-[90vh] object-contain"
                     priority
                   />
                 </div>
-                <button onClick={() => setActiveImage((activeImage - 1 + displayImages.length) % displayImages.length)} className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 flex items-center justify-center u-focus" aria-label="Previous image">
+                <button onClick={() => setActiveImage((activeImage - 1 + currentDisplayImages.length) % currentDisplayImages.length)} className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 flex items-center justify-center u-focus" aria-label="Previous image">
                   <svg className="w-6 h-6 text-paper" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <button onClick={() => setActiveImage((activeImage + 1) % displayImages.length)} className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 flex items-center justify-center u-focus" aria-label="Next image">
-                  <ChevronRight className="w-6 h-6 text-paper" aria-hidden="true" />
+                <button onClick={() => setActiveImage((activeImage + 1) % currentDisplayImages.length)} className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 flex items-center justify-center u-focus" aria-label="Next image">
+                  <ChevronRight className="w-6 h-6 text-paper" />
                 </button>
               </div>
             )}
@@ -395,6 +459,21 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                   <Shield className="w-4 h-4" aria-hidden="true" />
                   <span>Secure checkout</span>
                 </div>
+              </div>
+
+              {/* Fabric Zoom + Size Guide buttons */}
+              <div className="flex flex-wrap gap-3">
+                <FabricZoomViewer
+                  images={product.images}
+                  selectedColor={selectedColor}
+                  productName={product.name}
+                />
+                {product.sizeGuide && (
+                  <InteractiveSizeChart
+                    chart={product.sizeGuide}
+                    productName={product.name}
+                  />
+                )}
               </div>
 
               {/* Accordion Details */}
