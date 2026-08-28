@@ -18,10 +18,10 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/staff-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email, password }),
+        body: JSON.stringify({ email, password }),
         credentials: 'include',
       });
 
@@ -32,8 +32,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // After customer login, try to get staff session
-      // The middleware will handle redirect based on cookie
+      // After staff login, redirect to dashboard
       router.push('/admin/dashboard');
       router.refresh();
     } catch {

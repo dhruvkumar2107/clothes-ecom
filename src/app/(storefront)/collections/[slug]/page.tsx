@@ -37,7 +37,12 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const collection = await getCollection(slug);
+  let collection = null;
+  try {
+    collection = await getCollection(slug);
+  } catch {
+    return { title: 'Collection' };
+  }
   if (!collection) return { title: 'Collection not found' };
 
   const description =
@@ -67,13 +72,25 @@ export default async function CollectionPage({ params, searchParams }: PageProps
   const { slug } = await params;
   const { page: pageParam, sort: sortParam } = await searchParams;
 
-  const collection = await getCollection(slug);
-  if (!collection) notFound();
-
+  let collection: Awaited<ReturnType<typeof getCollection>> = null;
+  let products: Awaited<ReturnType<typeof getCollectionProducts>>['products'] = [];
+  let total = 0;
   const page = Math.max(1, Number(pageParam) || 1);
   const sort: SortValue = isSort(sortParam) ? sortParam : 'manual';
 
-  const { products, total } = await getCollectionProducts(slug, page, PER_PAGE, sort);
+  try {
+    collection = await getCollection(slug);
+    if (!collection) notFound();
+
+    const result = await getCollectionProducts(slug, page, PER_PAGE, sort);
+    products = result.products;
+    total = result.total;
+  } catch {
+    // DB unavailable during build — render empty state
+  }
+
+  if (!collection) notFound();
+
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
   const accent = collection.accentHex ?? undefined;
 

@@ -134,44 +134,47 @@ export default async function SearchPage({ searchParams }: PageProps) {
     ],
   };
 
-  let [rows, total] = await Promise.all([
-    db.product.findMany({
-      where,
-      orderBy: [{ featured: 'desc' }, { soldCount: 'desc' }, { createdAt: 'desc' }],
-      skip: (page - 1) * PER_PAGE,
-      take: PER_PAGE,
-      select: CARD_SELECT,
-    }),
-    db.product.count({ where }),
-  ]);
-
-  /**
-   * No literal match usually means a typo, so fall back to the same bounded
-   * edit-distance pass the autocomplete API uses. Paginating that in SQL isn't
-   * possible, so the fallback is capped to one page — deep paging over guesses
-   * has no value anyway.
-   */
+  let rows: any[] = [];
+  let total = 0;
   let didYouMean = false;
-  if (total === 0 && tokens.length > 0) {
-    const candidates = await db.product.findMany({
-      where: { status: 'active' },
-      orderBy: [{ featured: 'desc' }, { soldCount: 'desc' }],
-      take: 500,
-      select: { ...CARD_SELECT, fabric: true },
-    });
-    const matched = candidates.filter((p) =>
-      fuzzyMatches(`${p.name} ${p.subtitle ?? ''} ${p.fabric ?? ''}`, tokens),
-    );
-    rows = matched.slice(0, PER_PAGE);
-    total = matched.length;
-    didYouMean = matched.length > 0;
+
+  try {
+    [rows, total] = await Promise.all([
+      db.product.findMany({
+        where,
+        orderBy: [{ featured: 'desc' }, { soldCount: 'desc' }, { createdAt: 'desc' }],
+        skip: (page - 1) * PER_PAGE,
+        take: PER_PAGE,
+        select: CARD_SELECT,
+      }),
+      db.product.count({ where }),
+    ]);
+
+    if (total === 0 && tokens.length > 0) {
+      const candidates = await db.product.findMany({
+        where: { status: 'active' },
+        orderBy: [{ featured: 'desc' }, { soldCount: 'desc' }],
+        take: 500,
+        select: { ...CARD_SELECT, fabric: true },
+      });
+      const matched = candidates.filter((p) =>
+        fuzzyMatches(`${p.name} ${p.subtitle ?? ''} ${p.fabric ?? ''}`, tokens),
+      );
+      rows = matched.slice(0, PER_PAGE);
+      total = matched.length;
+      didYouMean = matched.length > 0;
+    }
+  } catch {
+    // DB unavailable — render with empty results
+    rows = [];
+    total = 0;
   }
 
-  const products = rows.map((p) => ({
+  const products = rows.map((p: any) => ({
     ...p,
-    hasStock: p.variants.some((v) => v.stock - v.reserved > 0),
-    colors: [...new Set(p.variants.map((v) => v.color))],
-    sizes: [...new Set(p.variants.map((v) => v.size))],
+    hasStock: p.variants.some((v: any) => v.stock - v.reserved > 0),
+    colors: [...new Set(p.variants.map((v: any) => v.color))],
+    sizes: [...new Set(p.variants.map((v: any) => v.size))],
   }));
 
   const totalPages = didYouMean ? 1 : Math.max(1, Math.ceil(total / PER_PAGE));

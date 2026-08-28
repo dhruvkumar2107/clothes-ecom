@@ -26,7 +26,12 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 export default async function CollectionsPage() {
-  const collections = await getCollectionsForIndex();
+  let collections: Awaited<ReturnType<typeof getCollectionsForIndex>> = [];
+  try {
+    collections = await getCollectionsForIndex();
+  } catch {
+    // DB unavailable during build — render empty state
+  }
 
   return (
     <div className="py-12 md:py-20">

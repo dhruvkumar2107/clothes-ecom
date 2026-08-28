@@ -48,15 +48,31 @@ const OCCASIONS = [
 ];
 
 export default async function OccasionPage() {
-  const products = await db.product.findMany({
-    where: { status: 'active' },
-    include: {
-      images: { take: 2, orderBy: { sortOrder: 'asc' } },
-      variants: { select: { size: true, color: true, colorHex: true, stock: true, reserved: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-  });
+  let products: {
+    id: string;
+    slug: string;
+    name: string;
+    subtitle: string | null;
+    basePrice: number;
+    compareAtPrice: number | null;
+    gender: string;
+    occasion: string | null;
+    images: { url: string; alt: string | null }[];
+    variants: { size: string; color: string; colorHex: string; stock: number; reserved: number }[];
+  }[] = [];
+  try {
+    products = await db.product.findMany({
+      where: { status: 'active' },
+      include: {
+        images: { take: 2, orderBy: { sortOrder: 'asc' } },
+        variants: { select: { size: true, color: true, colorHex: true, stock: true, reserved: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+  } catch {
+    // DB unavailable (e.g. build time) — render with empty product list
+  }
 
   const formattedProducts = products.map((p) => ({
     id: p.id,
