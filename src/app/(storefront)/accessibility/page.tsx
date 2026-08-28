@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Eye, Keyboard, Volume2, Contrast, CheckCircle, HelpCircle, ChevronDown, Mail } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Accessibility Statement | LUMEN&CO',

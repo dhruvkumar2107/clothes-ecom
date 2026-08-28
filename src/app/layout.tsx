@@ -3,7 +3,10 @@ import { getSetting, getSettings } from '@/lib/settings';
 import { Providers } from '@/app/providers';
 import './globals.css';
 
-export const dynamic = 'force-dynamic';
+// Revalidate every 30s instead of force-dynamic. This allows Next.js to serve
+// a cached version of the layout shell while revalidating in the background,
+// dramatically reducing TTFB for repeated visits.
+export const revalidate = 30;
 
 const MainContentId = 'main-content';
 
@@ -104,8 +107,6 @@ export default async function RootLayout({
   return (
     <html lang={locale} style={style} className={enableGrain ? 'u-grain' : ''}>
       <head>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <meta name="theme-color" content="#0b0b0c" />
       </head>
       <body className="min-h-screen flex flex-col antialiased">

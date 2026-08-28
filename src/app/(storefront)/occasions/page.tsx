@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ChevronRight, Briefcase, Sparkles, PartyPopper, Palmtree } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Shop by Occasion | LUMEN&CO',

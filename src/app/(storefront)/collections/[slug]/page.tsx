@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -6,7 +7,11 @@ import { getCollectionBySlug, getCollectionProducts } from '@/lib/api-server';
 import { ProductCard } from '@/components/products/ProductCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-export const dynamic = 'force-dynamic';
+// Revalidate collection pages every 60s.
+export const revalidate = 60;
+
+// Deduplicate DB fetch for metadata + page component.
+const getCollection = cache((slug: string) => getCollectionBySlug(slug));
 
 const PER_PAGE = 24;
 
@@ -32,7 +37,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const collection = await getCollectionBySlug(slug);
+  const collection = await getCollection(slug);
   if (!collection) return { title: 'Collection not found' };
 
   const description =
@@ -62,7 +67,7 @@ export default async function CollectionPage({ params, searchParams }: PageProps
   const { slug } = await params;
   const { page: pageParam, sort: sortParam } = await searchParams;
 
-  const collection = await getCollectionBySlug(slug);
+  const collection = await getCollection(slug);
   if (!collection) notFound();
 
   const page = Math.max(1, Number(pageParam) || 1);

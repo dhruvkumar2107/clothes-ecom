@@ -4,7 +4,7 @@ import { getCustomerSession } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { AddressBook } from '@/components/account/AddressBook';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Addresses',

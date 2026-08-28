@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/Button';
 import { Rating } from '@/components/ui/Rating';
 import { ProductCard } from '@/components/products/ProductCard';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
-import { UGCWall } from '@/components/marketing/UGCWall';
 import { CountdownDrop } from '@/components/products/CountdownDrop';
 import { getHomepage } from '@/lib/api-server';
-import { ChevronRight, Truck, Shield, RotateCcw, Heart, Quote, ArrowRight, Play } from 'lucide-react';
+import { ChevronRight, Truck, Shield, RotateCcw, Heart, Quote, ArrowRight } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+// Revalidate homepage every 30s. Merchandising changes appear almost
+// immediately while visitors get cached fast loads.
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: 'LUMEN&CO — Light as couture',

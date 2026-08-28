@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Briefcase, Heart, Sparkles, Users, Clock, MapPin, CheckCircle } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Careers | LUMEN&CO',

@@ -1,9 +1,16 @@
 import { Metadata } from 'next';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { ProductDetailClient } from '@/components/products/ProductDetailClient';
-import { getProductBySlug, getCategories, getCollections } from '@/lib/api-server';
+import { getProductBySlug } from '@/lib/api-server';
 
-export const dynamic = 'force-dynamic';
+// Revalidate product pages every 60s — stock/pricing changes reflect quickly
+// while product detail pages get the ISR speed benefit.
+export const revalidate = 60;
+
+// Deduplicate DB fetch: generateMetadata + page component run in the same
+// request, so React.cache ensures a single DB round-trip instead of two.
+const getProduct = cache((slug: string) => getProductBySlug(slug));
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -11,7 +18,7 @@ interface ProductPageProps {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getProduct(slug);
   
   if (!product) {
     return { title: 'Product Not Found' };
@@ -37,7 +44,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getProduct(slug);
 
   if (!product) {
     notFound();

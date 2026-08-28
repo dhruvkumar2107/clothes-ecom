@@ -2,33 +2,34 @@ import path from 'path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Emits .next/standalone — a self-contained server bundle the Docker runner copies.
   output: 'standalone',
-
-  // Pin the tracing root to this project. Without it Next walks up looking for a
-  // lockfile and can pick an ancestor directory, which nests server.js under a
-  // deep subpath inside .next/standalone and breaks `node server.js`.
   outputFileTracingRoot: path.resolve(__dirname),
+
+  // Enable gzip/brotli compression for all responses
+  compress: true,
 
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    // Automatic memoization of identical props/requests during render
+    // Reduces redundant DB calls when the same data is needed in multiple places
+    optimizePackageImports: ['lucide-react', 'date-fns', 'tailwind-merge'],
   },
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
       { protocol: 'http', hostname: 'localhost' },
     ],
     formats: ['image/avif', 'image/webp'],
-    // Product and banner art is content-addressed by the CDN that serves it, so
-    // an optimized variant can be reused for a long time. The default 60s makes
-    // the server re-encode the same photo all day.
     minimumCacheTTL: 60 * 60 * 24 * 30,
+    // Allow larger device sizes for responsive images
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
   },
 
-  // Nothing downstream reads it and it advertises the framework version.
   poweredByHeader: false,
+
   async headers() {
     return [
       {
@@ -40,8 +41,22 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },
+      // Cache API responses briefly with stale-while-revalidate for speed
+      {
+        source: '/api/cart',
+        headers: [
+          { key: 'Cache-Control', value: 'private, max-age=5, stale-while-revalidate=30' },
+        ],
+      },
+      {
+        source: '/api/search',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=60, stale-while-revalidate=300' },
+        ],
+      },
     ];
   },
+
   async rewrites() {
     return [
       {

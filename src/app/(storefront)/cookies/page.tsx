@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Cookie, Shield, Database, Eye, Globe, Settings } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Cookie Policy | LUMEN&CO',

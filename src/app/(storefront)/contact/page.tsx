@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ContactForm } from '@/components/support/ContactForm';
 import { Mail, MessageCircle, Clock, Package, RotateCcw, HelpCircle } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Contact Us | LUMEN&CO',

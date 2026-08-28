@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { getCustomerSession } from '@/lib/auth/session';
 import { LoginForm } from '@/components/auth/LoginForm';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Login',

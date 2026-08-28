@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Sparkles, Leaf, Users, Award, Truck, Heart } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'About LUMEN&CO',

@@ -5,7 +5,7 @@ import { ProductCard } from '@/components/products/ProductCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Search } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 const PER_PAGE = 24;
 

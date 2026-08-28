@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { CheckCircle, ChevronRight, Package, Truck, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Order Confirmed',

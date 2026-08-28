@@ -13,18 +13,15 @@ import { verifySessionToken } from '@/lib/auth/jwt';
 
 const ADMIN_PATHS = ['/admin', '/api/admin'];
 
+// Fast path: skip middleware entirely for paths that never need auth or session.
+const SKIP_PREFIXES = ['/_next', '/favicon', '/api/img', '/images'];
+const SKIP_EXACT = new Set(['/robots.txt', '/sitemap.xml', '/manifest.json', '/health']);
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip static assets and public files
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon') ||
-    pathname.startsWith('/api/img') ||
-    pathname === '/robots.txt' ||
-    pathname === '/sitemap.xml' ||
-    pathname === '/manifest.json'
-  ) {
+  // Fast bail-out for static assets — avoids JWT verification overhead
+  if (SKIP_PREFIXES.some((p) => pathname.startsWith(p)) || SKIP_EXACT.has(pathname)) {
     return NextResponse.next();
   }
 
@@ -41,7 +38,6 @@ export async function middleware(request: NextRequest) {
     const staffToken = request.cookies.get('lmn_staff')?.value;
     const staffSession = await verifySessionToken(staffToken, 'staff');
     if (!staffSession) {
-      // Not authenticated as staff → redirect to admin login
       const url = new URL('/admin/login', request.url);
       url.searchParams.set('redirect', pathname);
       return NextResponse.redirect(url);

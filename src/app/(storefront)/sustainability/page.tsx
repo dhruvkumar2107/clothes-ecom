@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Leaf, Recycle, Truck, Factory, Shield, Award, Clock, RefreshCw } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Sustainability | LUMEN&CO',

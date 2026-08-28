@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/Accordion';
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'FAQs | LUMEN&CO',

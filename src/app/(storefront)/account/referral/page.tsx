@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Share2, Users, Gift, TrendingUp, Send, Mail } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const REFERRAL_PITCH =
   'Check out LUMEN&CO — use my link and get ₹200 off your first order.';

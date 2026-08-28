@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Store, Package, Truck, Users, Shield, Sparkles, Mail, MapPin } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Wholesale & Stockists | LUMEN&CO',

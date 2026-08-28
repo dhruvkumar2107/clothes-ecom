@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { readJsonArray } from '@/lib/json';
 import { Ruler, Info } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'Size Guide | LUMEN&CO',
