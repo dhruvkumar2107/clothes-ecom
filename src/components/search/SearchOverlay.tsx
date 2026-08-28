@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchOverlay } from '@/app/providers';
 import { Button, Input } from '@/components/ui';
 import { X, Search, Loader2, ChevronRight } from 'lucide-react';
@@ -40,9 +41,7 @@ export function SearchOverlay() {
     } else {
       document.body.style.overflow = '';
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [open]);
 
   useEffect(() => {
@@ -65,13 +64,8 @@ export function SearchOverlay() {
         ];
         const selected = allResults[selectedIndex];
         if (selected) {
-          if (selected.type === 'product') {
-            closeOverlay();
-            window.location.href = `/products/${selected.data.slug}`;
-          } else {
-            closeOverlay();
-            window.location.href = `/collections/${selected.data.slug}`;
-          }
+          closeOverlay();
+          window.location.href = selected.type === 'product' ? '/products/' + selected.data.slug : '/collections/' + selected.data.slug;
         }
       }
     };
@@ -81,19 +75,9 @@ export function SearchOverlay() {
 
   const debouncedSearch = useRef(
     debounce(async (q: string) => {
-      if (!q.trim() || q.length < 2) {
-        setResults(null);
-        return;
-      }
+      if (!q.trim() || q.length < 2) { setResults(null); return; }
       setLoading(true);
-      try {
-        const data = await apiGet<SearchResult>(`/api/search?q=${encodeURIComponent(q)}`);
-        setResults(data);
-      } catch {
-        setResults(null);
-      } finally {
-        setLoading(false);
-      }
+      try { const data = await apiGet<SearchResult>('/api/search?q=' + encodeURIComponent(q)); setResults(data); } catch { setResults(null); } finally { setLoading(false); }
     }, 300)
   ).current;
 
@@ -109,36 +93,18 @@ export function SearchOverlay() {
     ...(results?.collections ?? []).map((c) => ({ type: 'collection' as const, data: c })),
   ];
 
+  const formatPrice = (paise: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(paise / 100);
+
   return (
     <>
-      <div
-        className="fixed inset-0 bg-ink/60 z-[95] animate-in"
-        onClick={closeOverlay}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 bg-ink/60 z-[95] animate-in" onClick={closeOverlay} aria-hidden="true" />
       <div className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-[100] animate-in-up" role="search" aria-modal="true">
         <div className="bg-paper rounded-lg shadow-xl border border-line overflow-hidden">
           <div className="p-4 border-b border-line flex items-center gap-3">
             <Search className="w-5 h-5 text-muted flex-shrink-0" aria-hidden="true" />
-            <Input
-              ref={inputRef}
-              type="search"
-              placeholder="Search products, collections..."
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSelectedIndex(-1);
-              }}
-              className="flex-1 bg-transparent border-none focus:ring-0 px-0"
-              autoComplete="off"
-              aria-label="Search"
-            />
+            <Input ref={inputRef} type="search" placeholder="Search products, collections..." value={query} onChange={(e) => { setQuery(e.target.value); setSelectedIndex(-1); }} className="flex-1 bg-transparent border-none focus:ring-0 px-0" autoComplete="off" aria-label="Search" />
             {loading && <Loader2 className="w-5 h-5 text-accent animate-spin" aria-hidden="true" />}
-            <button
-              onClick={closeOverlay}
-              className="w-10 h-10 rounded-md hover:bg-ink-2 flex items-center justify-center transition-colors u-focus ml-2"
-              aria-label="Close search"
-            >
+            <button onClick={closeOverlay} className="w-10 h-10 rounded-md hover:bg-ink-2 flex items-center justify-center transition-colors u-focus ml-2" aria-label="Close search">
               <X className="w-5 h-5 text-ink" aria-hidden="true" />
             </button>
           </div>
@@ -150,9 +116,7 @@ export function SearchOverlay() {
                 <p className="text-sm">Type at least 2 characters to search</p>
               </div>
             ) : results === null && !loading ? (
-              <div className="p-8 text-center text-muted">
-                <p className="text-sm">Search for products or collections</p>
-              </div>
+              <div className="p-8 text-center text-muted"><p className="text-sm">Search for products or collections</p></div>
             ) : allResults.length === 0 ? (
               <div className="p-8 text-center text-muted">
                 <Search className="w-12 h-12 mx-auto mb-4 opacity-30" aria-hidden="true" />
@@ -163,39 +127,24 @@ export function SearchOverlay() {
               <>
                 {results?.products && results.products.length > 0 && (
                   <>
-                    <div className="px-4 py-3 border-b border-line">
-                      <h3 className="u-label">Products</h3>
-                    </div>
+                    <div className="px-4 py-3 border-b border-line"><h3 className="u-label">Products</h3></div>
                     <ul role="listbox" aria-label="Products">
-                      {results?.products?.map((product, i) => (
+                      {results.products.map((product, i) => (
                         <li key={product.id} role="option" aria-selected={selectedIndex === i}>
-                          <Link
-                            href={`/products/${product.slug}`}
-                            onClick={closeOverlay}
-                            className={`flex items-center gap-4 p-3 hover:bg-ink-2 transition-colors ${selectedIndex === i ? 'bg-ink-2' : ''}`}
-                          >
-                            <div className="w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-paper-2">
+                          <Link href={'/products/' + product.slug} onClick={closeOverlay} className={'flex items-center gap-4 p-3 hover:bg-ink-2 transition-colors ' + (selectedIndex === i ? 'bg-ink-2' : '')}>
+                            <div className="w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-paper-2 relative">
                               {product.images[0]?.url ? (
-                                <img src={product.images[0].url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                <Image src={product.images[0].url} alt="" fill className="object-cover" sizes="48px" loading="lazy" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-muted">
-                                  <Search className="w-5 h-5" aria-hidden="true" />
-                                </div>
+                                <div className="w-full h-full flex items-center justify-center text-muted"><Search className="w-5 h-5" aria-hidden="true" /></div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-sm text-ink truncate">{product.name}</p>
                               <p className="text-sm text-accent font-medium">
                                 {product.compareAtPrice && product.compareAtPrice > product.basePrice ? (
-                                  <>
-                                    <span className="line-through text-muted text-xs mr-2">
-                                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.compareAtPrice / 100)}
-                                    </span>
-                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.basePrice / 100)}
-                                  </>
-                                ) : (
-                                  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.basePrice / 100)
-                                )}
+                                  <><span className="line-through text-muted text-xs mr-2">{formatPrice(product.compareAtPrice)}</span>{formatPrice(product.basePrice)}</>
+                                ) : formatPrice(product.basePrice)}
                               </p>
                             </div>
                             <ChevronRight className="w-4 h-4 text-muted flex-shrink-0" aria-hidden="true" />
@@ -207,24 +156,16 @@ export function SearchOverlay() {
                 )}
                 {results?.collections && results.collections.length > 0 && (
                   <>
-                    <div className="px-4 py-3 border-b border-line">
-                      <h3 className="u-label">Collections</h3>
-                    </div>
+                    <div className="px-4 py-3 border-b border-line"><h3 className="u-label">Collections</h3></div>
                     <ul role="listbox" aria-label="Collections">
                       {results.collections.map((collection, i) => (
                         <li key={collection.id} role="option" aria-selected={selectedIndex === results.products.length + i}>
-                          <Link
-                            href={`/collections/${collection.slug}`}
-                            onClick={closeOverlay}
-                            className={`flex items-center gap-4 p-3 hover:bg-ink-2 transition-colors ${selectedIndex === results.products.length + i ? 'bg-ink-2' : ''}`}
-                          >
+                          <Link href={'/collections/' + collection.slug} onClick={closeOverlay} className={'flex items-center gap-4 p-3 hover:bg-ink-2 transition-colors ' + (selectedIndex === results.products.length + i ? 'bg-ink-2' : '')}>
                             <div className="w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-paper-2 relative">
                               {collection.heroImage ? (
-                                <img src={collection.heroImage} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                <Image src={collection.heroImage} alt="" fill className="object-cover" sizes="48px" loading="lazy" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-muted">
-                                  <Search className="w-5 h-5" aria-hidden="true" />
-                                </div>
+                                <div className="w-full h-full flex items-center justify-center text-muted"><Search className="w-5 h-5" aria-hidden="true" /></div>
                               )}
                             </div>
                             <div className="flex-1">
@@ -243,11 +184,7 @@ export function SearchOverlay() {
           </div>
 
           <div className="p-4 border-t border-line">
-            <Link
-              href={`/search?q=${encodeURIComponent(query)}`}
-              onClick={closeOverlay}
-              className="flex items-center justify-center gap-2 text-sm text-accent hover:text-accent/80 transition-colors u-focus"
-            >
+            <Link href={'/search?q=' + encodeURIComponent(query)} onClick={closeOverlay} className="flex items-center justify-center gap-2 text-sm text-accent hover:text-accent/80 transition-colors u-focus">
               View all results for &ldquo;{query}&rdquo;
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </Link>
