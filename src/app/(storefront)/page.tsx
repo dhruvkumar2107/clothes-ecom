@@ -39,7 +39,7 @@ const FALLBACK_HERO = {
   subhead: 'Engineered fabrics. Sculptural silhouettes. Limited drops shipped across India.',
   ctaLabel: 'Shop New Arrivals',
   ctaHref: '/products?sort=newest',
-  imageUrl: null as string | null,
+  imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=1920&q=80' as string | null,
   mobileImageUrl: null as string | null,
   accentHex: null as string | null,
 };
@@ -77,7 +77,9 @@ export default async function HomePage() {
             priority
             fetchPriority="high"
             sizes="100vw"
-            quality={85}
+            quality={70}
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0MDAnIGhlaWdodD0nMjI1Jz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjMWExYjFlJy8+PC9zdmc+"
             className="object-cover object-center"
           />
         ) : (
@@ -241,7 +243,7 @@ export default async function HomePage() {
         name="Winter Capsule"
         tagline="A 12-piece collection of engineered warmth. Available for 48 hours only."
         heroImage=""
-        launchAt={new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()}
+        launchAt="2026-08-31T12:00:00.000Z"
         slug="winter-capsule"
       />
 
