@@ -57,8 +57,9 @@ if (!parsed.success) {
         referralCode: null,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return apiError('INTERNAL_ERROR', 'An unexpected error occurred', 500);
+    const detail = process.env.NODE_ENV !== 'production' ? error?.message : undefined;
+    return apiError('INTERNAL_ERROR', detail || 'An unexpected error occurred', 500);
   }
 }
