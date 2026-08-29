@@ -33,8 +33,8 @@ export async function middleware(request: NextRequest) {
     (p) => pathname === p || pathname.startsWith(p + '/'),
   );
 
-  // Admin routes — require staff session
-  if (isAdmin) {
+  // Admin routes — require staff session (exclude /admin/login to avoid redirect loop)
+  if (isAdmin && !pathname.startsWith('/admin/login')) {
     const staffToken = request.cookies.get('lmn_staff')?.value;
     const staffSession = await verifySessionToken(staffToken, 'staff');
     if (!staffSession) {
@@ -50,8 +50,12 @@ export async function middleware(request: NextRequest) {
 
   // Redirect authenticated users away from auth pages
   if (session && (pathname === '/login' || pathname === '/signup')) {
-    const redirect =
+    const redirectParam =
       request.nextUrl.searchParams.get('redirect') || '/account';
+    // Only allow relative paths to prevent open redirect
+    const redirect = redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+      ? redirectParam
+      : '/account';
     return NextResponse.redirect(new URL(redirect, request.url));
   }
 
