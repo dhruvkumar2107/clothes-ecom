@@ -41,6 +41,16 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },
+      // Cache optimized images aggressively — the Next.js image optimizer serves
+      // immutable hashes, so the browser (and any CDN in front) can keep them
+      // indefinitely.  Without this header every image request hits the Render
+      // server which then fetches from the upstream CDN, doubling latency.
+      {
+        source: '/_next/image',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
       // Cache API responses briefly with stale-while-revalidate for speed
       {
         source: '/api/cart',

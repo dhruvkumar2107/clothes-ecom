@@ -109,26 +109,32 @@ export async function authRateLimit(
   request: NextRequest,
   options: AuthRateLimitOptions
 ): Promise<AuthRateLimitResult> {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
-  const key: RateLimitKey = {
-    type: 'ip',
-    identifier: `${options.keyPrefix}:${ip}`,
-    path: request.nextUrl.pathname,
-  };
+  try {
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
+    const key: RateLimitKey = {
+      type: 'ip',
+      identifier: `${options.keyPrefix}:${ip}`,
+      path: request.nextUrl.pathname,
+    };
 
-  const windowMs = parseWindow(options.window);
-  const result = await checkRateLimit(key, options.limit, windowMs);
+    const windowMs = parseWindow(options.window);
+    const result = await checkRateLimit(key, options.limit, windowMs);
 
-  if (!result.allowed) {
-    const response = NextResponse.json(
-      { error: 'Too many requests', code: 'RATE_LIMITED' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil(result.resetTime / 1000)) } }
-    );
-    return { limited: true, response };
+    if (!result.allowed) {
+      const response = NextResponse.json(
+        { error: 'Too many requests', code: 'RATE_LIMITED' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((result.resetTime - Date.now()) / 1000)) } }
+      );
+      return { limited: true, response };
+    }
+
+    return { limited: false };
+  } catch (error) {
+    // If rate limiting fails (e.g., table missing, DB timeout), allow the request through
+    console.error('Rate limit check failed, allowing request:', error);
+    return { limited: false };
   }
-
-  return { limited: false };
 }
 
 function parseWindow(window: string): number {
