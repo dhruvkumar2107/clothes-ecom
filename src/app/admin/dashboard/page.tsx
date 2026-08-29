@@ -12,7 +12,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export default async function AdminDashboardPage() {
   const [
@@ -21,7 +21,7 @@ export default async function AdminDashboardPage() {
     usersCount,
     pendingRefundsCount,
     recentOrders,
-    completedOrders,
+    revenueAgg,
   ] = await Promise.all([
     db.product.count(),
     db.order.count(),
@@ -30,17 +30,20 @@ export default async function AdminDashboardPage() {
     db.order.findMany({
       take: 6,
       orderBy: { placedAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        orderNumber: true,
+        grandTotal: true,
+        status: true,
         user: { select: { name: true, email: true } },
-        items: { select: { name: true, qty: true } },
       },
     }),
-    db.order.findMany({
-      select: { grandTotal: true },
+    db.order.aggregate({
+      _sum: { grandTotal: true },
     }),
   ]);
 
-  const totalRevenue = completedOrders.reduce((acc, curr) => acc + curr.grandTotal, 0);
+  const totalRevenue = revenueAgg._sum.grandTotal ?? 0;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">

@@ -3,11 +3,12 @@ import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { Plus, TicketPercent, Edit, Trash2, Eye, Calendar, Package, Truck } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export default async function AdminCouponsPage() {
   const coupons = await db.coupon.findMany({
     orderBy: { createdAt: 'desc' },
+    take: 100,
   });
 
   return (

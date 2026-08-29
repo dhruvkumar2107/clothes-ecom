@@ -3,30 +3,46 @@ import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { Wallet, Banknote, CheckCircle, XCircle, Clock, Loader2, Shield, AlertTriangle, ExternalLink } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export default async function AdminPayoutsPage() {
-  const [withdrawals, bankAccounts] = await Promise.all([
+  const [withdrawals, bankAccounts, pendingCount, processingCount, completedCount, failedCount, totalPendingAgg] = await Promise.all([
     db.withdrawalRequest.findMany({
       orderBy: { requestedAt: 'desc' },
-      include: {
-        user: { select: { name: true, email: true, phone: true } },
+      take: 50,
+      select: {
+        id: true,
+        amount: true,
+        netAmount: true,
+        status: true,
+        providerPayoutId: true,
+        requestedAt: true,
+        user: { select: { name: true, email: true } },
         bankAccount: { select: { accountHolderName: true, accountNumberLast4: true, ifsc: true, bankName: true, verificationStatus: true } },
       },
     }),
     db.bankAccount.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { user: { select: { name: true, email: true } } },
+      take: 50,
+      select: {
+        id: true,
+        accountHolderName: true,
+        accountNumberLast4: true,
+        bankName: true,
+        ifsc: true,
+        verificationStatus: true,
+        verifiedAt: true,
+        user: { select: { name: true, email: true } },
+      },
     }),
+    db.withdrawalRequest.count({ where: { status: 'pending' } }),
+    db.withdrawalRequest.count({ where: { status: 'processing' } }),
+    db.withdrawalRequest.count({ where: { status: 'completed' } }),
+    db.withdrawalRequest.count({ where: { status: 'failed' } }),
+    db.withdrawalRequest.aggregate({ where: { status: 'pending' }, _sum: { amount: true } }),
   ]);
 
-  const pendingCount = withdrawals.filter(w => w.status === 'pending').length;
-  const processingCount = withdrawals.filter(w => w.status === 'processing').length;
-  const completedCount = withdrawals.filter(w => w.status === 'completed').length;
-  const failedCount = withdrawals.filter(w => w.status === 'failed').length;
-  const totalPending = withdrawals
-    .filter(w => w.status === 'pending')
-    .reduce((acc, w) => acc + w.amount, 0);
+  const totalPending = totalPendingAgg._sum.amount ?? 0;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -246,16 +262,22 @@ export default async function AdminPayoutsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30`}
+                        className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                          ba.verificationStatus === 'verified'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : ba.verificationStatus === 'failed'
+                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        }`}
                       >
-                        Verified
+                        {ba.verificationStatus || 'pending'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-zinc-400 font-mono text-[11px]">
                       {ba.verifiedAt ? new Date(ba.verifiedAt).toLocaleString() : '—'}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {!true && (
+                      {ba.verificationStatus !== 'verified' && (
                         <button className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-medium rounded hover:bg-blue-500/20 transition-colors">
                           Re-verify
                         </button>
