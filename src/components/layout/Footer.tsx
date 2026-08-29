@@ -160,14 +160,14 @@ export function Footer() {
 
         {/* App Links */}
         <div className="flex flex-wrap gap-3 mb-12">
-          <a href="#" className="flex items-center gap-2 px-4 py-2 bg-ink-3 border border-ink-2 rounded-md text-sm text-paper/70 hover:text-accent transition-colors">
+          <span className="flex items-center gap-2 px-4 py-2 bg-ink-3 border border-ink-2 rounded-md text-sm text-paper/50 cursor-not-allowed" aria-disabled="true">
             <Mail className="w-4 h-4" aria-hidden="true" />
             <span>Download on the App Store</span>
-          </a>
-          <a href="#" className="flex items-center gap-2 px-4 py-2 bg-ink-3 border border-ink-2 rounded-md text-sm text-paper/70 hover:text-accent transition-colors">
+          </span>
+          <span className="flex items-center gap-2 px-4 py-2 bg-ink-3 border border-ink-2 rounded-md text-sm text-paper/50 cursor-not-allowed" aria-disabled="true">
             <Mail className="w-4 h-4" aria-hidden="true" />
             <span>Get it on Google Play</span>
-          </a>
+          </span>
         </div>
 
         {/* Bottom */}

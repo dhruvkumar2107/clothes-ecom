@@ -8,7 +8,7 @@ import { ChevronRight, CreditCard, Smartphone, Landmark, Lock, Loader2, AlertCir
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea, Select, Label } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
-import { apiPost, apiGet } from '@/lib/api-client';
+import { apiPost, apiGet, apiDelete } from '@/lib/api-client';
 import { useToast } from '@/app/providers';
 import type { CartView } from '@/lib/cart';
 import type { CartTotals } from '@/lib/pricing';
@@ -104,7 +104,7 @@ export function CheckoutClient({ initialCart, addresses, userId }: CheckoutClien
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
     try {
-      await apiPost('/api/cart', { action: 'coupon', code: couponCode.trim().toUpperCase() });
+      await apiDelete('/api/cart', { action: 'coupon', code: couponCode.trim().toUpperCase() });
       await refreshCart();
       toast({ title: 'Coupon applied', message: 'Your coupon has been applied', tone: 'success' });
     } catch (error: any) {

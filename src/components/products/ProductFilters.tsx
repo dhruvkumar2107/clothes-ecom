@@ -261,8 +261,13 @@ export function ProductFilters({ categories, collections, initialParams, onChang
             size="sm"
             className="w-full"
             onClick={() => {
-              handleChange('minPrice', priceRange.min > 0 ? String(priceRange.min * 100) : null);
-              handleChange('maxPrice', priceRange.max < 50000 ? String(priceRange.max * 100) : null);
+              const newParams = { ...initialParams };
+              if (priceRange.min > 0) newParams.minPrice = String(priceRange.min * 100);
+              else delete newParams.minPrice;
+              if (priceRange.max < 50000) newParams.maxPrice = String(priceRange.max * 100);
+              else delete newParams.maxPrice;
+              newParams.page = '1';
+              onChange(newParams);
             }}
           >
             Apply

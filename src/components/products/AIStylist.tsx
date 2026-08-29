@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChevronRight, ShoppingCart, Heart, RefreshCw, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { apiPost } from '@/lib/api-client';
+import { apiPost, apiGet } from '@/lib/api-client';
 import { useCartStore } from '@/app/providers';
 
 interface OutfitItem {
@@ -106,7 +106,13 @@ export function AIStylist({ currentProduct, className }: AIStylistProps) {
 
   const addToCart = async (item: OutfitItem) => {
     try {
-      await apiPost('/api/cart', { productId: item.id, qty: 1 });
+      const products = await apiGet<{ data: any[] }>('/api/products', { slug: item.slug, limit: '1' });
+      const product = products.data?.[0];
+      const variant = product?.variants?.find((v: any) => v.stock - v.reserved > 0) || product?.variants?.[0];
+      if (!variant) {
+        throw new Error('No variants available');
+      }
+      await apiPost('/api/cart', { variantId: variant.id, qty: 1 });
       openDrawer();
       setAddedItems((prev) => new Set([...prev, item.id]));
       setTimeout(() => {

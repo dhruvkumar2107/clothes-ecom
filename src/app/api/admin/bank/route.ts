@@ -83,7 +83,7 @@ const verifier = getBankVerifier();
         data: {
           bankAccountId: accountId,
           userId: account.userId,
-          provider: 'unknown',
+          provider: verifier.name || 'unknown',
           mode: 'penny_drop',
           status: result.status === 'verified' ? 'verified' : 'failed',
           providerRefId: result.providerRefId,
@@ -99,8 +99,46 @@ const verifier = getBankVerifier();
     }
 
     if (action === 'retry_verification') {
-      // Trigger a new verification attempt
-      return apiOk({ data: { retried: true } });
+      const account = await db.bankAccount.findUnique({ where: { id: accountId } });
+      if (!account) return apiError('NOT_FOUND', 'Bank account not found', 404);
+
+      const verifier = getBankVerifier();
+      const result = await verifier.verifyBankAccount({
+        accountHolderName: account.accountHolderName,
+        accountNumber: account.accountNumberEnc!,
+        ifsc: account.ifsc!,
+        referenceId: account.id,
+        idempotencyKey: `retry-verify:${account.id}:${Date.now()}`,
+      });
+
+      await db.bankAccount.update({
+        where: { id: accountId },
+        data: {
+          verificationStatus: result.status === 'verified' ? 'verified' : result.status === 'failed' ? 'failed' : 'pending',
+          nameMatchScore: result.nameMatchScore,
+          registeredName: result.registeredName,
+          verifiedAt: result.status === 'verified' ? new Date() : null,
+          failureReason: result.status === 'verified' ? null : result.failureReason,
+          providerRefId: result.providerRefId,
+        },
+      });
+
+      await db.bankVerification.create({
+        data: {
+          bankAccountId: accountId,
+          userId: account.userId,
+          provider: verifier.name || 'unknown',
+          mode: 'penny_drop',
+          status: result.status === 'verified' ? 'verified' : result.status === 'failed' ? 'failed' : 'pending',
+          providerRefId: result.providerRefId,
+          registeredName: result.registeredName,
+          nameMatchScore: result.nameMatchScore,
+          failureReason: result.failureReason,
+          triggeredBy: 'admin',
+        },
+      });
+
+      return apiOk({ data: { retried: true, result } });
     }
 
     return apiError('INVALID_ACTION', 'Unknown action', 400);

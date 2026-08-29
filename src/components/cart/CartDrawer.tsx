@@ -7,7 +7,7 @@ import { useCartStore, useToast } from '@/app/providers';
 import { Button } from '@/components/ui/Button';
 import { X, Plus, Minus, Trash2, Heart, ChevronRight, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { apiGet, apiDelete } from '@/lib/api-client';
+import { apiGet, apiPatch, apiDelete } from '@/lib/api-client';
 import type { CartView } from '@/lib/cart';
 
 export function CartDrawer() {
@@ -33,9 +33,11 @@ export function CartDrawer() {
   const updateQty = async (itemId: string, qty: number) => {
     setUpdating(itemId);
     try {
-      const params: Record<string, string> = { itemId };
-      if (qty === 0) params.action = 'remove';
-      await apiDelete('/api/cart', params, { body: JSON.stringify({ itemId, qty }) });
+      if (qty === 0) {
+        await apiDelete('/api/cart', { itemId });
+      } else {
+        await apiPatch('/api/cart', { itemId, qty });
+      }
       await loadCart();
     } catch (error: any) { toast({ title: 'Error', message: error.message || 'Failed to update cart', tone: 'danger' }); } finally { setUpdating(null); }
   };
@@ -101,7 +103,7 @@ export function CartDrawer() {
                       <div className="flex items-center gap-2 text-xs text-muted mt-1 flex-wrap">
                         <span>Size: {item.size}</span><span>•</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full border border-line/50 inline-block" style={{ backgroundColor: item.color === 'white' ? '#fff' : item.color === 'navy' ? '#1a237e' : item.color === 'charcoal' ? '#36454f' : item.color === 'grey' || item.color === 'gray' ? '#808080' : item.color === 'red' ? '#ff0000' : item.color === 'black' ? '#000' : '#666' }} aria-hidden="true" />
+                          <span className="w-4 h-4 rounded-full border border-line/50 inline-block" style={{ backgroundColor: (item as any).colorHex || '#666' }} aria-hidden="true" />
                           <span>{item.color}</span>
                         </div>
                       </div>

@@ -1,19 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { getCustomerSession } from '@/lib/auth/session';
+import { getWardrobe, setWardrobe } from '@/lib/wardrobe-store';
+import { apiOk, apiError } from '@/lib/api';
 
-const wardrobeStore = new Map<string, { items: any[]; outfits: any[] }>();
+export const dynamic = 'force-dynamic';
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getCustomerSession();
+    if (!session?.userId) return apiError('UNAUTHORIZED', 'Login required', 401);
+
     const { id } = await params;
-    const userId = req.headers.get('x-user-id') || 'anonymous';
-    const data = wardrobeStore.get(userId) || { items: [], outfits: [] };
-    data.items = data.items.filter((item: any) => item.id !== id);
-    wardrobeStore.set(userId, data);
-    return NextResponse.json({ ok: true });
+    const data = getWardrobe(session.userId);
+    data.items = data.items.filter((item) => item.id !== id);
+    setWardrobe(session.userId, data);
+    return apiOk({ deleted: true });
   } catch {
-    return NextResponse.json({ ok: false, error: 'Failed to remove item' }, { status: 500 });
+    return apiError('INTERNAL_ERROR', 'Failed to remove item', 500);
   }
 }

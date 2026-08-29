@@ -38,7 +38,7 @@ interface ProductGridProps {
 export function ProductGrid({ initialParams }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0, limit: 24 });
   const [params, setParams] = useState<Record<string, string>>(initialParams);
 
   useEffect(() => {
@@ -51,11 +51,11 @@ export function ProductGrid({ initialParams }: ProductGridProps) {
       const searchParams = new URLSearchParams(params);
       const data = await apiGet<{ data: Product[]; meta: any }>(`/api/products?${searchParams.toString()}`);
       setProducts(Array.isArray(data?.data) ? data.data : []);
-      setMeta(data?.meta ?? { page: 1, totalPages: 1, total: 0 });
+      setMeta(data?.meta ?? { page: 1, totalPages: 1, total: 0, limit: 24 });
     } catch (error) {
       console.error('Failed to load products:', error);
       setProducts([]);
-      setMeta({ page: 1, totalPages: 1, total: 0 });
+      setMeta({ page: 1, totalPages: 1, total: 0, limit: 24 });
     } finally {
       setLoading(false);
     }
@@ -158,7 +158,7 @@ export function ProductGrid({ initialParams }: ProductGridProps) {
       )}
 
       <p className="mt-6 text-center text-sm text-muted">
-        Showing {((meta.page - 1) * 24) + 1}–{Math.min(meta.page * 24, meta.total)} of {meta.total} products
+        Showing {((meta.page - 1) * meta.limit) + 1}–{Math.min(meta.page * meta.limit, meta.total)} of {meta.total} products
       </p>
     </>
   );

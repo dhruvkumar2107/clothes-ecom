@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
+import { requireAdmin } from '@/lib/auth/admin';
 import { getPaymentGateway, getPayoutGateway, getBankVerifier, getShippingProvider } from '@/lib/adapters/registry';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin(['settings.write']);
     const body = await request.text();
     const headers = Object.fromEntries(request.headers.entries());
     const provider = request.nextUrl.searchParams.get('provider') || 'unknown';

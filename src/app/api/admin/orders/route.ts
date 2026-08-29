@@ -112,11 +112,58 @@ export async function POST(request: NextRequest) {
         const cancelResult = await cancelOrder(orderId, data.reason || 'Cancelled by admin', 'admin');
         result = cancelResult;
         break;
-      case 'refund':
+      case 'refund': {
         if (order.paymentStatus !== 'paid') return apiError('INVALID_STATE', 'Only paid orders can be refunded', 409);
-        // This would integrate with the payment gateway refund flow
-        result = { refunded: true, message: 'Refund initiated' };
+        const refundAmount = data.amount || order.grandTotal;
+        const refundMode = data.mode || 'wallet';
+        const existingRefunds = await db.refund.findMany({ where: { orderId } });
+        const existingRefundedPaise = existingRefunds.reduce((acc: number, r: any) => acc + r.amount, 0);
+        const refundAmountPaise = Math.round(refundAmount * 100);
+        if (refundAmountPaise + existingRefundedPaise > order.grandTotal) {
+          return apiError('VALIDATION_ERROR', 'Total refunded amount cannot exceed grand total', 400);
+        }
+        const isFullRefund = refundAmountPaise + existingRefundedPaise === order.grandTotal;
+        const newPaymentStatus = isFullRefund ? 'refunded' : 'partially_refunded';
+        const orderWithUser = await db.order.findUnique({ where: { id: orderId }, select: { userId: true } });
+        result = await db.$transaction(async (tx) => {
+          const refund = await tx.refund.create({
+            data: {
+              orderId,
+              userId: orderWithUser!.userId,
+              amount: refundAmountPaise,
+              reason: data.reason || 'Admin initiated refund',
+              mode: refundMode,
+              status: 'completed',
+              completedAt: new Date(),
+            },
+          });
+          await tx.order.update({ where: { id: orderId }, data: { paymentStatus: newPaymentStatus } });
+          if (refundMode === 'wallet') {
+            const wallet = await tx.wallet.upsert({
+              where: { userId: orderWithUser!.userId },
+              update: { balance: { increment: refundAmountPaise }, totalEarned: { increment: refundAmountPaise } },
+              create: { userId: orderWithUser!.userId, balance: refundAmountPaise, totalEarned: refundAmountPaise },
+            });
+            const updatedWallet = await tx.wallet.findUnique({ where: { id: wallet.id } });
+            await tx.walletTransaction.create({
+              data: {
+                walletId: wallet.id,
+                userId: orderWithUser!.userId,
+                type: 'refund',
+                direction: 'credit',
+                amount: refundAmountPaise,
+                status: 'completed',
+                balanceAfter: updatedWallet!.balance,
+                refType: 'Order',
+                refId: orderId,
+                description: `Refund for Order #${order.orderNumber}`,
+              },
+            });
+          }
+          return { refunded: true, refundId: refund.id };
+        });
         break;
+      }
       default:
         return apiError('INVALID_ACTION', 'Unknown action', 400);
     }

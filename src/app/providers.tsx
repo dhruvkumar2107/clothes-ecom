@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { create } from 'zustand';
 
 /* ────────────────────────────────────────────────────────────────────────── */
@@ -70,11 +70,10 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
 function MountedToastHelper({ onMount, toasts }: { onMount: () => void; toasts: Toast[] }) {
   const [done, setDone] = useState(false);
-  if (!done) {
+  useEffect(() => {
     setDone(true);
-    // Defer state update to after paint
-    setTimeout(onMount, 0);
-  }
+    onMount();
+  }, [onMount]);
   return done ? (
     <div className="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none" aria-live="polite">
       {toasts.map((t) => (

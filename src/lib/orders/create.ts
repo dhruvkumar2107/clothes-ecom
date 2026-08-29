@@ -8,6 +8,7 @@ import { addDays } from '../utils';
 import { priceCart, type PricedCart } from '../pricing';
 import { reserve, releaseReservation, type ReserveFailure } from '../inventory';
 import { recordRedemption } from '../coupons';
+import { getPaymentGateway } from '../adapters/registry';
 import { debit as walletDebit } from '../wallet';
 import type { PaymentMethod } from '../enums';
 
@@ -571,7 +572,7 @@ export async function cancelOrder(
 ): Promise<{ cancelled: boolean }> {
   const order = await db.order.findUnique({
     where: { id: orderId },
-    include: { items: true, intents: true },
+    include: { items: true, intents: { include: { attempts: true } } },
   });
   if (!order) throw new ApiFailure('not_found', 'Order not found.', 404);
 
@@ -610,10 +611,63 @@ export async function cancelOrder(
     }
 
     if (order.walletApplied > 0) {
-      await client.wallet.update({ where: { userId: order.userId }, data: { balance: { increment: order.walletApplied }, lockedBalance: { decrement: order.walletApplied } } });
-      await client.walletTransaction.create({
-        data: { walletId: (await client.wallet.findUnique({ where: { userId: order.userId } }))!.id, userId: order.userId, type: 'refund', direction: 'credit', amount: order.walletApplied, status: 'completed', balanceAfter: 0, refType: 'Order', refId: orderId, description: `Refund for cancelled order ${order.orderNumber}` },
-      });
+      const wallet = await client.wallet.findUnique({ where: { userId: order.userId } });
+      if (wallet) {
+        await client.wallet.update({ where: { userId: order.userId }, data: { balance: { increment: order.walletApplied }, lockedBalance: { decrement: order.walletApplied } } });
+        const updatedWallet = await client.wallet.findUnique({ where: { userId: order.userId } });
+        await client.walletTransaction.create({
+          data: { walletId: wallet.id, userId: order.userId, type: 'refund', direction: 'credit', amount: order.walletApplied, status: 'completed', balanceAfter: updatedWallet?.balance ?? 0, refType: 'Order', refId: orderId, description: `Refund for cancelled order ${order.orderNumber}` },
+        });
+      }
+    }
+
+    // Initiate gateway refund for the non-wallet portion if order was paid via gateway
+    const gatewayAmount = order.grandTotal - order.walletApplied;
+    if (order.paymentStatus === 'paid' && gatewayAmount > 0) {
+      const paidAttempt = order.intents
+        .flatMap((i) => i.attempts)
+        .find((a) => a.status === 'captured' && a.providerPaymentId);
+      if (paidAttempt?.providerPaymentId) {
+        try {
+          const gateway = getPaymentGateway();
+          const gatewayRefund = await gateway.refund({
+            providerPaymentId: paidAttempt.providerPaymentId,
+            amount: gatewayAmount as Paise,
+            speed: 'normal',
+            notes: { order_number: order.orderNumber, reason },
+            idempotencyKey: `cancel:${orderId}:${Date.now()}`,
+          });
+
+          await client.refund.create({
+            data: {
+              orderId,
+              userId: order.userId,
+              amount: gatewayAmount,
+              reason: reason || 'Order cancelled',
+              mode: 'source',
+              status: gatewayRefund.status === 'completed' ? 'completed' : 'pending',
+              completedAt: gatewayRefund.status === 'completed' ? new Date() : null,
+              provider: paidAttempt.provider,
+              providerRefundId: gatewayRefund.providerRefundId,
+              initiatedBy: cancelledBy,
+            },
+          });
+        } catch (refundError) {
+          // Log the refund failure but don't block the cancellation
+          console.error(`Gateway refund failed for order ${order.orderNumber}:`, refundError);
+          await client.refund.create({
+            data: {
+              orderId,
+              userId: order.userId,
+              amount: gatewayAmount,
+              reason: reason || 'Order cancelled',
+              mode: 'source',
+              status: 'pending',
+              initiatedBy: cancelledBy,
+            },
+          });
+        }
+      }
     }
   });
 

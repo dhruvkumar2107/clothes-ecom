@@ -1,20 +1,49 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { requireAdmin } from '@/lib/auth/admin';
+import { db } from '@/lib/db';
+import { apiOk, apiError } from '@/lib/api';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-const prisma = new PrismaClient();
+const CreateProductSchema = z.object({
+  name: z.string().min(1),
+  slug: z.string().min(1),
+  subtitle: z.string().optional(),
+  description: z.string().optional(),
+  story: z.string().optional(),
+  basePrice: z.string().min(1),
+  compareAtPrice: z.string().optional(),
+  fabric: z.string().optional(),
+  occasion: z.string().optional(),
+  fit: z.string().optional(),
+  gender: z.string().optional(),
+  categoryId: z.string().cuid(),
+  imageUrl: z.string().url().optional(),
+  variants: z.array(z.object({
+    size: z.string().optional(),
+    color: z.string().optional(),
+    colorHex: z.string().optional(),
+    stock: z.string().optional(),
+  })).optional(),
+});
 
 export async function POST(req: Request) {
   try {
+    await requireAdmin(['products.write']);
     const body = await req.json();
+    const parsed = CreateProductSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError('VALIDATION_ERROR', 'Invalid input', 400, { details: parsed.error.flatten().fieldErrors });
+    }
+
     const {
       name,
       slug,
       subtitle,
       description,
       story,
-      basePrice, // in rupees from form
+      basePrice,
       compareAtPrice,
       fabric,
       occasion,
@@ -22,21 +51,12 @@ export async function POST(req: Request) {
       gender,
       categoryId,
       imageUrl,
-      variants, // array of { size, color, colorHex, stock }
-    } = body;
+      variants,
+    } = parsed.data;
 
-    if (!name || !slug || !basePrice || !categoryId) {
-      return NextResponse.json(
-        { error: 'Name, slug, base price, and category are required.' },
-        { status: 400 }
-      );
-    }
-
-    // Convert price rupees to paise (multiply by 100)
     const basePricePaise = Math.round(parseFloat(basePrice) * 100);
     const compareAtPricePaise = compareAtPrice ? Math.round(parseFloat(compareAtPrice) * 100) : null;
 
-    // Default image if none provided
     const imageList = imageUrl
       ? [{ url: imageUrl, alt: name, kind: 'gallery', sortOrder: 1 }]
       : [
@@ -48,16 +68,15 @@ export async function POST(req: Request) {
           },
         ];
 
-    // Build variants array
     const variantList =
       Array.isArray(variants) && variants.length > 0
-        ? variants.map((v: any) => ({
+        ? variants.map((v) => ({
             sku: `${slug.toUpperCase()}-${(v.size || 'M').toUpperCase()}-${(v.color || 'BLACK').toUpperCase().slice(0, 3)}`,
             size: v.size || 'M',
             color: v.color || 'Default',
             colorHex: v.colorHex || '#111111',
             priceDelta: 0,
-            stock: parseInt(v.stock, 10) || 10,
+            stock: parseInt(v.stock || '10', 10) || 10,
             weightGrams: 300,
           }))
         : [
@@ -65,7 +84,7 @@ export async function POST(req: Request) {
             { sku: `${slug.toUpperCase()}-L-DEF`, size: 'L', color: 'Natural', colorHex: '#111111', priceDelta: 0, stock: 20, weightGrams: 300 },
           ];
 
-    const product = await prisma.product.create({
+    const product = await db.product.create({
       data: {
         name,
         slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
@@ -86,12 +105,12 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, product }, { status: 201 });
+    return apiOk({ data: product }, { status: 201 });
   } catch (error: any) {
+    if (error?.code) {
+      return apiError(error.code, error.message, error.status || 500);
+    }
     console.error('Error creating product:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to create product.' },
-      { status: 500 }
-    );
+    return apiError('INTERNAL_ERROR', 'Failed to create product.', 500);
   }
 }

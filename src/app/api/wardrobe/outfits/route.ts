@@ -1,24 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { getCustomerSession } from '@/lib/auth/session';
+import { getWardrobe, setWardrobe, type WardrobeOutfit } from '@/lib/wardrobe-store';
+import { apiOk, apiError } from '@/lib/api';
 
-const wardrobeStore = new Map<string, { items: any[]; outfits: any[] }>();
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = req.headers.get('x-user-id') || 'anonymous';
+    const session = await getCustomerSession();
+    if (!session?.userId) return apiError('UNAUTHORIZED', 'Login required', 401);
+
     const body = await req.json();
-    
-    const existing = wardrobeStore.get(userId) || { items: [], outfits: [] };
-    const newOutfit = {
+    const existing = getWardrobe(session.userId);
+    const newOutfit: WardrobeOutfit = {
       id: Date.now().toString(),
       name: body.name,
       items: body.itemIds || [],
       createdAt: new Date().toISOString(),
     };
     existing.outfits.push(newOutfit);
-    wardrobeStore.set(userId, existing);
+    setWardrobe(session.userId, existing);
 
-    return NextResponse.json({ ok: true, data: newOutfit });
+    return apiOk({ data: newOutfit });
   } catch {
-    return NextResponse.json({ ok: false, error: 'Failed to create outfit' }, { status: 500 });
+    return apiError('INTERNAL_ERROR', 'Failed to create outfit', 500);
   }
 }

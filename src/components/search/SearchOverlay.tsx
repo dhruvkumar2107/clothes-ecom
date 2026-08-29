@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSearchOverlay } from '@/app/providers';
 import { Button, Input } from '@/components/ui';
@@ -28,6 +29,7 @@ interface SearchResult {
 
 export function SearchOverlay() {
   const { open, closeOverlay } = useSearchOverlay();
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +67,7 @@ export function SearchOverlay() {
         const selected = allResults[selectedIndex];
         if (selected) {
           closeOverlay();
-          window.location.href = selected.type === 'product' ? '/products/' + selected.data.slug : '/collections/' + selected.data.slug;
+          router.push(selected.type === 'product' ? '/products/' + selected.data.slug : '/collections/' + selected.data.slug);
         }
       }
     };

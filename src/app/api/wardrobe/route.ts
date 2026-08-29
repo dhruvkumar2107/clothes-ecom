@@ -1,35 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { getCustomerSession } from '@/lib/auth/session';
+import { getWardrobe, setWardrobe, type WardrobeItem } from '@/lib/wardrobe-store';
+import { apiOk, apiError } from '@/lib/api';
 
-// In-memory store (replace with database in production)
-const wardrobeStore = new Map<string, { items: any[]; outfits: any[] }>();
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.headers.get('x-user-id') || 'anonymous';
-    const data = wardrobeStore.get(userId) || { items: [], outfits: [] };
-    return NextResponse.json({ ok: true, data });
+    const session = await getCustomerSession();
+    if (!session?.userId) return apiError('UNAUTHORIZED', 'Login required', 401);
+
+    const data = getWardrobe(session.userId);
+    return apiOk({ data });
   } catch {
-    return NextResponse.json({ ok: false, error: 'Failed to load wardrobe' }, { status: 500 });
+    return apiError('INTERNAL_ERROR', 'Failed to load wardrobe', 500);
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = req.headers.get('x-user-id') || 'anonymous';
+    const session = await getCustomerSession();
+    if (!session?.userId) return apiError('UNAUTHORIZED', 'Login required', 401);
+
     const body = await req.json();
-    
-    const existing = wardrobeStore.get(userId) || { items: [], outfits: [] };
-    const newItem = {
+    const existing = getWardrobe(session.userId);
+    const newItem: WardrobeItem = {
       id: Date.now().toString(),
       ...body,
       addedAt: new Date().toISOString(),
       purchased: body.purchased || false,
     };
     existing.items.push(newItem);
-    wardrobeStore.set(userId, existing);
+    setWardrobe(session.userId, existing);
 
-    return NextResponse.json({ ok: true, data: newItem });
+    return apiOk({ data: newItem });
   } catch {
-    return NextResponse.json({ ok: false, error: 'Failed to add item' }, { status: 500 });
+    return apiError('INTERNAL_ERROR', 'Failed to add item', 500);
   }
 }

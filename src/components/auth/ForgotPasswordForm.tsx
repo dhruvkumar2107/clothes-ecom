@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Loader2, Mail, Smartphone, CheckCircle } from 'lucide-react';
+import { Loader2, Mail, Smartphone, CheckCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { apiPost } from '@/lib/api-client';
@@ -26,13 +26,19 @@ export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
+  useEffect(() => {
+    if (step !== 'verify' || resendTimer <= 0) return;
+    const id = setTimeout(() => setResendTimer((t) => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [step, resendTimer]);
+
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contact.trim() || loading) return;
 
     setLoading(true);
     try {
-      await apiPost('/auth/forgot-password', {
+      await apiPost('/api/auth/forgot-password', {
         channel,
         destination: contact.trim(),
       });
@@ -52,7 +58,7 @@ export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
 
     setLoading(true);
     try {
-      await apiPost('/auth/verify-otp', {
+      await apiPost('/api/auth/verify-phone', {
         channel,
         destination: contact,
         code: otp,
@@ -71,7 +77,7 @@ export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
     if (resendTimer > 0 || loading) return;
     setLoading(true);
     try {
-      await apiPost('/auth/forgot-password', {
+      await apiPost('/api/auth/forgot-password', {
         channel,
         destination: contact,
       });
@@ -90,7 +96,7 @@ export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
 
     setLoading(true);
     try {
-      await apiPost('/auth/reset-password', {
+      await apiPost('/api/auth/reset-password', {
         channel,
         destination: contact,
         code: otp,
@@ -105,11 +111,6 @@ export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
       setLoading(false);
     }
   };
-
-  // Resend timer countdown
-  if (step === 'verify' && resendTimer > 0) {
-    setTimeout(() => setResendTimer(t => t - 1), 1000);
-  }
 
   const contactLabel = channel === 'email' ? 'Email address' : 'Phone number';
   const contactPlaceholder = channel === 'email' ? 'you@example.com' : '9876543210';
@@ -233,7 +234,7 @@ export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
         <>
           <p className="text-sm text-muted text-center mb-2">Your new password must be at least 8 characters.</p>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" aria-hidden="true" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" aria-hidden="true" />
             <Input
               type="password"
               placeholder="New password"
@@ -246,7 +247,7 @@ export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
             />
           </div>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" aria-hidden="true" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" aria-hidden="true" />
             <Input
               type="password"
               placeholder="Confirm password"

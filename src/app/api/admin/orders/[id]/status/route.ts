@@ -1,24 +1,33 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { requireAdmin } from '@/lib/auth/admin';
+import { db } from '@/lib/db';
+import { apiOk, apiError } from '@/lib/api';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-const prisma = new PrismaClient();
+const VALID_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'] as const;
+
+const UpdateStatusSchema = z.object({
+  status: z.enum(VALID_STATUSES),
+});
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAdmin(['orders.write']);
     const { id } = await params;
     const body = await req.json();
-    const { status } = body;
-
-    if (!status) {
-      return NextResponse.json({ error: 'Status is required.' }, { status: 400 });
+    const parsed = UpdateStatusSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError('VALIDATION_ERROR', 'Invalid status value', 400, { details: parsed.error.flatten().fieldErrors });
     }
 
-    const order = await prisma.order.update({
+    const { status } = parsed.data;
+
+    const order = await db.order.update({
       where: { id },
       data: {
         status,
@@ -28,7 +37,7 @@ export async function PATCH(
       },
     });
 
-    await prisma.orderEvent.create({
+    await db.orderEvent.create({
       data: {
         orderId: id,
         status,
@@ -38,12 +47,12 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json({ success: true, order });
+    return apiOk({ data: order });
   } catch (error: any) {
+    if (error?.code) {
+      return apiError(error.code, error.message, error.status || 500);
+    }
     console.error('Error updating order status:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to update order status.' },
-      { status: 500 }
-    );
+    return apiError('INTERNAL_ERROR', 'Failed to update order status.', 500);
   }
 }

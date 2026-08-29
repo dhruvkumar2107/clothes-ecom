@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { useToast } from '@/app/providers';
 import { apiPost } from '@/lib/api-client';
-import { Loader2, Mail, Lock, User, Eye, EyeOff, Shield, AlertCircle, CheckCircle, Gift } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Eye, EyeOff, Shield, AlertCircle, CheckCircle, Gift, Smartphone } from 'lucide-react';
 
 const PASSWORD_REQUIREMENTS = [
   { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
@@ -33,7 +33,7 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [activeField, setActiveField] = useState<'email' | 'phone'>('email');
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -119,7 +119,7 @@ export function SignupForm() {
           onClick={() => setActiveField('phone')}
           className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${activeField === 'phone' ? 'bg-ink text-paper' : 'bg-paper border border-line text-ink hover:bg-ink-2'}`}
         >
-          <Mail className="w-4 h-4 inline mr-1" /> Phone
+          <Smartphone className="w-4 h-4 inline mr-1" /> Phone
         </button>
       </div>
 
@@ -146,7 +146,7 @@ export function SignupForm() {
         <div>
           <label htmlFor="phone" className="u-label mb-1 block">Phone Number</label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
             <Input
               id="phone"
               type="tel"
@@ -254,7 +254,7 @@ export function SignupForm() {
           type="checkbox"
           id="marketing"
           checked={formData.marketingOptIn}
-          onChange={e => handleChange('marketingOptIn', String(e.target.checked))}
+          onChange={e => handleChange('marketingOptIn', e.target.checked)}
           className="w-4 h-4 mt-0.5 rounded border-line text-accent focus:ring-accent"
         />
         <Label htmlFor="marketing" className="text-sm text-ink cursor-pointer">

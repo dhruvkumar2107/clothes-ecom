@@ -16,16 +16,22 @@ export async function POST(request: NextRequest) {
                       request.headers.get('x-signature');
     const body = await request.text();
 
-    // Verify signature
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
-    if (secret && signature) {
-      const valid = await verifyWebhookSignature(body, signature, secret, provider);
-      if (!valid) {
-        return apiError('INVALID_SIGNATURE', 'Invalid webhook signature', 400);
-      }
+
+    if (!secret) {
+      console.error('Webhook secret not configured — rejecting all webhooks');
+      return apiError('CONFIG_ERROR', 'Webhook verification not configured', 500);
     }
 
-    // Store webhook event for idempotency
+    if (!signature) {
+      return apiError('MISSING_SIGNATURE', 'Webhook signature is required', 400);
+    }
+
+    const valid = await verifyWebhookSignature(body, signature, secret, provider);
+    if (!valid) {
+      return apiError('INVALID_SIGNATURE', 'Invalid webhook signature', 400);
+    }
+
     const eventId = request.headers.get('x-razorpay-event-id') || 
                     request.headers.get('stripe-event-id') ||
                     crypto.randomUUID();
@@ -46,12 +52,11 @@ export async function POST(request: NextRequest) {
         eventId,
         eventType,
         payloadJson: body,
-        signature: signature ?? null,
-        signatureValid: !!secret,
+        signature,
+        signatureValid: true,
       },
     });
 
-    // Route to handler
     await handleWebhook(provider, eventType, payload);
 
     await db.webhookEvent.update({
@@ -62,9 +67,7 @@ export async function POST(request: NextRequest) {
     return apiOk({ received: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    // Always return 200 to prevent retries for application errors
-    // The webhook event is stored and can be replayed manually
-    return apiOk({ received: true, error: 'Application error logged' });
+    return apiError('WEBHOOK_ERROR', 'Webhook processing failed', 500);
   }
 }
 
@@ -99,9 +102,7 @@ async function handleWebhook(provider: string, eventType: string, payload: any) 
     case 'payment.failed':
     case 'charge.failed':
     case 'payment_intent.payment_failed': {
-      const paymentId = payload.payment?.entity?.id || payload.data?.object?.id;
       const orderId = payload.payment?.entity?.notes?.order_id || payload.data?.object?.metadata?.order_id;
-      const error = payload.payment?.entity?.error_description || payload.data?.object?.last_payment_error?.message;
 
       if (orderId) {
         const order = await db.order.findUnique({
@@ -109,7 +110,6 @@ async function handleWebhook(provider: string, eventType: string, payload: any) 
           select: { id: true, paymentStatus: true },
         });
         if (order && order.paymentStatus === 'unpaid') {
-          // Mark as failed, don't cancel automatically
           await db.order.update({
             where: { id: order.id },
             data: { paymentStatus: 'failed' },
@@ -156,7 +156,6 @@ async function handleWebhook(provider: string, eventType: string, payload: any) 
 
     case 'order.paid':
     case 'checkout.session.completed': {
-      // Handle payment link / checkout session completion
       break;
     }
   }

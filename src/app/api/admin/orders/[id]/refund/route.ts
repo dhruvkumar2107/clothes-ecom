@@ -1,46 +1,52 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { requireAdmin } from '@/lib/auth/admin';
+import { db } from '@/lib/db';
+import { apiOk, apiError } from '@/lib/api';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-const prisma = new PrismaClient();
+const RefundSchema = z.object({
+  amount: z.coerce.number().positive('Refund amount must be positive'),
+  reason: z.string().optional(),
+  mode: z.enum(['wallet', 'source']).default('wallet'),
+});
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAdmin(['payments.refund']);
     const { id } = await params;
     const body = await req.json();
-    const { amount, reason, mode = 'wallet' } = body;
-
-    if (!amount || parseFloat(amount) <= 0) {
-      return NextResponse.json({ error: 'Valid refund amount is required.' }, { status: 400 });
+    const parsed = RefundSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError('VALIDATION_ERROR', 'Invalid input', 400, { details: parsed.error.flatten().fieldErrors });
     }
 
-    const order = await prisma.order.findUnique({
+    const { amount, reason, mode } = parsed.data;
+
+    const order = await db.order.findUnique({
       where: { id },
       include: { refunds: true, user: true },
     });
 
     if (!order) {
-      return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
+      return apiError('NOT_FOUND', 'Order not found.', 404);
     }
 
-    const refundAmountPaise = Math.round(parseFloat(amount) * 100);
+    const refundAmountPaise = Math.round(amount * 100);
     const existingRefundedPaise = order.refunds.reduce((acc, r) => acc + r.amount, 0);
 
     if (refundAmountPaise + existingRefundedPaise > order.grandTotal) {
-      return NextResponse.json(
-        { error: 'Total refunded amount cannot exceed grand total of the order.' },
-        { status: 400 }
-      );
+      return apiError('VALIDATION_ERROR', 'Total refunded amount cannot exceed grand total of the order.', 400);
     }
 
     const isFullRefund = refundAmountPaise + existingRefundedPaise === order.grandTotal;
     const newPaymentStatus = isFullRefund ? 'refunded' : 'partially_refunded';
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       const refund = await tx.refund.create({
         data: {
           orderId: id,
@@ -72,6 +78,8 @@ export async function POST(
           },
         });
 
+        const updatedWallet = await tx.wallet.findUnique({ where: { id: wallet.id } });
+
         await tx.walletTransaction.create({
           data: {
             walletId: wallet.id,
@@ -80,7 +88,7 @@ export async function POST(
             direction: 'credit',
             amount: refundAmountPaise,
             status: 'completed',
-            balanceAfter: wallet.balance,
+            balanceAfter: updatedWallet!.balance,
             refType: 'Order',
             refId: id,
             description: `Refund for Order #${order.orderNumber}: ${reason || 'Admin refund'}`,
@@ -102,12 +110,12 @@ export async function POST(
       return { refund, updatedOrder };
     });
 
-    return NextResponse.json({ success: true, result });
+    return apiOk({ data: result });
   } catch (error: any) {
+    if (error?.code) {
+      return apiError(error.code, error.message, error.status || 500);
+    }
     console.error('Error processing refund:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to process refund.' },
-      { status: 500 }
-    );
+    return apiError('INTERNAL_ERROR', 'Failed to process refund.', 500);
   }
 }

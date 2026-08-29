@@ -73,8 +73,14 @@ export async function POST(request: NextRequest) {
       const { referralId } = data;
       const referral = await db.referral.findUnique({ where: { id: referralId }, include: { commissions: true } });
       if (!referral) return apiError('NOT_FOUND', 'Referral not found', 404);
-      // Recalculation logic would go here
-      return apiOk({ data: { recalculated: true } });
+
+      const totalCommission = referral.commissions.reduce((sum, c) => sum + (c.commissionAmount || 0), 0);
+      const totalPaid = referral.commissions
+        .filter((c) => c.status === 'paid' || c.status === 'released')
+        .reduce((sum, c) => sum + (c.commissionAmount || 0), 0);
+      const pendingCommission = totalCommission - totalPaid;
+
+      return apiOk({ data: { recalculated: true, referralId, totalCommission, totalPaid, pendingCommission, commissionCount: referral.commissions.length } });
     }
 
     if (action === 'override_commission') {
