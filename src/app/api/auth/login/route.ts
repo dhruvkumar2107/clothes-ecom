@@ -18,6 +18,10 @@ const OtpLoginSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  if (!process.env.AUTH_SECRET?.trim()) {
+    return apiError('SERVER_MISCONFIGURED', 'AUTH_SECRET env var is missing — login is disabled until it is set. Add it in the Render dashboard.', 500);
+  }
+
   const rl = await authRateLimit(request, { limit: 10, window: '1m', keyPrefix: 'auth:login' });
   if (rl.limited) return rl.response;
 
