@@ -39,7 +39,7 @@ const FALLBACK_HERO = {
   subhead: 'Engineered fabrics. Sculptural silhouettes. Limited drops shipped across India.',
   ctaLabel: 'Shop New Arrivals',
   ctaHref: '/products?sort=newest',
-  imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=1920&q=80' as string | null,
+  imageUrl: null as string | null,
   mobileImageUrl: null as string | null,
   accentHex: null as string | null,
 };
