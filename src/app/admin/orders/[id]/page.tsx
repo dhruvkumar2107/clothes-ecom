@@ -97,7 +97,7 @@ export default async function AdminOrderDetailPage({
                   <div className="flex items-center gap-3.5">
                     <div className="relative w-12 h-14 rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/60 shrink-0">
                       <Image
-                        src={item.imageUrl || 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=400&q=80'}
+                        src={item.imageUrl || '/images/product-linen-shirt.jpg'}
                         alt={item.name}
                         fill
                         className="object-cover"

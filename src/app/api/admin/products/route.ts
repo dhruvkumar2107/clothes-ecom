@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       ? [{ url: imageUrl, alt: name, kind: 'gallery', sortOrder: 1 }]
       : [
           {
-            url: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=1200&q=80',
+            url: '/images/product-linen-shirt.jpg',
             alt: name,
             kind: 'gallery',
             sortOrder: 1,

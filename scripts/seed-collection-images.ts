@@ -10,19 +10,19 @@ async function main() {
   });
 
   const heroImages: Record<string, string> = {
-    'new-arrivals': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80',
-    'bestsellers': 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80',
-    'essentials': 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80',
-    'editorial': 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80',
-    'winter': 'https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?auto=format&fit=crop&w=1200&q=80',
-    'summer': 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1200&q=80',
-    'monsoon': 'https://images.unsplash.com/photo-1520367445093-50dc08a59d9d?auto=format&fit=crop&w=1200&q=80',
+    'new-arrivals': '/images/collection-new-arrivals.jpg',
+    'bestsellers': '/images/collection-lumen-edit.jpg',
+    'essentials': '/images/collection-essentials.jpg',
+    'editorial': '/images/product-dress-back.jpg',
+    'winter': '/images/collection-winter.jpg',
+    'summer': '/images/collection-summer.jpg',
+    'monsoon': '/images/collection-monsoon.jpg',
   };
 
   const defaultImages = [
-    'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1558171813-4c088753af8f?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80',
+    '/images/collection-lumen-edit.jpg',
+    '/images/collection-new-arrivals.jpg',
+    '/images/collection-essentials.jpg',
   ];
 
   let idx = 0;

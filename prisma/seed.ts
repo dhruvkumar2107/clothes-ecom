@@ -230,7 +230,7 @@ async function main() {
       kind: 'seasonal',
       tagline: 'Weightless fabrics. Architectural forms.',
       description: 'A curated selection of our most essential pieces — designed for the modern wardrobe.',
-      heroImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=80',
+      heroImage: '/images/collection-lumen-edit.jpg',
       accentHex: '#B08D57',
       featured: true,
       sortOrder: 1,
@@ -379,9 +379,9 @@ async function main() {
       featured: true,
       categoryId: unisexCategory.id,
       images: [
-        { url: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=1200&q=80', alt: 'Linen Oversized Shirt - Natural', kind: 'gallery', colorKey: 'natural', sortOrder: 1 },
-        { url: 'https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=1200&q=80', alt: 'Linen Oversized Shirt - Detail', kind: 'gallery', colorKey: 'natural', sortOrder: 2 },
-        { url: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1200&q=80', alt: 'Linen Oversized Shirt - Worn', kind: 'gallery', colorKey: 'natural', sortOrder: 3 },
+        { url: '/images/product-linen-shirt.jpg', alt: 'Linen Oversized Shirt - Natural', kind: 'gallery', colorKey: 'natural', sortOrder: 1 },
+        { url: '/images/product-linen-detail.jpg', alt: 'Linen Oversized Shirt - Detail', kind: 'gallery', colorKey: 'natural', sortOrder: 2 },
+        { url: '/images/product-shirt-worn.jpg', alt: 'Linen Oversized Shirt - Worn', kind: 'gallery', colorKey: 'natural', sortOrder: 3 },
       ],
       variants: [
         { size: 'XS', color: 'Natural', colorHex: '#F5F0E1', priceDelta: 0, stock: 25, weightGrams: 280 },
@@ -421,8 +421,8 @@ async function main() {
       featured: true,
       categoryId: menCategory.id,
       images: [
-        { url: 'https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?auto=format&fit=crop&w=1200&q=80', alt: 'Silk Blend Mandarin Shirt - Ivory', kind: 'gallery', colorKey: 'ivory', sortOrder: 1 },
-        { url: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1200&q=80', alt: 'Silk Blend Mandarin Shirt - Detail', kind: 'gallery', colorKey: 'ivory', sortOrder: 2 },
+        { url: '/images/product-silk-shirt.jpg', alt: 'Silk Blend Mandarin Shirt - Ivory', kind: 'gallery', colorKey: 'ivory', sortOrder: 1 },
+        { url: '/images/product-shirt-worn.jpg', alt: 'Silk Blend Mandarin Shirt - Detail', kind: 'gallery', colorKey: 'ivory', sortOrder: 2 },
       ],
       variants: [
         { size: 'S', color: 'Ivory', colorHex: '#FFFFF0', priceDelta: 0, stock: 15, weightGrams: 220 },
@@ -455,8 +455,8 @@ async function main() {
       featured: true,
       categoryId: womenCategory.id,
       images: [
-        { url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=80', alt: 'Cotton Poplin Wrap Dress - White', kind: 'gallery', colorKey: 'white', sortOrder: 1 },
-        { url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80', alt: 'Cotton Poplin Wrap Dress - Back', kind: 'gallery', colorKey: 'white', sortOrder: 2 },
+        { url: '/images/product-wrap-dress.jpg', alt: 'Cotton Poplin Wrap Dress - White', kind: 'gallery', colorKey: 'white', sortOrder: 1 },
+        { url: '/images/product-dress-back.jpg', alt: 'Cotton Poplin Wrap Dress - Back', kind: 'gallery', colorKey: 'white', sortOrder: 2 },
       ],
       variants: [
         { size: 'XS', color: 'White', colorHex: '#FFFFFF', priceDelta: 0, stock: 18, weightGrams: 320 },
@@ -491,7 +491,7 @@ async function main() {
       featured: false,
       categoryId: unisexCategory.id,
       images: [
-        { url: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=1200&q=80', alt: 'Merino Wool Crew Neck - Oatmeal', kind: 'gallery', colorKey: 'oatmeal', sortOrder: 1 },
+        { url: '/images/product-merino-wool.jpg', alt: 'Merino Wool Crew Neck - Oatmeal', kind: 'gallery', colorKey: 'oatmeal', sortOrder: 1 },
       ],
       variants: [
         { size: 'XS', color: 'Oatmeal', colorHex: '#D9D2C4', priceDelta: 0, stock: 20, weightGrams: 280 },
@@ -526,7 +526,7 @@ async function main() {
       featured: true,
       categoryId: unisexCategory.id,
       images: [
-        { url: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=1200&q=80', alt: 'Cashmere Blend Scarf - Camel', kind: 'gallery', colorKey: 'camel', sortOrder: 1 },
+        { url: '/images/product-cashmere-scarf.jpg', alt: 'Cashmere Blend Scarf - Camel', kind: 'gallery', colorKey: 'camel', sortOrder: 1 },
       ],
       variants: [
         { size: 'OS', color: 'Camel', colorHex: '#C19A6B', priceDelta: 0, stock: 25, weightGrams: 180 },

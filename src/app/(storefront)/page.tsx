@@ -78,7 +78,7 @@ export default async function HomePage() {
             priority
             fetchPriority="high"
             sizes="100vw"
-            quality={70}
+            quality={80}
             placeholder="blur"
             blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0MDAnIGhlaWdodD0nMjI1Jz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjMWExYjFlJy8+PC9zdmc+"
             className="object-cover object-center"
@@ -108,29 +108,29 @@ export default async function HomePage() {
             {/* Magazine-style headline — ultra-large serif */}
             <h1
               id="hero-title"
-              className="u-display text-6xl md:text-8xl lg:text-[10rem] font-light text-paper leading-[0.9] mb-6 tracking-tight"
+              className="u-display text-5xl md:text-7xl lg:text-[9rem] font-light text-paper leading-[0.88] mb-6 tracking-[-0.02em]"
             >
               {hero.headline}
             </h1>
 
             {hero.subhead ? (
-              <p className="text-lg md:text-xl text-paper/70 mb-10 max-w-lg leading-relaxed font-light">
+              <p className="text-base md:text-lg text-paper/60 mb-8 max-w-md leading-relaxed font-light">
                 {hero.subhead}
               </p>
             ) : null}
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               <Link href={hero.ctaHref ?? '/products'}>
-                <Button size="lg" className="gap-2 bg-paper text-ink hover:bg-paper/90">
+                <Button size="lg" className="gap-2 bg-paper text-ink hover:bg-paper/90 text-sm tracking-wide">
                   {hero.ctaLabel ?? 'Shop the collection'}
-                  <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </Button>
               </Link>
               <Link href="/size-guide">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="bg-transparent border-paper/30 text-paper hover:bg-paper/10 gap-2"
+                  className="bg-transparent border-paper/20 text-paper hover:bg-paper/10 gap-2 text-sm tracking-wide"
                 >
                   Find your size
                 </Button>
@@ -140,9 +140,9 @@ export default async function HomePage() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-paper/40">
-          <span className="text-[10px] uppercase tracking-widest">Scroll</span>
-          <div className="w-px h-8 bg-paper/20 animate-pulse" />
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-paper/30">
+          <span className="text-[10px] uppercase tracking-[0.2em]">Scroll</span>
+          <div className="w-px h-8 bg-paper/15 animate-pulse" />
         </div>
       </section>
 
@@ -244,7 +244,7 @@ export default async function HomePage() {
         name="Winter Capsule"
         tagline="A 12-piece collection of engineered warmth. Available for 48 hours only."
         heroImage=""
-        launchAt="2026-08-31T12:00:00.000Z"
+        launchAt="2026-12-01T12:00:00.000Z"
         slug="winter-capsule"
       />
 

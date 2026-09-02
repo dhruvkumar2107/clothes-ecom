@@ -66,7 +66,7 @@ export function ProductForm({
     fit: 'regular',
     gender: 'unisex',
     categoryId: categories[0]?.id || '',
-    imageUrl: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: '/images/product-linen-shirt.jpg',
     ...initialData,
   });
 
@@ -297,7 +297,7 @@ export function ProductForm({
           <input
             type="url"
             required
-            placeholder="https://images.unsplash.com/photo-..."
+            placeholder="/images/product-..."
             value={formData.imageUrl}
             onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
             className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 font-mono focus:border-amber-500/60 focus:outline-none"

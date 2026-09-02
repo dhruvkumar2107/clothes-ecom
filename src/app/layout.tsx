@@ -30,13 +30,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: 'https://lumenandco.example',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://lumenandco.example',
     siteName: 'LUMEN&CO',
     title: 'LUMEN&CO — Light as couture',
     description: 'Future-facing luxury fashion. Engineered fabrics, sculptural silhouettes, and limited drops — shipped across India.',
     images: [
       {
-        url: '/api/img/og?title=LUMEN%26CO',
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://lumenandco.example'}/api/img/og?title=LUMEN%26CO`,
         width: 1200,
         height: 630,
         alt: 'LUMEN&CO',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'LUMEN&CO — Light as couture',
     description: 'Future-facing luxury fashion. Engineered fabrics, sculptural silhouettes, and limited drops.',
-    images: ['/api/img/og?title=LUMEN%26CO'],
+    images: [`${process.env.NEXT_PUBLIC_APP_URL || 'https://lumenandco.example'}/api/img/og?title=LUMEN%26CO`],
   },
   icons: {
     icon: '/favicon.ico',
@@ -106,6 +106,11 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} style={style} className={enableGrain ? 'u-grain' : ''}>
+      <head>
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preload" as="image" href="/api/img/og?title=LUMEN%26CO" />
+      </head>
       <body className="min-h-screen flex flex-col antialiased">
         <a
           href={`#${MainContentId}`}

@@ -156,7 +156,7 @@ export function ProductCard({
   const sizeLabel = sizes.length === 1 ? '1 size' : sizes.length + ' sizes';
 
   return (
-    <article className="group relative bg-paper rounded-lg border border-line overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-ink/5 u-focus">
+    <article className="group relative bg-paper overflow-hidden u-focus">
       <Link
         href={'/products/' + slug}
         className="block relative aspect-[3/4] overflow-hidden bg-paper-2"
@@ -256,21 +256,21 @@ export function ProductCard({
         </div>
       </Link>
 
-      <div className="p-4">
-        {subtitle && <p className="u-label text-xs mb-1">{subtitle}</p>}
-        <h3 className="font-medium text-sm text-ink line-clamp-2 mb-2 group-hover:text-accent transition-colors">
+      <div className="p-3 md:p-4">
+        {subtitle && <p className="u-label text-[10px] mb-0.5">{subtitle}</p>}
+        <h3 className="font-medium text-sm text-ink line-clamp-1 mb-1">
           <Link href={'/products/' + slug} className="hover:underline">{name}</Link>
         </h3>
 
         {colorOptions.length > 1 && (
-          <div className="flex gap-1.5 mb-2" role="radiogroup" aria-label="Available colors">
+          <div className="flex gap-1 mb-2" role="radiogroup" aria-label="Available colors">
             {colorOptions.slice(0, 6).map((opt) => {
               const isActive = activeColor === opt.color;
               return (
                 <button
                   key={opt.color}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveColor(opt.color); }}
-                  className={'relative w-6 h-6 rounded-full border-2 transition-all duration-200 ' + (isActive ? 'border-ink scale-110 ring-2 ring-ink/20' : 'border-line/50 hover:scale-110 hover:border-ink/50')}
+                  className={'w-4 h-4 rounded-full border transition-all duration-150 ' + (isActive ? 'border-ink ring-1 ring-ink/20' : 'border-line hover:border-ink/50')}
                   style={{ backgroundColor: opt.colorHex || '#808080' }}
                   aria-pressed={isActive}
                   aria-label={opt.color}
@@ -278,7 +278,7 @@ export function ProductCard({
               );
             })}
             {colorOptions.length > 6 && (
-              <span className="w-6 h-6 rounded-full border border-line flex items-center justify-center text-[9px] text-muted">
+              <span className="w-4 h-4 rounded-full border border-line flex items-center justify-center text-[8px] text-muted">
                 +{colorOptions.length - 6}
               </span>
             )}
@@ -286,15 +286,11 @@ export function ProductCard({
         )}
 
         <div className="flex items-baseline gap-2">
-          <span className="font-semibold text-sm text-ink">{formatCurrency(basePrice)}</span>
+          <span className="font-medium text-sm text-ink">{formatCurrency(basePrice)}</span>
           {hasDiscount && (
-            <span className="text-sm text-muted line-through">{formatCurrency(compareAtPrice!)}</span>
+            <span className="text-xs text-muted line-through">{formatCurrency(compareAtPrice!)}</span>
           )}
         </div>
-
-        {sizes.length > 0 && (
-          <p className="text-xs text-muted mt-2">{sizeLabel} available</p>
-        )}
       </div>
     </article>
   );

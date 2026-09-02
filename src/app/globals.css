@@ -354,4 +354,26 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Safe area padding for mobile bottom nav */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Product card hover effect */
+  .product-card-hover {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .product-card-hover:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Smooth image reveal */
+  .img-reveal {
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+  }
+  .img-reveal.loaded {
+    opacity: 1;
+  }
 }
