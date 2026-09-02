@@ -112,6 +112,7 @@ async function main() {
     prisma.staffUser.deleteMany(),
     prisma.staffRole.deleteMany(),
     prisma.auditLog.deleteMany(),
+    prisma.banner.deleteMany(),
     prisma.setting.deleteMany(),
   ]);
 
@@ -133,6 +134,28 @@ async function main() {
       { key: 'loyalty.pointValue', value: '100', valueType: 'number', group: 'payments', label: 'Point Value (Paise)' },
       { key: 'loyalty.pointsPerHundred', value: '100', valueType: 'number', group: 'payments', label: 'Points per ₹100' },
     ],
+  });
+
+  // Homepage Hero Banner
+  await prisma.banner.upsert({
+    where: { id: 'home_hero_default' },
+    update: {},
+    create: {
+      id: 'home_hero_default',
+      name: 'Homepage Hero — Light as Couture',
+      placement: 'home_hero',
+      imageUrl: '/images/hero-banner.jpg',
+      mobileImageUrl: '/images/hero-banner-mobile.jpg',
+      eyebrow: null,
+      headline: 'Light as couture',
+      subhead: 'Engineered fabrics. Sculptural silhouettes. Limited drops shipped across India.',
+      ctaLabel: 'Shop New Arrivals',
+      ctaHref: '/products?sort=newest',
+      accentHex: '#c9a96e',
+      theme: 'dark',
+      sortOrder: 0,
+      active: true,
+    },
   });
 
   // Loyalty Tiers

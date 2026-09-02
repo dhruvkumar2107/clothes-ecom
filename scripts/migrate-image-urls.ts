@@ -103,6 +103,32 @@ async function migrateCollections() {
 async function migrateBanners() {
   console.log('\n🖼️  Migrating Banner URLs...');
   const banners = await prisma.banner.findMany();
+
+  // Create a default banner if none exist
+  if (banners.length === 0) {
+    console.log('   No banners found — creating default homepage hero banner');
+    await prisma.banner.create({
+      data: {
+        id: 'home_hero_default',
+        name: 'Homepage Hero — Light as Couture',
+        placement: 'home_hero',
+        imageUrl: '/images/hero-banner.jpg',
+        mobileImageUrl: '/images/hero-banner-mobile.jpg',
+        eyebrow: null,
+        headline: 'Light as couture',
+        subhead: 'Engineered fabrics. Sculptural silhouettes. Limited drops shipped across India.',
+        ctaLabel: 'Shop New Arrivals',
+        ctaHref: '/products?sort=newest',
+        accentHex: '#c9a96e',
+        theme: 'dark',
+        sortOrder: 0,
+        active: true,
+      },
+    });
+    console.log('   ✅ Created default homepage hero banner');
+    return;
+  }
+
   let updated = 0;
 
   for (const banner of banners) {
