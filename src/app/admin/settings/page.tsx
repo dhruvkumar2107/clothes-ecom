@@ -1,89 +1,125 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Save, Loader2, Shield, Truck, CreditCard, Gift, Globe, Bell } from 'lucide-react';
+import { apiPost } from '@/lib/api-client';
 
 type SelectFieldOptions = string[];
+type FieldDef = { key: string; label: string; type: string; placeholder?: string; step?: string; options?: string[] };
 
-function isSelectField(field: { type: string; options?: unknown }): field is { type: 'select'; options: SelectFieldOptions } {
+function isSelectField(field: FieldDef): field is FieldDef & { type: 'select'; options: string[] } {
   return field.type === 'select' && Array.isArray(field.options);
 }
 
-function isNumberField(field: { type: string; step?: unknown }): field is { type: 'number'; step: string | number } {
+function isNumberField(field: FieldDef): field is FieldDef & { type: 'number'; step: string } {
   return field.type === 'number' && field.step != null;
 }
+
+const sections = [
+  {
+    id: 'store',
+    title: 'Store Information',
+    icon: Globe,
+    fields: [
+      { key: 'storeName', label: 'Store Name', type: 'text', placeholder: 'LUMEN&CO' },
+      { key: 'storeEmail', label: 'Contact Email', type: 'email', placeholder: 'hello@lumen.co' },
+      { key: 'storePhone', label: 'Contact Phone', type: 'tel', placeholder: '+91 98765 43210' },
+      { key: 'gstNumber', label: 'GST Number', type: 'text', placeholder: '29AAACL1234A1Z5' },
+      { key: 'storeAddress', label: 'Registered Address', type: 'textarea', placeholder: '123 Fashion Street, Bangalore, KA 560001' },
+    ],
+  },
+  {
+    id: 'shipping',
+    title: 'Shipping Configuration',
+    icon: Truck,
+    fields: [
+      { key: 'freeShippingThreshold', label: 'Free Shipping Threshold (₹)', type: 'number', placeholder: '2999' },
+      { key: 'standardShippingRate', label: 'Standard Shipping Rate (₹)', type: 'number', placeholder: '99' },
+      { key: 'expressShippingRate', label: 'Express Shipping Rate (₹)', type: 'number', placeholder: '199' },
+      { key: 'codEnabled', label: 'Enable Cash on Delivery', type: 'checkbox' },
+      { key: 'codFee', label: 'COD Additional Fee (₹)', type: 'number', placeholder: '50' },
+    ],
+  },
+  {
+    id: 'payments',
+    title: 'Payment Gateway',
+    icon: CreditCard,
+    fields: [
+      { key: 'razorpayKeyId', label: 'Razorpay Key ID', type: 'text', placeholder: 'rzp_test_...' },
+      { key: 'razorpayKeySecret', label: 'Razorpay Key Secret', type: 'password', placeholder: '••••••••' },
+      { key: 'stripePublishableKey', label: 'Stripe Publishable Key', type: 'text', placeholder: 'pk_test_...' },
+      { key: 'stripeSecretKey', label: 'Stripe Secret Key', type: 'password', placeholder: '••••••••' },
+    ],
+  },
+  {
+    id: 'referral',
+    title: 'Referral Program',
+    icon: Gift,
+    fields: [
+      { key: 'referralWelcomeCoupon', label: 'Welcome Coupon Code', type: 'text', placeholder: 'WELCOME10' },
+      { key: 'referralCommissionPercent', label: 'Default Commission %', type: 'number', step: '0.1', placeholder: '7.5' },
+      { key: 'referralHoldDays', label: 'Commission Hold Period (days)', type: 'number', placeholder: '14' },
+      { key: 'referralMinOrderValue', label: 'Minimum Order for Commission (₹)', type: 'number', placeholder: '999' },
+    ],
+  },
+  {
+    id: 'notifications',
+    title: 'Notifications & SMS',
+    icon: Bell,
+    fields: [
+      { key: 'smsProvider', label: 'SMS Provider', type: 'select', options: ['mock', 'twilio', 'msg91'] },
+      { key: 'twilioAccountSid', label: 'Twilio Account SID', type: 'text', placeholder: 'AC...' },
+      { key: 'twilioAuthToken', label: 'Twilio Auth Token', type: 'password', placeholder: '••••••••' },
+      { key: 'msg91AuthKey', label: 'MSG91 Auth Key', type: 'password', placeholder: '••••••••' },
+    ],
+  },
+];
 
 export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [values, setValues] = useState<Record<string, string>>({});
 
-  const sections = [
-    {
-      id: 'store',
-      title: 'Store Information',
-      icon: Globe,
-      fields: [
-        { key: 'storeName', label: 'Store Name', type: 'text', placeholder: 'LUMEN&CO' },
-        { key: 'storeEmail', label: 'Contact Email', type: 'email', placeholder: 'hello@lumen.co' },
-        { key: 'storePhone', label: 'Contact Phone', type: 'tel', placeholder: '+91 98765 43210' },
-        { key: 'gstNumber', label: 'GST Number', type: 'text', placeholder: '29AAACL1234A1Z5' },
-        { key: 'storeAddress', label: 'Registered Address', type: 'textarea', placeholder: '123 Fashion Street, Bangalore, KA 560001' },
-      ],
-    },
-    {
-      id: 'shipping',
-      title: 'Shipping Configuration',
-      icon: Truck,
-      fields: [
-        { key: 'freeShippingThreshold', label: 'Free Shipping Threshold (₹)', type: 'number', placeholder: '2999' },
-        { key: 'standardShippingRate', label: 'Standard Shipping Rate (₹)', type: 'number', placeholder: '99' },
-        { key: 'expressShippingRate', label: 'Express Shipping Rate (₹)', type: 'number', placeholder: '199' },
-        { key: 'codEnabled', label: 'Enable Cash on Delivery', type: 'checkbox' },
-        { key: 'codFee', label: 'COD Additional Fee (₹)', type: 'number', placeholder: '50' },
-      ],
-    },
-    {
-      id: 'payments',
-      title: 'Payment Gateway',
-      icon: CreditCard,
-      fields: [
-        { key: 'razorpayKeyId', label: 'Razorpay Key ID', type: 'text', placeholder: 'rzp_test_...' },
-        { key: 'razorpayKeySecret', label: 'Razorpay Key Secret', type: 'password', placeholder: '••••••••' },
-        { key: 'stripePublishableKey', label: 'Stripe Publishable Key', type: 'text', placeholder: 'pk_test_...' },
-        { key: 'stripeSecretKey', label: 'Stripe Secret Key', type: 'password', placeholder: '••••••••' },
-      ],
-    },
-    {
-      id: 'referral',
-      title: 'Referral Program',
-      icon: Gift,
-      fields: [
-        { key: 'referralWelcomeCoupon', label: 'Welcome Coupon Code', type: 'text', placeholder: 'WELCOME10' },
-        { key: 'referralCommissionPercent', label: 'Default Commission %', type: 'number', step: '0.1', placeholder: '7.5' },
-        { key: 'referralHoldDays', label: 'Commission Hold Period (days)', type: 'number', placeholder: '14' },
-        { key: 'referralMinOrderValue', label: 'Minimum Order for Commission (₹)', type: 'number', placeholder: '999' },
-      ],
-    },
-    {
-      id: 'notifications',
-      title: 'Notifications & SMS',
-      icon: Bell,
-      fields: [
-        { key: 'smsProvider', label: 'SMS Provider', type: 'select', options: ['mock', 'twilio', 'msg91'] },
-        { key: 'twilioAccountSid', label: 'Twilio Account SID', type: 'text', placeholder: 'AC...' },
-        { key: 'twilioAuthToken', label: 'Twilio Auth Token', type: 'password', placeholder: '••••••••' },
-        { key: 'msg91AuthKey', label: 'MSG91 Auth Key', type: 'password', placeholder: '••••••••' },
-      ],
-    },
-  ];
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.data) {
+            const map: Record<string, string> = {};
+            for (const s of data.data) {
+              map[s.key] = s.value;
+            }
+            setValues(map);
+          }
+        }
+      } catch {
+        // settings will show defaults
+      }
+    }
+    loadSettings();
+  }, []);
+
+  const handleChange = useCallback((key: string, value: string) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
-    await new Promise(r => setTimeout(r, 1000));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      const entries = Object.entries(values);
+      for (const [key, value] of entries) {
+        await apiPost('/admin/settings', { key, value, valueType: 'string', group: 'general' });
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      // error handled by apiPost
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -126,11 +162,17 @@ export default function AdminSettingsPage() {
                     {field.type === 'textarea' ? (
                       <textarea
                         placeholder={field.placeholder}
+                        value={values[field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
                         className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 focus:border-amber-500/60 focus:outline-none min-h-[80px] resize-y"
                         rows={3}
                       />
                     ) : isSelectField(field) ? (
-                      <select className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 focus:border-amber-500/60 focus:outline-none">
+                      <select
+                        value={values[field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 focus:border-amber-500/60 focus:outline-none"
+                      >
                         {field.options.map((opt) => (
                           <option key={opt} value={opt}>{opt}</option>
                         ))}
@@ -139,6 +181,8 @@ export default function AdminSettingsPage() {
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
+                          checked={values[field.key] === 'true'}
+                          onChange={(e) => handleChange(field.key, e.target.checked ? 'true' : 'false')}
                           className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-amber-500"
                         />
                         <span className="text-sm text-zinc-300">{field.placeholder}</span>
@@ -147,6 +191,8 @@ export default function AdminSettingsPage() {
                       <input
                         type={field.type}
                         placeholder={field.placeholder}
+                        value={values[field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
                         step={isNumberField(field) ? field.step : undefined}
                         className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 font-mono focus:border-amber-500/60 focus:outline-none"
                       />

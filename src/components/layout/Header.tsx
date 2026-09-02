@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCartStore, useSearchOverlay, useMobileNav } from '@/app/providers';
 import { Button } from '@/components/ui/Button';
-import { Search, Menu, X, User, Heart, LogOut, ShoppingBag } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { Search, Menu, X, User, Heart, ShoppingBag } from 'lucide-react';
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const { count } = useCartStore();
+  const { count, refresh } = useCartStore();
   const { open: searchOpen, closeOverlay } = useSearchOverlay();
   const { open: mobileOpen, closeNav } = useMobileNav();
 
@@ -19,10 +18,15 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Preload cart count on mount for faster perceived performance
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-[50] transition-all duration-300 ${
-        scrolled ? 'bg-paper/95 backdrop-blur-sm border-b border-line' : 'bg-transparent'
+        scrolled ? 'bg-paper/95 backdrop-blur-sm border-b border-line shadow-sm' : 'bg-transparent'
       }`}
       role="banner"
     >
@@ -99,7 +103,7 @@ export function Header() {
             >
               <ShoppingBag className="w-5 h-5 text-ink" aria-hidden="true" />
               {count > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-accent text-paper text-[10px] font-medium rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-accent text-paper text-[10px] font-medium rounded-full flex items-center justify-center animate-fade-in">
                   {count > 99 ? '99+' : count}
                 </span>
               )}

@@ -1,12 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { ProductForm } from '@/components/admin/ProductForm';
-
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewProductPage() {
-  const categories = await prisma.category.findMany({
+  const categories = await db.category.findMany({
     orderBy: { name: 'asc' },
     select: { id: true, name: true, slug: true },
   });

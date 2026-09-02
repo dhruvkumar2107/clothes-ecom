@@ -5,16 +5,13 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.resolve(__dirname),
 
-  // Enable gzip/brotli compression for all responses
   compress: true,
 
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    // Automatic memoization of identical props/requests during render
-    // Reduces redundant DB calls when the same data is needed in multiple places
-    optimizePackageImports: ['lucide-react', 'date-fns', 'tailwind-merge'],
+    optimizePackageImports: ['lucide-react', 'date-fns', 'tailwind-merge', 'framer-motion'],
   },
 
   images: {
@@ -24,8 +21,10 @@ const nextConfig: NextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60 * 60 * 24 * 30,
-    // Allow larger device sizes for responsive images
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    dangerouslyAllowSVG: false,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   poweredByHeader: false,
@@ -33,25 +32,27 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: '/(.*)',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
-      // Cache optimized images aggressively — the Next.js image optimizer serves
-      // immutable hashes, so the browser (and any CDN in front) can keep them
-      // indefinitely.  Without this header every image request hits the Render
-      // server which then fetches from the upstream CDN, doubling latency.
       {
         source: '/_next/image',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
-      // Cache API responses briefly with stale-while-revalidate for speed
+      {
+        source: '/api/img/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
       {
         source: '/api/cart',
         headers: [
@@ -62,6 +63,36 @@ const nextConfig: NextConfig = {
         source: '/api/search',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=60, stale-while-revalidate=300' },
+        ],
+      },
+      {
+        source: '/api/products(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=30, stale-while-revalidate=120' },
+        ],
+      },
+      {
+        source: '/api/categories',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=120, stale-while-revalidate=600' },
+        ],
+      },
+      {
+        source: '/api/collections',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=120, stale-while-revalidate=600' },
+        ],
+      },
+      {
+        source: '/favicon.ico',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400' },
         ],
       },
     ];

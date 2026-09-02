@@ -15,6 +15,7 @@ const ResetOtpSchema = z.object({
   identifier: z.string().min(1),
   code: z.string().length(6, 'Code must be 6 digits'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  challengeToken: z.string().min(1, 'Challenge token is required'),
 });
 
 export async function POST(request: NextRequest) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       if (!parsed.success) {
         return apiError('VALIDATION_ERROR', 'Validation failed', 400, { details: parsed.error.flatten().fieldErrors });
       }
-      await resetPasswordWithOtp({ challengeToken: '', code: parsed.data.code, password: parsed.data.password });
+      await resetPasswordWithOtp({ challengeToken: parsed.data.challengeToken, code: parsed.data.code, password: parsed.data.password });
     } else {
       const parsed = ResetTokenSchema.safeParse(body);
       if (!parsed.success) {

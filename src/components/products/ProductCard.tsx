@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { useCartStore, useToast } from '@/app/providers';
 import { apiPost } from '@/lib/api-client';
@@ -31,6 +31,8 @@ function FabricSwipe({ images, selectedColor, productName }: FabricSwipeProps) {
         className="object-cover animate-fade-in"
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
         loading="lazy"
+        placeholder="blur"
+        blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTYwJz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjZjRmMmVjJy8+PHJlY3Qgd2lkdGg9JzYwJScgaGVpZ2h0PSc4MCUnIHg9JzIwJScgeT0nMTAlJyBmaWxsPScjZWJlOGUwJyByeD0nNicvPjwvc3ZnPg=="
       />
     </div>
   );
@@ -45,7 +47,7 @@ interface ProductCardProps {
   compareAtPrice?: number | null;
   images: { url: string; alt: string; kind?: string; colorKey?: string }[];
   gender?: string;
-  occasion?: string;
+  occasion?: string | null;
   ratingAvg?: number;
   ratingCount?: number;
   variants: {
@@ -80,6 +82,7 @@ export function ProductCard({
   const [wishlisted, setWishlisted] = useState(false);
   const [activeColor, setActiveColor] = useState<string>(colors[0] || '');
   const [viewMode, setViewMode] = useState<'model' | 'flat'>('model');
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const hasDiscount = compareAtPrice && compareAtPrice > basePrice;
 
@@ -107,7 +110,7 @@ export function ProductCard({
 
   const displayImage = viewMode === 'flat' && flatLayImage ? flatLayImage : activeImage;
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
+  const handleAddToCart = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -135,9 +138,9 @@ export function ProductCard({
     } finally {
       setAdding(false);
     }
-  };
+  }, [inStock, variants, activeColor, openDrawer, toast, name]);
 
-  const handleWishlist = async (e: React.MouseEvent) => {
+  const handleWishlist = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (wishlisted) return;
@@ -148,12 +151,12 @@ export function ProductCard({
     } catch {
       toast({ title: 'Error', message: 'Failed to add to wishlist', tone: 'danger' });
     }
-  };
+  }, [wishlisted, id, toast]);
 
   const sizeLabel = sizes.length === 1 ? '1 size' : sizes.length + ' sizes';
 
   return (
-    <article className="group relative bg-paper rounded-lg border border-line overflow-hidden transition-all duration-300 hover:shadow-lg u-focus">
+    <article className="group relative bg-paper rounded-lg border border-line overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-ink/5 u-focus">
       <Link
         href={'/products/' + slug}
         className="block relative aspect-[3/4] overflow-hidden bg-paper-2"
@@ -176,6 +179,9 @@ export function ProductCard({
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   loading="lazy"
+                  placeholder="blur"
+                  blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTYwJz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjZjRmMmVjJy8+PHJlY3Qgd2lkdGg9JzYwJScgaGVpZ2h0PSc4MCUnIHg9JzIwJScgeT0nMTAlJyBmaWxsPScjZWJlOGUwJyByeD0nNicvPjwvc3ZnPg=="
+                  onLoad={() => setImageLoaded(true)}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted">
@@ -190,7 +196,7 @@ export function ProductCard({
 
         {flatLayImage && (
           <div
-            className="absolute top-3 left-3 z-10 flex bg-paper/80 backdrop-blur-sm rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-3 left-3 z-10 flex bg-paper/80 backdrop-blur-sm rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             <button
@@ -212,19 +218,24 @@ export function ProductCard({
 
         <button
           onClick={handleWishlist}
-          className={'absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 z-10 ' + (wishlisted ? 'bg-accent text-paper' : 'bg-paper/80 text-ink hover:bg-paper')}
+          className={'absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 z-10 ' + (wishlisted ? 'bg-accent text-paper scale-110' : 'bg-paper/80 text-ink hover:bg-paper hover:scale-110')}
           aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
-          <svg className={'w-5 h-5 ' + (wishlisted ? 'fill-current' : '')} viewBox="0 0 24 24" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <svg className={'w-5 h-5 transition-transform ' + (wishlisted ? 'fill-current scale-90' : '')} viewBox="0 0 24 24" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
         </button>
 
         <button
           onClick={handleAddToCart}
           disabled={adding || !inStock}
-          className={'absolute bottom-3 left-1/2 -translate-x-1/2 px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-300 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 z-10 ' + (inStock ? 'bg-ink text-paper hover:bg-ink-2' : 'bg-muted text-paper/50 cursor-not-allowed')}
+          className={'absolute bottom-3 left-1/2 -translate-x-1/2 px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-200 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 z-10 ' + (inStock ? 'bg-ink text-paper hover:bg-ink-2 active:scale-95' : 'bg-muted text-paper/50 cursor-not-allowed')}
           aria-label={inStock ? 'Add ' + name + ' to bag' : 'Out of stock'}
         >
-          {adding ? 'Adding...' : inStock ? 'Add to Bag' : 'Out of Stock'}
+          {adding ? (
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+              Adding...
+            </span>
+          ) : inStock ? 'Add to Bag' : 'Out of Stock'}
         </button>
 
         {hasDiscount && (
@@ -232,7 +243,7 @@ export function ProductCard({
             {'\u2212'}{Math.round(((compareAtPrice! - basePrice) / compareAtPrice!) * 100)}%
           </span>
         )}
-        {!inStock && (
+        {!inStock && !hasDiscount && (
           <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-muted text-paper rounded z-10">
             Sold Out
           </span>

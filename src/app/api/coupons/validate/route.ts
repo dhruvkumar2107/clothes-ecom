@@ -16,7 +16,6 @@ const ValidateCouponSchema = z.object({
     qty: z.number().int().min(1),
     price: z.number().int().min(0),
   })),
-  userId: z.string().cuid().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,8 +27,8 @@ export async function POST(request: NextRequest) {
       return apiError('VALIDATION_ERROR', 'Validation failed', 400, { details: parsed.error.flatten().fieldErrors });
     }
 
-    const { code, cartValue, items, userId } = parsed.data;
-    const customerId = userId || session?.userId;
+    const { code, cartValue, items } = parsed.data;
+    const customerId = session?.userId;
 
     const result = await validateCouponForCheckout({ code, cartValue, items, userId: customerId });
 

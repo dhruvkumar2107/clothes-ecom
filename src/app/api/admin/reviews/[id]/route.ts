@@ -39,11 +39,18 @@ export async function PATCH(
     const review = await db.review.update({ where: { id }, data: updateData, include: { user: true, product: true } });
 
     if (status === 'approved') {
+      const productReviews = await db.review.findMany({
+        where: { productId: review.productId, status: 'approved' },
+        select: { rating: true },
+      });
+      const allRatings = [...productReviews.map((r) => r.rating), review.rating];
+      const newAvg = allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length;
+
       await db.product.update({
         where: { id: review.productId },
         data: {
-          ratingAvg: { increment: 0 },
-          ratingCount: { increment: 1 },
+          ratingAvg: Math.round(newAvg * 10) / 10,
+          ratingCount: allRatings.length,
         },
       });
     }

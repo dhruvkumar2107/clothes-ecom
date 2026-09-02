@@ -57,8 +57,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin(['payouts.approve']);
-    const body = await request.json();
-    const { withdrawalId, action, note, amount, mode } = body;
+    const { withdrawalId, action, note, amount, mode, reason } = await request.json();
 
     const withdrawal = await db.withdrawalRequest.findUnique({ where: { id: withdrawalId }, include: { bankAccount: true } });
     if (!withdrawal) return apiError('NOT_FOUND', 'Withdrawal request not found', 404);
@@ -67,8 +66,6 @@ export async function POST(request: NextRequest) {
       if (withdrawal.status !== 'pending') return apiError('INVALID_STATE', 'Only pending withdrawals can be approved', 409);
 
       const payoutGateway = getPayoutGateway();
-      // Note: In production, the bank account would need to be pre-registered as a contact/fund account
-      // with the payout gateway, and we'd use the fundAccountId here
       const fundAccountId = withdrawal.bankAccount.providerRefId || '';
       const payout = await payoutGateway.createPayout({
         fundAccountId,
@@ -101,18 +98,16 @@ export async function POST(request: NextRequest) {
     if (action === 'reject') {
       if (withdrawal.status !== 'pending') return apiError('INVALID_STATE', 'Only pending withdrawals can be rejected', 409);
 
-      const body = await request.json();
-      const { note, reason } = body;
-
       await db.withdrawalRequest.update({
         where: { id: withdrawalId },
         data: { status: 'rejected', reviewedAt: new Date(), reviewNote: note, rejectionReason: reason },
       });
 
-      // Reverse wallet hold
       if (withdrawal.walletTxnId) {
-        await db.walletTransaction.update({ where: { id: withdrawal.walletTxnId }, data: { status: 'reversed', releasedAt: new Date() } });
-        await db.wallet.update({ where: { userId: withdrawal.userId }, data: { lockedBalance: { decrement: withdrawal.amount }, balance: { increment: withdrawal.amount } } });
+        await db.$transaction(async (tx) => {
+          await tx.walletTransaction.update({ where: { id: withdrawal.walletTxnId! }, data: { status: 'reversed', releasedAt: new Date() } });
+          await tx.wallet.update({ where: { userId: withdrawal.userId }, data: { lockedBalance: { decrement: withdrawal.amount }, balance: { increment: withdrawal.amount } } });
+        });
       }
 
       await db.auditLog.create({

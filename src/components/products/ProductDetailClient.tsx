@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Heart, ShoppingBag, Truck, RotateCcw, Shield, ChevronRight, Loader2, X, Shirt, Camera } from 'lucide-react';
+import { Heart, ShoppingBag, Truck, RotateCcw, Shield, ChevronRight, X, Shirt, Camera, ZoomIn, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { QtyStepper } from '@/components/ui/QtyStepper';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/Accordion';
@@ -93,6 +93,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [showZoom, setShowZoom] = useState(false);
   const [viewMode, setViewMode] = useState<'model' | 'flat'>('model');
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
+  const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const currentColor = product.colors.find(c => c.color === selectedColor);
   const availableSizes = currentColor?.sizes.filter(s => s.stock > 0) || [];
@@ -113,7 +115,32 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const flatLayImage = product.images.find(img => img.kind === 'flat') || null;
   const currentDisplayImages = viewMode === 'flat' && flatLayImage ? [flatLayImage, ...displayImages.filter(img => img.id !== flatLayImage.id)] : displayImages;
 
-  const handleAddToCart = async () => {
+  // Preload next/prev images for instant switching
+  useEffect(() => {
+    const preloadImage = (src: string) => {
+      const img = new window.Image();
+      img.src = src;
+    };
+    if (currentDisplayImages[activeImage + 1]) {
+      preloadImage(currentDisplayImages[activeImage + 1].url);
+    }
+    if (activeImage > 0 && currentDisplayImages[activeImage - 1]) {
+      preloadImage(currentDisplayImages[activeImage - 1].url);
+    }
+  }, [activeImage, currentDisplayImages]);
+
+  // Scroll thumbnail into view
+  useEffect(() => {
+    if (thumbnailRefs.current[activeImage]) {
+      thumbnailRefs.current[activeImage]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  }, [activeImage]);
+
+  const handleAddToCart = useCallback(async () => {
     if (!selectedSizeData) {
       toast({ title: 'Select a size', message: 'Please choose a size before adding to bag', tone: 'warning' });
       return;
@@ -131,9 +158,9 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     } finally {
       setAdding(false);
     }
-  };
+  }, [selectedSizeData, qty, product.name, toast]);
 
-  const handleWishlist = async () => {
+  const handleWishlist = useCallback(async () => {
     if (wishlisted) return;
     try {
       await apiPost('/api/account/wishlist', { productId: product.id });
@@ -142,27 +169,27 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     } catch {
       toast({ title: 'Error', message: 'Failed to add to wishlist', tone: 'danger' });
     }
-  };
+  }, [wishlisted, product.id, toast]);
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = useCallback(async () => {
     if (!selectedSizeData) {
       toast({ title: 'Select a size', message: 'Please choose a size', tone: 'warning' });
       return;
     }
     await handleAddToCart();
     router.push('/checkout');
-  };
+  }, [selectedSizeData, handleAddToCart, router, toast]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     if (navigator.share) {
       try { await navigator.share({ title: product.name, url: shareUrl }); } catch { /* cancelled */ }
     } else {
       await navigator.clipboard.writeText(shareUrl);
       toast({ title: 'Link copied', message: 'Product link copied to clipboard', tone: 'success' });
     }
-  };
+  }, [product.name, shareUrl, toast]);
 
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.basePrice;
   const currentPrice = selectedSizeData?.price ?? product.basePrice;
@@ -176,11 +203,14 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             <li aria-hidden="true">/</li>
             <li><Link href="/products" className="hover:text-ink transition-colors">Shop</Link></li>
             <li aria-hidden="true">/</li>
+            <li><Link href={`/products?category=${product.gender}`} className="hover:text-ink transition-colors capitalize">{product.gender}</Link></li>
+            <li aria-hidden="true">/</li>
             <li aria-current="page" className="text-ink font-medium truncate max-w-[200px]">{product.name}</li>
           </ol>
         </nav>
 
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12">
+          {/* Image Gallery */}
           <div className="relative">
             <div className="aspect-[3/4] rounded-lg overflow-hidden bg-paper-2 relative">
               <div key={(currentDisplayImages[activeImage]?.id || '') + '-' + viewMode} className="absolute inset-0 animate-fade-in">
@@ -192,6 +222,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                     priority
                     className="object-cover"
                     sizes="(max-width: 1024px) 100vw, 50vw"
+                    placeholder="blur"
+                    blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0MDAnIGhlaWdodD0nNTMzJz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjZjRmMmVjJy8+PC9zdmc+"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted">
@@ -212,53 +244,87 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
               )}
 
               <button onClick={() => setShowZoom(true)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-paper/80 backdrop-blur-sm flex items-center justify-center hover:bg-paper transition-colors u-focus" aria-label="Zoom image">
-                <svg className="w-5 h-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <ZoomIn className="w-5 h-5 text-ink" aria-hidden="true" />
               </button>
 
-              <button onClick={handleWishlist} className={'absolute top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center transition-all ' + (wishlisted ? 'bg-accent text-paper' : 'bg-paper/80 text-ink hover:bg-paper')} aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
-                <Heart className={'w-5 h-5 ' + (wishlisted ? 'fill-current' : '')} aria-hidden="true" />
+              <button onClick={handleWishlist} className={'absolute top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ' + (wishlisted ? 'bg-accent text-paper scale-110' : 'bg-paper/80 text-ink hover:bg-paper')} aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
+                <Heart className={'w-5 h-5 transition-transform ' + (wishlisted ? 'fill-current scale-90' : '')} aria-hidden="true" />
               </button>
 
               <button onClick={handleShare} className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-paper/80 backdrop-blur-sm flex items-center justify-center hover:bg-paper transition-colors u-focus" aria-label="Share product">
-                <svg className="w-5 h-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                <Share2 className="w-5 h-5 text-ink" aria-hidden="true" />
               </button>
+
+              {/* Image counter */}
+              <div className="absolute bottom-4 left-4 px-3 py-1 bg-ink/60 backdrop-blur-sm rounded-full text-xs text-paper font-medium">
+                {activeImage + 1} / {currentDisplayImages.length}
+              </div>
             </div>
 
+            {/* Thumbnails */}
             {currentDisplayImages.length > 1 && (
-              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+              <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
                 {currentDisplayImages.map((img, i) => (
-                  <button key={img.id} onClick={() => setActiveImage(i)} className={'flex-shrink-0 w-20 h-24 rounded-md overflow-hidden border-2 transition-all ' + (i === activeImage ? 'border-accent' : 'border-transparent hover:border-line')} aria-label={'View image ' + (i + 1)} aria-current={i === activeImage ? 'true' : 'false'}>
-                    <Image src={img.url} alt="" fill className="object-cover" sizes="80px" />
+                  <button
+                    key={img.id}
+                    ref={(el) => { thumbnailRefs.current[i] = el; }}
+                    onClick={() => setActiveImage(i)}
+                    className={'flex-shrink-0 w-20 h-24 rounded-md overflow-hidden border-2 transition-all duration-200 ' + (i === activeImage ? 'border-accent ring-2 ring-accent/20' : 'border-transparent hover:border-line opacity-70 hover:opacity-100')}
+                    aria-label={'View image ' + (i + 1)}
+                    aria-current={i === activeImage ? 'true' : 'false'}
+                  >
+                    <Image
+                      src={img.url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                      loading="lazy"
+                      placeholder="blur"
+                      blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4MCcgaGVpZ2h0PSc5Nic+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsbD0nI2Y0ZjJlYycvPjwvc3ZnPg=="
+                    />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
+          {/* Zoom Modal */}
           {showZoom && (
-            <div className="fixed inset-0 z-[200] bg-ink/95 flex items-center justify-center" onClick={() => setShowZoom(false)} role="dialog" aria-modal="true" aria-label="Image zoom">
-              <button onClick={() => setShowZoom(false)} className="absolute top-6 right-6 w-12 h-12 rounded-full bg-paper/10 flex items-center justify-center u-focus" aria-label="Close zoom">
+            <div className="fixed inset-0 z-[200] bg-ink/95 flex items-center justify-center p-4" onClick={() => setShowZoom(false)} role="dialog" aria-modal="true" aria-label="Image zoom">
+              <button onClick={() => setShowZoom(false)} className="absolute top-6 right-6 w-12 h-12 rounded-full bg-paper/10 hover:bg-paper/20 flex items-center justify-center transition-colors u-focus" aria-label="Close zoom">
                 <X className="w-6 h-6 text-paper" aria-hidden="true" />
               </button>
               <div className="max-w-5xl max-h-[90vh] relative">
-                <Image src={currentDisplayImages[activeImage].url} alt={currentDisplayImages[activeImage].alt || product.name} width={1200} height={1600} className="max-w-full max-h-[90vh] object-contain" priority />
+                <Image
+                  src={currentDisplayImages[activeImage].url}
+                  alt={currentDisplayImages[activeImage].alt || product.name}
+                  width={1200}
+                  height={1600}
+                  className="max-w-full max-h-[90vh] object-contain"
+                  priority
+                />
               </div>
-              <button onClick={() => setActiveImage((activeImage - 1 + currentDisplayImages.length) % currentDisplayImages.length)} className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 flex items-center justify-center u-focus" aria-label="Previous image">
+              <button onClick={() => setActiveImage((activeImage - 1 + currentDisplayImages.length) % currentDisplayImages.length)} className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 hover:bg-paper/20 flex items-center justify-center transition-colors u-focus" aria-label="Previous image">
                 <svg className="w-6 h-6 text-paper" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <button onClick={() => setActiveImage((activeImage + 1) % currentDisplayImages.length)} className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 flex items-center justify-center u-focus" aria-label="Next image">
+              <button onClick={() => setActiveImage((activeImage + 1) % currentDisplayImages.length)} className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/10 hover:bg-paper/20 flex items-center justify-center transition-colors u-focus" aria-label="Next image">
                 <ChevronRight className="w-6 h-6 text-paper" />
               </button>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-ink/60 backdrop-blur-sm rounded-full text-sm text-paper">
+                {activeImage + 1} / {currentDisplayImages.length}
+              </div>
             </div>
           )}
 
+          {/* Product Info */}
           <div className="lg:sticky lg:top-24 lg:self-start space-y-6">
             {product.subtitle && <p className="u-label text-sm text-accent">{product.subtitle}</p>}
             <h1 className="u-display text-3xl md:text-4xl text-ink">{product.name}</h1>
 
             {product.ratingCount > 0 && (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1" aria-label={product.ratingAvg + ' out of 5 stars'}>
+                <div className="flex items-center gap-0.5" aria-label={product.ratingAvg + ' out of 5 stars'}>
                   {[...Array(5)].map((_, i) => (
                     <svg key={i} className="w-5 h-5" fill={i < Math.round(product.ratingAvg) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -271,16 +337,23 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
             <div className="flex items-baseline gap-4 flex-wrap">
               <span className="text-3xl md:text-4xl font-medium text-ink">{formatCurrency(currentPrice)}</span>
-              {hasDiscount && <span className="text-xl text-muted line-through">{formatCurrency(product.compareAtPrice!)}</span>}
+              {hasDiscount && (
+                <>
+                  <span className="text-xl text-muted line-through">{formatCurrency(product.compareAtPrice!)}</span>
+                  <span className="px-2 py-1 text-xs font-medium bg-danger/10 text-danger rounded">
+                    Save {formatCurrency(product.compareAtPrice! - currentPrice)}
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-xs text-muted">Inclusive of all taxes</p>
 
             {product.colors.length > 1 && (
-              <fieldset className="space-y-2">
-                <legend className="u-label mb-2">Color</legend>
+              <fieldset className="space-y-3">
+                <legend className="u-label mb-2">Color — <span className="text-ink font-normal normal-case">{selectedColor}</span></legend>
                 <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Color options">
                   {product.colors.map((colorOpt) => (
-                    <button key={colorOpt.color} onClick={() => setSelectedColor(colorOpt.color)} className={'relative w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ' + (selectedColor === colorOpt.color ? 'border-accent ring-2 ring-accent/20' : 'border-line hover:border-ink/50')} style={{ backgroundColor: colorOpt.colorHex }} aria-pressed={selectedColor === colorOpt.color} aria-label={colorOpt.color}>
+                    <button key={colorOpt.color} onClick={() => setSelectedColor(colorOpt.color)} className={'relative w-10 h-10 rounded-full border-2 transition-all duration-200 flex items-center justify-center ' + (selectedColor === colorOpt.color ? 'border-accent ring-2 ring-accent/20 scale-110' : 'border-line hover:border-ink/50 hover:scale-105')} style={{ backgroundColor: colorOpt.colorHex }} aria-pressed={selectedColor === colorOpt.color} aria-label={colorOpt.color}>
                       {selectedColor === colorOpt.color && (
                         <svg className="w-5 h-5 text-paper" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                       )}
@@ -290,19 +363,19 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
               </fieldset>
             )}
 
-            <fieldset className="space-y-2">
+            <fieldset className="space-y-3">
               <legend className="u-label mb-2 flex items-center gap-2">
                 Size
                 {availableSizes.length > 0 && <span className="text-sm text-muted font-normal">({availableSizes.length} available)</span>}
               </legend>
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Size options">
                 {availableSizes.map((sizeOpt) => (
-                  <button key={sizeOpt.id} onClick={() => setSelectedSize(sizeOpt.size)} disabled={sizeOpt.stock === 0} className={'relative px-4 py-2.5 min-w-[52px] rounded-md border-2 font-medium text-sm transition-all ' + (selectedSize === sizeOpt.size ? 'border-ink bg-ink text-paper' : sizeOpt.stock === 0 ? 'border-line/50 text-muted line-through cursor-not-allowed' : 'border-line hover:border-ink hover:text-ink')} aria-pressed={selectedSize === sizeOpt.size} aria-disabled={sizeOpt.stock === 0} aria-label={sizeOpt.stock === 0 ? sizeOpt.size + ' - Out of stock' : sizeOpt.size}>
-                    {sizeOpt.size}
-                    {sizeOpt.lowStock && sizeOpt.stock > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning text-paper text-[9px] font-bold flex items-center justify-center">{sizeOpt.stock}</span>
-                    )}
-                  </button>
+                  <button key={sizeOpt.id} onClick={() => setSelectedSize(sizeOpt.size)} disabled={sizeOpt.stock === 0} className={'relative px-4 py-2.5 min-w-[52px] rounded-md border-2 font-medium text-sm transition-all duration-200 ' + (selectedSize === sizeOpt.size ? 'border-ink bg-ink text-paper' : sizeOpt.stock === 0 ? 'border-line/50 text-muted line-through cursor-not-allowed' : 'border-line hover:border-ink hover:text-ink active:scale-95')} aria-pressed={selectedSize === sizeOpt.size} aria-disabled={sizeOpt.stock === 0} aria-label={sizeOpt.stock === 0 ? sizeOpt.size + ' - Out of stock' : sizeOpt.size}>
+                  {sizeOpt.size}
+                  {sizeOpt.lowStock && sizeOpt.stock > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning text-paper text-[9px] font-bold flex items-center justify-center">{sizeOpt.stock}</span>
+                  )}
+                </button>
                 ))}
                 {availableSizes.length === 0 && <span className="text-sm text-muted px-4 py-2">Out of stock</span>}
               </div>
@@ -314,11 +387,18 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Button onClick={handleAddToCart} disabled={adding || !selectedSizeData} className="flex-1 sm:flex-none gap-2">
-                <ShoppingBag className="w-5 h-5" aria-hidden="true" />
+              <Button onClick={handleAddToCart} disabled={adding || !selectedSizeData} className="flex-1 sm:flex-none gap-2 h-12">
+                {adding ? (
+                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <ShoppingBag className="w-5 h-5" aria-hidden="true" />
+                )}
                 {adding ? 'Adding...' : 'Add to Bag'}
               </Button>
-              <Button variant="outline" onClick={handleBuyNow} disabled={!selectedSizeData} className="flex-1 sm:flex-none gap-2">
+              <Button variant="outline" onClick={handleBuyNow} disabled={!selectedSizeData} className="flex-1 sm:flex-none gap-2 h-12">
                 Buy Now
                 <ChevronRight className="w-5 h-5" aria-hidden="true" />
               </Button>

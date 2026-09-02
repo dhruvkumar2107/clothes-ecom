@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 const VerifyPhoneSchema = z.object({
   phone: z.string().regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone number'),
   code: z.string().length(6, 'Code must be 6 digits'),
+  challengeToken: z.string().min(1, 'Challenge token is required'),
 });
 
 export async function POST(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     await verifyOtp({
-      challengeToken: '', // This should come from the OTP issuance flow
+      challengeToken: parsed.data.challengeToken,
       code: parsed.data.code,
       purpose: 'verify_phone',
     });

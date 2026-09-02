@@ -293,8 +293,65 @@
     animation: shimmer 1.6s ease-in-out infinite;
   }
 
+  /* Product card skeleton with better shimmer */
+  .u-skeleton-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: var(--color-paper-2);
+  }
+  .u-skeleton-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* Smooth image loading */
+  .img-loading {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+  }
+  .img-loaded {
+    opacity: 1;
+  }
+
+  /* Performance: GPU-accelerate common transitions */
+  .gpu-accelerate {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Content visibility for below-fold sections — browsers skip rendering hidden sections */
+  .u-content-visibility {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
+
   /* Utility to clamp lines without JS. */
   .u-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .u-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .u-clamp-4 { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* Hide scrollbar but keep scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Tabular numbers for prices and counts */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }

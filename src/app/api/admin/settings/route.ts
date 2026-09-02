@@ -40,7 +40,13 @@ export async function POST(request: NextRequest) {
     let typedValue: any = value;
     if (valueType === 'number') typedValue = Number(value);
     else if (valueType === 'boolean') typedValue = value === 'true';
-    else if (valueType === 'json') typedValue = JSON.parse(value);
+    else if (valueType === 'json') {
+      try {
+        typedValue = JSON.parse(value);
+      } catch {
+        return apiError('VALIDATION_ERROR', 'Invalid JSON value', 400);
+      }
+    }
 
     const setting = await db.setting.upsert({
       where: { key },

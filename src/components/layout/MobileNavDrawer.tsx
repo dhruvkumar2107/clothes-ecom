@@ -2,19 +2,26 @@
 
 import Link from 'next/link';
 import { useMobileNav, useSearchOverlay } from '@/app/providers';
-import { X, ChevronRight, ShoppingBag, Heart, User, Search } from 'lucide-react';
+import { X, ChevronRight, ShoppingBag, Heart, User, Search, Sparkles, Tag, Star, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 const MOBILE_NAV = [
-  { label: 'Shop All', href: '/products', icon: ShoppingBag },
-  { label: 'New Arrivals', href: '/products?new=true', icon: null },
-  { label: 'Bestsellers', href: '/products?featured=true', icon: null },
-  { label: 'Collections', href: '/collections', icon: null },
-  { label: 'Creator Storefronts', href: '/creators', icon: null },
-  { label: 'Virtual Try-On', href: '/virtual-try-on', icon: null },
-  { label: 'Virtual Wardrobe', href: '/wardrobe', icon: null },
-  { label: 'Style Quiz', href: '/style-quiz', icon: null },
-  { label: 'Sale', href: '/products?sale=true', icon: null },
+  { label: 'Shop All', href: '/products', icon: ShoppingBag, highlight: false },
+  { label: 'New Arrivals', href: '/products?new=true', icon: Sparkles, highlight: true },
+  { label: 'Bestsellers', href: '/products?featured=true', icon: Star, highlight: false },
+  { label: 'Collections', href: '/collections', icon: null, highlight: false },
+  { label: 'Creator Storefronts', href: '/creators', icon: null, highlight: false },
+  { label: 'Virtual Try-On', href: '/virtual-try-on', icon: null, highlight: false },
+  { label: 'Virtual Wardrobe', href: '/wardrobe', icon: null, highlight: false },
+  { label: 'Style Quiz', href: '/style-quiz', icon: null, highlight: false },
+  { label: 'Sale', href: '/products?sale=true', icon: Tag, highlight: true },
+];
+
+const QUICK_LINKS = [
+  { label: 'Dresses', href: '/products?category=dresses' },
+  { label: 'Kurtas', href: '/products?category=kurtas' },
+  { label: 'Sarees', href: '/products?category=sarees' },
+  { label: 'Tops', href: '/products?category=tops' },
 ];
 
 export function MobileNavDrawer() {
@@ -25,7 +32,7 @@ export function MobileNavDrawer() {
   return (
     <>
       <div
-        className="fixed inset-0 bg-ink/50 z-[90] animate-in"
+        className="fixed inset-0 bg-ink/50 z-[90] animate-in backdrop-blur-sm"
         onClick={closeNav}
         aria-hidden="true"
       />
@@ -52,13 +59,34 @@ export function MobileNavDrawer() {
               key={i}
               href={item.href}
               onClick={closeNav}
-              className="flex items-center gap-3 px-4 py-3 rounded-md text-ink hover:bg-ink-2 transition-colors u-focus"
+              className={'flex items-center gap-3 px-4 py-3 rounded-md transition-colors u-focus ' + (item.highlight ? 'text-accent hover:bg-accent/5' : 'text-ink hover:bg-ink-2')}
             >
-              {item.icon && <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />}
+              {item.icon ? (
+                <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+              ) : (
+                <div className="w-5 h-5" />
+              )}
               <span className="font-medium">{item.label}</span>
               <ChevronRight className="w-4 h-4 text-muted ml-auto" aria-hidden="true" />
             </Link>
           ))}
+
+          {/* Quick category links */}
+          <div className="pt-4 border-t border-line mt-4">
+            <p className="u-label px-4 mb-3">Quick Links</p>
+            <div className="grid grid-cols-2 gap-2 px-4">
+              {QUICK_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeNav}
+                  className="px-3 py-2 text-sm text-ink bg-ink/5 rounded-md hover:bg-ink/10 transition-colors u-focus text-center"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
 
           <div className="pt-4 border-t border-line">
             <Link
