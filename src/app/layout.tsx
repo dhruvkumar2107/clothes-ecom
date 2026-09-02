@@ -109,7 +109,7 @@ export default async function RootLayout({
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        <link rel="preload" as="image" href="/api/img/og?title=LUMEN%26CO" />
+        <link rel="preload" as="image" href="/images/hero-banner.jpg" />
       </head>
       <body className="min-h-screen flex flex-col antialiased">
         <a
