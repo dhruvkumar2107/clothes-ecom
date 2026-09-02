@@ -5,7 +5,7 @@ import { formatMoney } from '@/lib/money';
 import { DeleteRowButton } from '@/components/admin/DeleteRowButton';
 import { Plus, Edit, ExternalLink, Search, AlertTriangle } from 'lucide-react';
 
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 const PER_PAGE = 25;
 

@@ -8,7 +8,7 @@ import { ProductCard } from '@/components/products/ProductCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 // Revalidate collection pages every 60s.
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 // Deduplicate DB fetch for metadata + page component.
 const getCollection = cache((slug: string) => getCollectionBySlug(slug));

@@ -6,12 +6,13 @@ import { Rating } from '@/components/ui/Rating';
 import { ProductCard } from '@/components/products/ProductCard';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 import { CountdownDrop } from '@/components/products/CountdownDrop';
+import { RecentlyViewed } from '@/components/products/RecentlyViewed';
 import { getHomepage } from '@/lib/api-server';
 import { ChevronRight, Truck, Shield, RotateCcw, Heart, Quote, ArrowRight } from 'lucide-react';
 
 // Revalidate homepage every 30s. Merchandising changes appear almost
 // immediately while visitors get cached fast loads.
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'LUMEN&CO — Light as couture',
@@ -149,7 +150,7 @@ export default async function HomePage() {
        * EDITORIAL GRID — Asymmetric magazine layout
        * ═══════════════════════════════════════════════════════════════════ */}
       {editorialPicks.length >= 2 && (
-        <section className="py-16 md:py-24" aria-labelledby="editorial-title">
+        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="editorial-title">
           <div className="u-container">
             <div className="flex items-end justify-between gap-6 mb-12">
               <div>
@@ -250,7 +251,7 @@ export default async function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════════
        * OCCASION SHOPPING — Curated collections by occasion
        * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 bg-ink text-paper" aria-labelledby="occasions-title">
+      <section className="py-16 md:py-24 bg-ink text-paper u-content-visibility" aria-labelledby="occasions-title">
         <div className="u-container">
           <div className="text-center mb-12">
             <span className="u-label text-accent mb-3 block">Shop by Occasion</span>
@@ -291,7 +292,7 @@ export default async function HomePage() {
        * FULL-BLEED COLLECTION — Editorial magazine spread
        * ═══════════════════════════════════════════════════════════════════ */}
       {showcase && (
-        <section className="relative min-h-[70vh] flex items-center overflow-hidden" aria-labelledby="collection-title">
+        <section className="relative min-h-[70vh] flex items-center overflow-hidden u-content-visibility" aria-labelledby="collection-title">
           {showcase.heroImage ? (
             <Image
               src={showcase.heroImage}
@@ -348,7 +349,7 @@ export default async function HomePage() {
        * SHOP BY CATEGORY — Horizontal scroll cards
        * ═══════════════════════════════════════════════════════════════════ */}
       {liveCategories.length > 0 ? (
-        <section className="py-16 md:py-24" aria-labelledby="categories-title">
+        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="categories-title">
           <div className="u-container">
             <div className="flex items-end justify-between gap-6 mb-12">
               <div>
@@ -408,7 +409,7 @@ export default async function HomePage() {
        * NEW ARRIVALS — Horizontal product scroll
        * ═══════════════════════════════════════════════════════════════════ */}
       {arrivals.length > 0 ? (
-        <section className="py-16 md:py-24 bg-paper-2" aria-labelledby="arrivals-title">
+        <section className="py-16 md:py-24 bg-paper-2 u-content-visibility" aria-labelledby="arrivals-title">
           <div className="u-container">
             <div className="flex items-end justify-between gap-6 mb-12">
               <div>
@@ -455,7 +456,7 @@ export default async function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════════
        * TRUST STRIP
        * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-12 md:py-16 border-y border-line" aria-label="Why shop with us">
+      <section className="py-12 md:py-16 border-y border-line u-content-visibility" aria-label="Why shop with us">
         <div className="u-container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {FEATURES.map((feature) => (
@@ -475,7 +476,7 @@ export default async function HomePage() {
        * OTHER COLLECTIONS
        * ═══════════════════════════════════════════════════════════════════ */}
       {collections.length > 1 ? (
-        <section className="py-16 md:py-24" aria-labelledby="more-collections-title">
+        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="more-collections-title">
           <div className="u-container">
             <div className="flex items-end justify-between gap-6 mb-12">
               <h2 id="more-collections-title" className="u-display text-3xl md:text-4xl">
@@ -535,7 +536,7 @@ export default async function HomePage() {
        * REVIEWS
        * ═══════════════════════════════════════════════════════════════════ */}
       {reviews.length > 0 ? (
-        <section className="py-16 md:py-24 bg-paper-2" aria-labelledby="reviews-title">
+        <section className="py-16 md:py-24 bg-paper-2 u-content-visibility" aria-labelledby="reviews-title">
           <div className="u-container">
             <h2 id="reviews-title" className="u-display text-3xl md:text-4xl mb-12 text-center">
               What Our Customers Say
@@ -563,7 +564,7 @@ export default async function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════════
        * NEWSLETTER
        * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 border-t border-line" aria-labelledby="newsletter-title">
+      <section className="py-16 md:py-24 border-t border-line u-content-visibility" aria-labelledby="newsletter-title">
         <div className="u-container">
           <div className="max-w-2xl mx-auto text-center">
             <h2 id="newsletter-title" className="u-display text-3xl md:text-4xl mb-4">
@@ -583,6 +584,11 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * RECENTLY VIEWED
+       * ═══════════════════════════════════════════════════════════════════ */}
+      <RecentlyViewed />
     </div>
   );
 }

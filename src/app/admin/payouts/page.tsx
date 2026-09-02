@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { Wallet, Banknote, CheckCircle, XCircle, Clock, Loader2, Shield, AlertTriangle, ExternalLink } from 'lucide-react';
 
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminPayoutsPage() {
   const [withdrawals, bankAccounts, pendingCount, processingCount, completedCount, failedCount, totalPendingAgg] = await Promise.all([

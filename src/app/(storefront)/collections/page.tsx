@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { getCollectionsForIndex } from '@/lib/api-server';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Collections',

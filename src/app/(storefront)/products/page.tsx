@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import ProductsClient from './ProductsClient';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   searchParams: Promise<{
@@ -27,12 +27,35 @@ export default function ProductsPage({ searchParams }: PageProps) {
     <Suspense fallback={
       <div className="py-8 md:py-12">
         <div className="u-container">
-          <div className="max-w-md mx-auto text-center py-16">
-            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-ink/10 flex items-center justify-center animate-spin">
-              <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v15.944M19 4v15.944M10 4v15.944" />
-              </svg>
-            </div>
+          <div className="mb-8 md:mb-12 space-y-3">
+            <div className="h-8 w-48 bg-ink/10 rounded animate-pulse" />
+            <div className="h-4 w-64 bg-ink/10 rounded animate-pulse" />
+          </div>
+          <div className="flex flex-col lg:flex-row gap-8">
+            <aside className="lg:w-64 flex-shrink-0 space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 w-20 bg-ink/10 rounded animate-pulse" />
+                  <div className="space-y-1.5">
+                    {[...Array(3)].map((_, j) => (
+                      <div key={j} className="h-3 w-full bg-ink/5 rounded animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </aside>
+            <main className="flex-1 min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="space-y-3">
+                    <div className="aspect-[3/4] bg-paper-2 rounded-lg animate-pulse" />
+                    <div className="h-3 w-16 bg-paper-3 rounded animate-pulse" />
+                    <div className="h-4 w-3/4 bg-paper-3 rounded animate-pulse" />
+                    <div className="h-4 w-1/2 bg-paper-3 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </main>
           </div>
         </div>
       </div>

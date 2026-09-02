@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { Plus, Layers, GripVertical, Edit, Trash2, Eye, Shield } from 'lucide-react';
 
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminCollectionsPage() {
   const collections = await db.collection.findMany({

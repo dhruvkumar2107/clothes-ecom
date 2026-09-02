@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { Gift, ExternalLink } from 'lucide-react';
 
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 const PER_PAGE = 25;
 

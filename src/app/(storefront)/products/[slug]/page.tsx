@@ -6,7 +6,7 @@ import { getProductBySlug } from '@/lib/api-server';
 
 // Revalidate product pages every 60s — stock/pricing changes reflect quickly
 // while product detail pages get the ISR speed benefit.
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 // Deduplicate DB fetch: generateMetadata + page component run in the same
 // request, so React.cache ensures a single DB round-trip instead of two.
