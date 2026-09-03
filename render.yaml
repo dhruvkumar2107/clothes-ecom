@@ -19,6 +19,14 @@ services:
     healthCheckPath: /api/health
     autoDeployTrigger: commit
 
+  # Keeps the web service warm by pinging /health every 10 minutes.
+  # Render free/starter services spin down after ~15 min of inactivity;
+  # this cron prevents that from happening.
+  - type: cron
+    name: keep-alive
+    schedule: "*/10 * * * *"
+    startCommand: curl -sf https://lumen-and-co.onrender.com/health || true
+
     envVars:
       # ── Required ──────────────────────────────────────────────────────────
       # Supabase connection string. Use the POOLER URI (port 6543) with

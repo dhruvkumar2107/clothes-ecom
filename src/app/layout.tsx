@@ -3,10 +3,9 @@ import { getSetting, getSettings } from '@/lib/settings';
 import { Providers } from '@/app/providers';
 import './globals.css';
 
-// Revalidate every 30s instead of force-dynamic. This allows Next.js to serve
-// a cached version of the layout shell while revalidating in the background,
-// dramatically reducing TTFB for repeated visits.
-export const dynamic = 'force-dynamic';
+// Cache layout shell for 30s at the edge. Settings changes appear within 30s
+// while visitors get dramatically faster TTFB from cached HTML.
+export const revalidate = 30;
 
 const MainContentId = 'main-content';
 
@@ -109,7 +108,7 @@ export default async function RootLayout({
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        <link rel="preload" as="image" href="/images/hero-banner.jpg" />
+        <link rel="preload" as="image" href="/images/hero-banner.webp" />
       </head>
       <body className="min-h-screen flex flex-col antialiased">
         <a

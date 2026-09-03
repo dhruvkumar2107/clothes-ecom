@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { getStaticPage, type ContentSection, type StaticPage } from '@/lib/content/pages';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ slug: string }>;

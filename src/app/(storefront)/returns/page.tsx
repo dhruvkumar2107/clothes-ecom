@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { RotateCcw, Truck, Clock, CheckCircle, XCircle, Package, MessageCircle, ChevronDown } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: 'Returns & Exchanges | LUMEN&CO',

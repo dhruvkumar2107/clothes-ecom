@@ -10,19 +10,19 @@ async function main() {
   });
 
   const heroImages: Record<string, string> = {
-    'new-arrivals': '/images/collection-new-arrivals.jpg',
-    'bestsellers': '/images/collection-lumen-edit.jpg',
-    'essentials': '/images/collection-essentials.jpg',
-    'editorial': '/images/product-dress-back.jpg',
-    'winter': '/images/collection-winter.jpg',
-    'summer': '/images/collection-summer.jpg',
-    'monsoon': '/images/collection-monsoon.jpg',
+    'new-arrivals': '/images/collection-new-arrivals.webp',
+    'bestsellers': '/images/collection-lumen-edit.webp',
+    'essentials': '/images/collection-essentials.webp',
+    'editorial': '/images/product-dress-back.webp',
+    'winter': '/images/collection-winter.webp',
+    'summer': '/images/collection-summer.webp',
+    'monsoon': '/images/collection-monsoon.webp',
   };
 
   const defaultImages = [
-    '/images/collection-lumen-edit.jpg',
-    '/images/collection-new-arrivals.jpg',
-    '/images/collection-essentials.jpg',
+    '/images/collection-lumen-edit.webp',
+    '/images/collection-new-arrivals.webp',
+    '/images/collection-essentials.webp',
   ];
 
   let idx = 0;

@@ -13,29 +13,29 @@ const prisma = new PrismaClient();
 // Map of Unsplash photo IDs to local paths
 const UNSPLASH_TO_LOCAL: Record<string, string> = {
   // Hero/Banner
-  'photo-1509631179647-0177331693ae': '/images/hero-banner.jpg',
+  'photo-1509631179647-0177331693ae': '/images/hero-banner.webp',
 
   // Product images
-  'photo-1598033129183-c4f50c736f10': '/images/product-linen-shirt.jpg',
-  'photo-1603252109303-2751441dd157': '/images/product-linen-detail.jpg',
-  'photo-1602810318383-e386cc2a3ccf': '/images/product-shirt-worn.jpg',
-  'photo-1620012253295-c15cc3e65df4': '/images/product-silk-shirt.jpg',
-  'photo-1539109136881-3be0616acf4b': '/images/product-wrap-dress.jpg',
-  'photo-1515886657613-9f3515b0c78f': '/images/product-dress-back.jpg',
-  'photo-1576995853123-5a10305d93c0': '/images/product-merino-wool.jpg',
-  'photo-1608256246200-53e635b5b65f': '/images/product-cashmere-scarf.jpg',
+  'photo-1598033129183-c4f50c736f10': '/images/product-linen-shirt.webp',
+  'photo-1603252109303-2751441dd157': '/images/product-linen-detail.webp',
+  'photo-1602810318383-e386cc2a3ccf': '/images/product-shirt-worn.webp',
+  'photo-1620012253295-c15cc3e65df4': '/images/product-silk-shirt.webp',
+  'photo-1539109136881-3be0616acf4b': '/images/product-wrap-dress.webp',
+  'photo-1515886657613-9f3515b0c78f': '/images/product-dress-back.webp',
+  'photo-1576995853123-5a10305d93c0': '/images/product-merino-wool.webp',
+  'photo-1608256246200-53e635b5b65f': '/images/product-cashmere-scarf.webp',
 
   // Collection images
-  'photo-1490481651871-ab68de25d43d': '/images/collection-lumen-edit.jpg',
-  'photo-1441986300917-64674bd600d8': '/images/collection-new-arrivals.jpg',
-  'photo-1523381210434-271e8be1f52b': '/images/collection-essentials.jpg',
-  'photo-1539533113208-f6df8cc8b543': '/images/collection-winter.jpg',
-  'photo-1469334031218-e382a71b716b': '/images/collection-summer.jpg',
-  'photo-1520367445093-50dc08a59d9d': '/images/collection-monsoon.jpg',
+  'photo-1490481651871-ab68de25d43d': '/images/collection-lumen-edit.webp',
+  'photo-1441986300917-64674bd600d8': '/images/collection-new-arrivals.webp',
+  'photo-1523381210434-271e8be1f52b': '/images/collection-essentials.webp',
+  'photo-1539533113208-f6df8cc8b543': '/images/collection-winter.webp',
+  'photo-1469334031218-e382a71b716b': '/images/collection-summer.webp',
+  'photo-1520367445093-50dc08a59d9d': '/images/collection-monsoon.webp',
 };
 
 // Fallback images for any unmatched Unsplash URLs
-const FALLBACK_LOCAL = '/images/product-linen-shirt.jpg';
+const FALLBACK_LOCAL = '/images/product-linen-shirt.webp';
 
 function convertUrl(url: string): string | null {
   if (!url) return null;
@@ -112,8 +112,8 @@ async function migrateBanners() {
         id: 'home_hero_default',
         name: 'Homepage Hero — Light as Couture',
         placement: 'home_hero',
-        imageUrl: '/images/hero-banner.jpg',
-        mobileImageUrl: '/images/hero-banner-mobile.jpg',
+        imageUrl: '/images/hero-banner.webp',
+        mobileImageUrl: '/images/hero-banner-mobile.webp',
         eyebrow: null,
         headline: 'Light as couture',
         subhead: 'Engineered fabrics. Sculptural silhouettes. Limited drops shipped across India.',

@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
 
   compress: true,
 
+  serverExternalPackages: [
+    '@prisma/client',
+    '@aws-sdk/client-s3',
+    '@aws-sdk/s3-request-presigner',
+    'nodemailer',
+    'bcryptjs',
+    'web-push',
+    '@react-pdf/renderer',
+    'pdf-lib',
+  ],
+
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',

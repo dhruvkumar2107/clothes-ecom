@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       ? [{ url: imageUrl, alt: name, kind: 'gallery', sortOrder: 1 }]
       : [
           {
-            url: '/images/product-linen-shirt.jpg',
+            url: '/images/product-linen-shirt.webp',
             alt: name,
             kind: 'gallery',
             sortOrder: 1,

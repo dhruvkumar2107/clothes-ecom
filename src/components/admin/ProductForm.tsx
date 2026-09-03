@@ -66,7 +66,7 @@ export function ProductForm({
     fit: 'regular',
     gender: 'unisex',
     categoryId: categories[0]?.id || '',
-    imageUrl: '/images/product-linen-shirt.jpg',
+    imageUrl: '/images/product-linen-shirt.webp',
     ...initialData,
   });
 

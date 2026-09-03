@@ -97,7 +97,7 @@ export default async function AdminOrderDetailPage({
                   <div className="flex items-center gap-3.5">
                     <div className="relative w-12 h-14 rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/60 shrink-0">
                       <SmartImage
-                        src={item.imageUrl || '/images/product-linen-shirt.jpg'}
+                        src={item.imageUrl || '/images/product-linen-shirt.webp'}
                         alt={item.name}
                         fill
                         className="object-cover"

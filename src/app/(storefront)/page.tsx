@@ -10,9 +10,9 @@ import { RecentlyViewed } from '@/components/products/RecentlyViewed';
 import { getHomepage } from '@/lib/api-server';
 import { ChevronRight, Truck, Shield, RotateCcw, Heart, Quote, ArrowRight } from 'lucide-react';
 
-// Revalidate homepage every 30s. Merchandising changes appear almost
+// Cache homepage for 30s. Merchandising changes appear almost
 // immediately while visitors get cached fast loads.
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: 'LUMEN&CO — Light as couture',
