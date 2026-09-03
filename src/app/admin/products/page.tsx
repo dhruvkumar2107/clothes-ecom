@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { DeleteRowButton } from '@/components/admin/DeleteRowButton';
@@ -180,7 +180,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                         <div className="flex items-center gap-3.5">
                           <div className="relative w-12 h-14 rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/60 shrink-0">
                             {mainImage ? (
-                              <Image
+                              <SmartImage
                                 src={mainImage}
                                 alt=""
                                 fill

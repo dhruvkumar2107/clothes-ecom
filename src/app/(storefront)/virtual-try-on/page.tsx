@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Upload, RotateCcw, Download, Shirt, ChevronRight, X, Loader2, Sparkles } from 'lucide-react';
@@ -217,7 +217,7 @@ export default function VirtualTryOnPage() {
                   className="relative aspect-[4/3] bg-paper-2 rounded-xl overflow-hidden"
                 >
                   {uploadedImage && (
-                    <Image
+                    <SmartImage
                       src={uploadedImage}
                       alt="Your photo"
                       fill

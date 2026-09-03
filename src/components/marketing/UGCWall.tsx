@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ShoppingBag, Camera, X, ChevronRight } from 'lucide-react';
@@ -66,7 +66,7 @@ export function UGCWall({ photos, title = 'Styled by You' }: UGCWallProps) {
                 onClick={() => setSelectedPhoto(photo)}
               >
                 <div className="relative aspect-[3/4]">
-                  <Image
+                  <SmartImage
                     src={photo.imageUrl}
                     alt={`${photo.userName}'s photo wearing ${photo.productName}`}
                     fill
@@ -82,7 +82,7 @@ export function UGCWall({ photos, title = 'Styled by You' }: UGCWallProps) {
                   <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                     <div className="flex items-center gap-2 mb-2">
                       {photo.userAvatar ? (
-                        <Image
+                        <SmartImage
                           src={photo.userAvatar}
                           alt=""
                           width={24}
@@ -144,7 +144,7 @@ export function UGCWall({ photos, title = 'Styled by You' }: UGCWallProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="relative aspect-[3/4] md:aspect-auto">
-                <Image
+                <SmartImage
                   src={selectedPhoto.imageUrl}
                   alt={`${selectedPhoto.userName}'s photo`}
                   fill
@@ -157,7 +157,7 @@ export function UGCWall({ photos, title = 'Styled by You' }: UGCWallProps) {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     {selectedPhoto.userAvatar ? (
-                      <Image
+                      <SmartImage
                         src={selectedPhoto.userAvatar}
                         alt=""
                         width={40}

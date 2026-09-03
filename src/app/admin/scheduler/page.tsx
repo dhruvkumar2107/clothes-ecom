@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { ArrowLeft, Clock, Calendar, Play, Pause, Trash2, Edit, Plus, Timer } from 'lucide-react';
 import { apiGet } from '@/lib/api-client';
 
@@ -79,7 +79,7 @@ export default function DropSchedulerPage() {
             <div key={drop.id} className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-5 shadow-2xl flex items-center gap-5">
               {drop.heroImage ? (
                 <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0">
-                  <Image src={drop.heroImage} alt="" fill className="object-cover" sizes="80px" />
+                  <SmartImage src={drop.heroImage} alt="" fill className="object-cover" sizes="80px" />
                 </div>
               ) : (
                 <div className="w-20 h-20 rounded-lg bg-zinc-800 shrink-0" />

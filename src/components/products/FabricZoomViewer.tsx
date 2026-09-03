@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ZoomIn, RotateCcw, Eye } from 'lucide-react';
 
@@ -171,7 +171,7 @@ export function FabricZoomViewer({ images, selectedColor, productName }: FabricZ
                 className="relative"
                 style={{ transformOrigin: 'center center' }}
               >
-                <Image
+                <SmartImage
                   src={activeImage.url}
                   alt={activeImage.alt || `${productName} fabric detail`}
                   width={1200}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { useRouter } from 'next/navigation';
 import { Plus, Minus, Trash2, Heart, ChevronRight, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -188,7 +188,7 @@ export function CartPageClient({ initialCart }: CartPageClientProps) {
               <article key={item.cartItemId} className="flex gap-4 p-4 bg-paper rounded-lg border border-line">
                 <Link href={`/products/${item.productSlug}`} className="relative w-24 h-32 flex-shrink-0 rounded-md overflow-hidden bg-paper-2">
                   {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt="" fill className="object-cover" sizes="96px" loading="lazy" />
+                    <SmartImage src={item.imageUrl} alt="" fill className="object-cover" sizes="96px" loading="lazy" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted">
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -381,7 +381,7 @@ export function CartPageClient({ initialCart }: CartPageClientProps) {
                       <div key={item.itemId} className="flex gap-3">
                         <div className="w-16 h-20 flex-shrink-0 rounded overflow-hidden bg-paper-2">
                           {item.imageUrl ? (
-                            <Image src={item.imageUrl} alt="" fill className="object-cover" sizes="64px" />
+                            <SmartImage src={item.imageUrl} alt="" fill className="object-cover" sizes="64px" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-muted">
                               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

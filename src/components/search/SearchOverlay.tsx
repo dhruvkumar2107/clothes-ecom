@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { useSearchOverlay } from '@/app/providers';
 import { Button, Input } from '@/components/ui';
 import { X, Search, Loader2, ChevronRight, TrendingUp, Clock, ArrowRight } from 'lucide-react';
@@ -241,7 +241,7 @@ export function SearchOverlay() {
                           <Link href={'/products/' + product.slug} onClick={() => { addRecentSearch(query); closeOverlay(); }} className={'flex items-center gap-4 p-3 hover:bg-ink-2 transition-colors ' + (selectedIndex === i ? 'bg-ink-2' : '')}>
                             <div className="w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-paper-2 relative">
                               {product.images[0]?.url ? (
-                                <Image src={product.images[0].url} alt="" fill className="object-cover" sizes="48px" loading="lazy" />
+                                <SmartImage src={product.images[0].url} alt="" fill className="object-cover" sizes="48px" loading="lazy" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-muted"><Search className="w-5 h-5" aria-hidden="true" /></div>
                               )}
@@ -270,7 +270,7 @@ export function SearchOverlay() {
                           <Link href={'/collections/' + collection.slug} onClick={() => { addRecentSearch(query); closeOverlay(); }} className={'flex items-center gap-4 p-3 hover:bg-ink-2 transition-colors ' + (selectedIndex === results.products.length + i ? 'bg-ink-2' : '')}>
                             <div className="w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-paper-2 relative">
                               {collection.heroImage ? (
-                                <Image src={collection.heroImage} alt="" fill className="object-cover" sizes="48px" loading="lazy" />
+                                <SmartImage src={collection.heroImage} alt="" fill className="object-cover" sizes="48px" loading="lazy" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-muted"><Search className="w-5 h-5" aria-hidden="true" /></div>
                               )}

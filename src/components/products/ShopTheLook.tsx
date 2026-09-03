@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Eye, ChevronRight } from 'lucide-react';
@@ -44,7 +44,7 @@ export function ShopTheLook({ outfitName, items, heroImage }: ShopTheLookProps) 
       </div>
 
       <div className="relative aspect-[16/10] rounded-lg overflow-hidden bg-paper-2">
-        <Image
+        <SmartImage
           src={heroImage}
           alt={outfitName}
           fill
@@ -83,7 +83,7 @@ export function ShopTheLook({ outfitName, items, heroImage }: ShopTheLookProps) 
                 >
                   {item.imageUrl && (
                     <div className="relative h-28 w-full">
-                      <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="208px" />
+                      <SmartImage src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="208px" />
                     </div>
                   )}
                   <div className="p-3">
@@ -128,7 +128,7 @@ export function ShopTheLook({ outfitName, items, heroImage }: ShopTheLookProps) 
                     className="group block relative aspect-[3/4] rounded-lg overflow-hidden bg-paper-2 border border-line hover:border-accent transition-all"
                   >
                     {item.imageUrl && (
-                      <Image
+                      <SmartImage
                         src={item.imageUrl}
                         alt={item.name}
                         fill

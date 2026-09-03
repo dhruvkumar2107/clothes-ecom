@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { ArrowRight } from 'lucide-react';
 import { getCollectionsForIndex } from '@/lib/api-server';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -69,7 +69,7 @@ export default async function CollectionsPage() {
                   >
                     <div className="relative aspect-[4/5] overflow-hidden bg-ink-2">
                       {c.heroImage ? (
-                        <Image
+                        <SmartImage
                           src={c.heroImage}
                           alt={c.name}
                           fill

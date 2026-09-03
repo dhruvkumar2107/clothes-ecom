@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChevronRight, ShoppingCart, Heart, RefreshCw, X, Check } from 'lucide-react';
@@ -214,7 +214,7 @@ export function AIStylist({ currentProduct, className }: AIStylistProps) {
                                     <span className="text-[10px] text-muted">Image</span>
                                   </div>
                                 ) : (
-                                  <Image
+                                  <SmartImage
                                     src={item.imageUrl}
                                     alt={item.name}
                                     fill

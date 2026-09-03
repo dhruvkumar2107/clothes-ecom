@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { Button } from '@/components/ui/Button';
 import { Rating } from '@/components/ui/Rating';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -71,7 +71,7 @@ export default async function HomePage() {
         aria-labelledby="hero-title"
       >
         {heroImage ? (
-          <Image
+          <SmartImage
             src={heroImage}
             alt=""
             fill
@@ -294,7 +294,7 @@ export default async function HomePage() {
       {showcase && (
         <section className="relative min-h-[70vh] flex items-center overflow-hidden u-content-visibility" aria-labelledby="collection-title">
           {showcase.heroImage ? (
-            <Image
+            <SmartImage
               src={showcase.heroImage}
               alt=""
               fill
@@ -375,7 +375,7 @@ export default async function HomePage() {
                   >
                     <div className="aspect-[3/4] relative overflow-hidden">
                       {cat.image ? (
-                        <Image
+                        <SmartImage
                           src={cat.image}
                           alt=""
                           fill
@@ -498,7 +498,7 @@ export default async function HomePage() {
                     className="group block relative aspect-[4/3] rounded-lg overflow-hidden bg-ink-2 u-focus"
                   >
                     {c.heroImage ? (
-                      <Image
+                      <SmartImage
                         src={c.heroImage}
                         alt=""
                         fill

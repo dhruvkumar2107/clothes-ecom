@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { notFound } from 'next/navigation';
 import { getCollectionBySlug, getCollectionProducts } from '@/lib/api-server';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -112,7 +112,7 @@ export default async function CollectionPage({ params, searchParams }: PageProps
         aria-labelledby="collection-title"
       >
         {collection.heroImage ? (
-          <Image
+          <SmartImage
             src={collection.heroImage}
             alt=""
             fill

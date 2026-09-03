@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shirt } from 'lucide-react';
 
@@ -69,7 +69,7 @@ export function HangerToModel({ imageUrl, alt, isHovered }: HangerToModelProps) 
             }}
             className="absolute inset-0"
           >
-            <Image
+            <SmartImage
               src={imageUrl}
               alt={alt}
               fill

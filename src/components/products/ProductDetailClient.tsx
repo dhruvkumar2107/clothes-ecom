@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag, Truck, RotateCcw, Shield, ChevronRight, X, Shirt, Camera, ZoomIn, Share2 } from 'lucide-react';
@@ -215,7 +215,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             <div className="aspect-[3/4] rounded-lg overflow-hidden bg-paper-2 relative">
               <div key={(currentDisplayImages[activeImage]?.id || '') + '-' + viewMode} className="absolute inset-0 animate-fade-in">
                 {currentDisplayImages[activeImage] ? (
-                  <Image
+                  <SmartImage
                     src={currentDisplayImages[activeImage].url}
                     alt={currentDisplayImages[activeImage].alt || product.name}
                     fill
@@ -273,7 +273,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                     aria-label={'View image ' + (i + 1)}
                     aria-current={i === activeImage ? 'true' : 'false'}
                   >
-                    <Image
+                    <SmartImage
                       src={img.url}
                       alt=""
                       fill
@@ -296,7 +296,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                 <X className="w-6 h-6 text-paper" aria-hidden="true" />
               </button>
               <div className="max-w-5xl max-h-[90vh] relative">
-                <Image
+                <SmartImage
                   src={currentDisplayImages[activeImage].url}
                   alt={currentDisplayImages[activeImage].alt || product.name}
                   width={1200}

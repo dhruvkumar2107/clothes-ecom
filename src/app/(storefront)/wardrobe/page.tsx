@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, GripVertical, Trash2, ShoppingBag, Eye, Sparkles, Filter } from 'lucide-react';
@@ -225,7 +225,7 @@ export default function VirtualWardrobePage() {
                   >
                     <div className="relative aspect-[3/4] bg-paper-2">
                       {item.imageUrl ? (
-                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="(max-width: 640px) 50vw, 25vw" />
+                        <SmartImage src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="(max-width: 640px) 50vw, 25vw" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <ShoppingBag className="w-8 h-8 text-muted/30" aria-hidden="true" />
@@ -318,7 +318,7 @@ export default function VirtualWardrobePage() {
                           <div key={item.id} className="flex-shrink-0 w-24">
                             <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-paper-2 mb-1">
                               {item.imageUrl ? (
-                                <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="96px" />
+                                <SmartImage src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="96px" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <ShoppingBag className="w-5 h-5 text-muted/30" aria-hidden="true" />

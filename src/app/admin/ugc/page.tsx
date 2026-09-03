@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { ArrowLeft, Check, X, Eye, Camera, Shield, Clock } from 'lucide-react';
 import { apiGet } from '@/lib/api-client';
 
@@ -93,7 +93,7 @@ export default function UGCModPage() {
           {filtered.map((sub) => (
             <div key={sub.id} className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl overflow-hidden shadow-2xl">
               <div className="relative aspect-square">
-                <Image src={sub.imageUrl} alt={sub.userName} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                <SmartImage src={sub.imageUrl} alt={sub.userName} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                 <div className="absolute top-3 right-3 flex gap-2">
                   <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase ${
                     sub.status === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :

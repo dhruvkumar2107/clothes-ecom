@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { Clock, Bell, Check, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -71,7 +71,7 @@ export function CountdownDrop({ id, name, tagline, heroImage, launchAt, slug, to
     <div className="relative overflow-hidden rounded-xl bg-ink text-paper animate-fade-in">
       <div className="absolute inset-0">
         {heroImage ? (
-          <Image src={heroImage} alt="" fill className="object-cover opacity-40" sizes="(max-width: 1024px) 100vw, 50vw" />
+          <SmartImage src={heroImage} alt="" fill className="object-cover opacity-40" sizes="(max-width: 1024px) 100vw, 50vw" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-ink to-ink" />
         )}

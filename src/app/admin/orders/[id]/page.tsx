@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
@@ -96,7 +96,7 @@ export default async function AdminOrderDetailPage({
                 <div key={item.id} className="py-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
                     <div className="relative w-12 h-14 rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/60 shrink-0">
-                      <Image
+                      <SmartImage
                         src={item.imageUrl || '/images/product-linen-shirt.jpg'}
                         alt={item.name}
                         fill

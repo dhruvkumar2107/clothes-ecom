@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { Plus, Trash2, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 
 interface CategoryOption {
@@ -306,7 +306,7 @@ export function ProductForm({
           {formData.imageUrl && (
             <div className="mt-3 flex items-center gap-3">
               <div className="relative w-16 h-20 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
-                <Image src={formData.imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                <SmartImage src={formData.imageUrl} alt="Preview" fill className="object-cover" unoptimized />
               </div>
               <span className="text-[11px] text-emerald-400">Live preview loaded</span>
             </div>

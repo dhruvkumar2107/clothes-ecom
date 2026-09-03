@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, ExternalLink, ShoppingBag, Heart, Star, Filter, ChevronRight } from 'lucide-react';
@@ -176,7 +176,7 @@ export default function CreatorsPage() {
                 <Link key={product.id} href={`/products/${product.slug}`} className="group">
                   <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-paper-2 mb-3">
                     {product.imageUrl ? (
-                      <Image src={product.imageUrl} alt={product.name} fill className="object-cover" sizes="25vw" />
+                      <SmartImage src={product.imageUrl} alt={product.name} fill className="object-cover" sizes="25vw" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <ShoppingBag className="w-8 h-8 text-muted/30" aria-hidden="true" />

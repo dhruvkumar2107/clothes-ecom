@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { useState, useMemo, useCallback } from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { useCartStore, useToast } from '@/app/providers';
@@ -23,8 +23,7 @@ function FabricSwipe({ images, selectedColor, productName }: FabricSwipeProps) {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <Image
-        key={activeImage.url + '-' + selectedColor}
+      <SmartImage
         src={activeImage.url}
         alt={activeImage.alt || productName}
         fill
@@ -172,7 +171,7 @@ export function ProductCard({
           ) : (
             <div key={(displayImage?.url || '') + '-' + viewMode} className="absolute inset-0 animate-fade-in">
               {displayImage ? (
-                <Image
+                <SmartImage
                   src={displayImage.url}
                   alt={displayImage.alt || name}
                   fill

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { ChevronRight, CreditCard, Smartphone, Landmark, Lock, Loader2, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea, Select, Label } from '@/components/ui';
@@ -437,7 +437,7 @@ export function CheckoutClient({ initialCart, addresses, userId }: CheckoutClien
                         <div key={item.key} className="flex gap-3">
                           <div className="w-16 h-20 flex-shrink-0 rounded overflow-hidden bg-paper-2">
                             {item.imageUrl ? (
-                              <Image src={item.imageUrl} alt="" fill className="object-cover" sizes="64px" />
+                              <SmartImage src={item.imageUrl} alt="" fill className="object-cover" sizes="64px" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-muted">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>

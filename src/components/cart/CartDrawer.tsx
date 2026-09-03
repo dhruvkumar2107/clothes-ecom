@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { SmartImage } from '@/components/ui/SmartImage';
 import { useCartStore, useToast } from '@/app/providers';
 import { Button } from '@/components/ui/Button';
 import { X, Plus, Minus, Trash2, Heart, ChevronRight } from 'lucide-react';
@@ -112,7 +112,7 @@ export function CartDrawer() {
                   <li key={item.cartItemId ?? item.key} className="flex gap-3 pb-4 border-b border-line last:border-0">
                     <Link href={'/products/' + item.productSlug} className="relative w-20 h-28 flex-shrink-0 rounded-md overflow-hidden bg-paper-2" aria-label={'View ' + item.productName}>
                       {item.imageUrl ? (
-                        <Image src={item.imageUrl} alt="" fill className="object-cover" sizes="80px" loading="lazy" placeholder="blur" blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4MCcgaGVpZ2h0PSc5Nic+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsbD0nI2Y0ZjJlYycvPjwvc3ZnPg==" />
+                        <SmartImage src={item.imageUrl} alt="" fill className="object-cover" sizes="80px" loading="lazy" placeholder="blur" blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4MCcgaGVpZ2h0PSc5Nic+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsbD0nI2Y0ZjJlYycvPjwvc3ZnPg==" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted">
                           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
