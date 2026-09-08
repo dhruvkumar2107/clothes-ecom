@@ -45,6 +45,22 @@ const FALLBACK_HERO = {
   accentHex: null as string | null,
 };
 
+const MOODS = [
+  { slug: 'minimal', name: 'Minimal', description: 'Clean lines, quiet luxury', color: '#e8e4dc', icon: '◻' },
+  { slug: 'bold', name: 'Bold', description: 'Statement-making confidence', color: '#8f2f2a', icon: '◆' },
+  { slug: 'effortless', name: 'Effortless', description: 'Undone elegance', color: '#7c8b7a', icon: '○' },
+  { slug: 'structured', name: 'Structured', description: 'Architectural precision', color: '#2a2b2e', icon: '△' },
+  { slug: 'romantic', name: 'Romantic', description: 'Soft, expressive beauty', color: '#e8b4b8', icon: '♡' },
+  { slug: 'artisanal', name: 'Artisanal', description: 'Crafted with intention', color: '#8c5f56', icon: '◇' },
+];
+
+const FABRICS = [
+  { name: 'Linen', slug: 'linen', description: 'Breathable, textured, natural' },
+  { name: 'Silk', slug: 'silk', description: 'Luminous, fluid, refined' },
+  { name: 'Merino Wool', slug: 'merino-wool', description: 'Soft, warm, resilient' },
+  { name: 'Cotton', slug: 'cotton', description: 'Everyday comfort, engineered' },
+];
+
 export default async function HomePage() {
   const { banner, featured, newArrivals, categories, collections, reviews } = await getHomepage();
 
@@ -452,6 +468,158 @@ export default async function HomePage() {
           </div>
         </section>
       ) : null}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * TRENDING NOW — Most popular pieces this week
+       * ═══════════════════════════════════════════════════════════════════ */}
+      {arrivals.length > 0 && (
+        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="trending-title">
+          <div className="u-container">
+            <div className="flex items-end justify-between gap-6 mb-12">
+              <div>
+                <span className="u-label text-accent mb-3 block">Most wanted</span>
+                <h2 id="trending-title" className="u-display text-3xl md:text-4xl">
+                  Trending Now
+                </h2>
+              </div>
+              <Link
+                href="/products?sort=popular"
+                className="u-label hover:text-accent transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
+              >
+                See all trending
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+            </div>
+            <ul className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6">
+              {arrivals.slice(0, 4).map((p) => (
+                <li key={p.id}>
+                  <ProductCard
+                    id={p.id}
+                    slug={p.slug}
+                    name={p.name}
+                    subtitle={p.subtitle}
+                    basePrice={p.basePrice}
+                    compareAtPrice={p.compareAtPrice}
+                    images={p.images}
+                    gender={p.gender}
+                    occasion={p.occasion ?? undefined}
+                    ratingAvg={p.ratingAvg}
+                    ratingCount={p.ratingCount}
+                    variants={p.variants}
+                    inStock={p.hasStock}
+                    colors={p.colors}
+                    sizes={p.sizes}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * SHOP BY MOOD — Discovery through aesthetic language
+       * ═══════════════════════════════════════════════════════════════════ */}
+      <section className="py-16 md:py-24 bg-ink text-paper u-content-visibility" aria-labelledby="moods-title">
+        <div className="u-container">
+          <div className="text-center mb-12">
+            <span className="u-label text-accent mb-3 block">Discover by aesthetic</span>
+            <h2 id="moods-title" className="u-display text-3xl md:text-5xl">
+              Shop by Mood
+            </h2>
+            <p className="text-paper/50 mt-3 max-w-lg mx-auto">
+              Not sure what you are looking for? Start with how you want to feel.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {MOODS.map((mood) => (
+              <Link
+                key={mood.slug}
+                href={`/products?mood=${mood.slug}`}
+                className="group relative aspect-[3/4] rounded-lg overflow-hidden u-focus"
+              >
+                <div
+                  className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
+                  style={{
+                    background: `linear-gradient(160deg, ${mood.color} 0%, ${mood.color}33 100%)`,
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                  <span className="text-3xl mb-2 text-paper/80" aria-hidden="true">{mood.icon}</span>
+                  <h3 className="u-display text-lg text-paper mb-1">{mood.name}</h3>
+                  <p className="text-[11px] text-paper/50 leading-tight">{mood.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * SHOP BY FABRIC — Material-first discovery
+       * ═══════════════════════════════════════════════════════════════════ */}
+      <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="fabrics-title">
+        <div className="u-container">
+          <div className="flex items-end justify-between gap-6 mb-12">
+            <div>
+              <span className="u-label text-accent mb-3 block">Feel the difference</span>
+              <h2 id="fabrics-title" className="u-display text-3xl md:text-4xl">
+                Shop by Fabric
+              </h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {FABRICS.map((fabric) => (
+              <Link
+                key={fabric.slug}
+                href={`/products?fabric=${fabric.slug}`}
+                className="group p-6 border border-line rounded-lg hover:border-accent transition-all duration-500 u-focus"
+              >
+                <h3 className="u-display text-xl mb-2 group-hover:text-accent transition-colors">{fabric.name}</h3>
+                <p className="text-sm text-muted">{fabric.description}</p>
+                <span className="mt-4 inline-flex items-center gap-1 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
+                  Explore <ChevronRight className="w-3 h-3" aria-hidden="true" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * STYLE QUIZ CTA — Personalization entry point
+       * ═══════════════════════════════════════════════════════════════════ */}
+      <section className="py-16 md:py-20 bg-paper-2 u-content-visibility" aria-labelledby="quiz-cta-title">
+        <div className="u-container">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
+            <div className="flex-1 text-center md:text-left">
+              <span className="u-label text-accent mb-3 block">Know your style</span>
+              <h2 id="quiz-cta-title" className="u-display text-3xl md:text-4xl mb-4">
+                Find Your Style Profile
+              </h2>
+              <p className="text-muted text-lg mb-6 max-w-md">
+                Answer four quick questions. We will curate a collection that fits your taste, occasion, and lifestyle.
+              </p>
+              <Link href="/style-quiz">
+                <Button size="lg" className="gap-2">
+                  Take the Style Quiz
+                  <ChevronRight className="w-5 h-5" aria-hidden="true" />
+                </Button>
+              </Link>
+            </div>
+            <div className="flex-1 relative">
+              <div className="aspect-[4/3] rounded-lg bg-ink/5 flex items-center justify-center">
+                <div className="text-center p-8">
+                  <div className="text-6xl mb-4" aria-hidden="true">◻ ♡ ◆</div>
+                  <p className="text-sm text-muted">4 questions. 30 seconds. A wardrobe that understands you.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
        * TRUST STRIP

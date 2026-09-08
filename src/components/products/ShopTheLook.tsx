@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Eye, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Eye, ChevronRight, Loader2, Check } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { apiPost } from '@/lib/api-client';
+import { useCartStore, useToast } from '@/app/providers';
 
 interface OutfitItem {
   id: string;
@@ -26,6 +28,38 @@ interface ShopTheLookProps {
 export function ShopTheLook({ outfitName, items, heroImage }: ShopTheLookProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [addingAll, setAddingAll] = useState(false);
+  const [allAdded, setAllAdded] = useState(false);
+  const { refresh: refreshCart } = useCartStore();
+  const { toast } = useToast();
+
+  const addAllToBag = useCallback(async () => {
+    if (addingAll || allAdded) return;
+    setAddingAll(true);
+    let successCount = 0;
+    for (const item of items) {
+      try {
+        const product = await apiPost<{ id: string; variants: { id: string; size: string; color: string; stock: number }[] }>(`/api/products/${item.slug}`, {});
+        if (product?.variants?.length) {
+          const variant = product.variants.find((v) => v.stock > 0) || product.variants[0];
+          if (variant) {
+            await apiPost('/api/cart', { variantId: variant.id, qty: 1 });
+            successCount++;
+          }
+        }
+      } catch {
+        // Continue with remaining items
+      }
+    }
+    await refreshCart();
+    setAddingAll(false);
+    if (successCount > 0) {
+      setAllAdded(true);
+      toast({ title: 'Added to bag', message: `${successCount} ${successCount === 1 ? 'piece' : 'pieces'} added to your bag`, tone: 'success' });
+    } else {
+      toast({ title: 'Could not add items', message: 'Some items may be out of stock', tone: 'warning' });
+    }
+  }, [items, addingAll, allAdded, refreshCart, toast]);
 
   return (
     <div className="relative">
@@ -147,9 +181,19 @@ export function ShopTheLook({ outfitName, items, heroImage }: ShopTheLookProps) 
             </div>
 
             <div className="flex justify-center mt-6">
-              <button className="flex items-center gap-2 px-6 py-3 bg-ink text-paper rounded-md text-sm font-medium hover:bg-ink-2 transition-colors u-focus">
-                <ShoppingBag className="w-4 h-4" aria-hidden="true" />
-                Add entire outfit to bag
+              <button
+                onClick={addAllToBag}
+                disabled={addingAll || allAdded}
+                className="flex items-center gap-2 px-6 py-3 bg-ink text-paper rounded-md text-sm font-medium hover:bg-ink-2 transition-colors u-focus disabled:opacity-60"
+              >
+                {addingAll ? (
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                ) : allAdded ? (
+                  <Check className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  <ShoppingBag className="w-4 h-4" aria-hidden="true" />
+                )}
+                {allAdded ? 'Added to bag' : 'Add entire outfit to bag'}
                 <span className="text-paper/60 ml-2">
                   {formatCurrency(items.reduce((acc, item) => acc + item.basePrice, 0))}
                 </span>

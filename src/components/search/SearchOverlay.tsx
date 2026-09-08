@@ -28,11 +28,14 @@ interface SearchResult {
 }
 
 const POPULAR_SEARCHES = [
-  { label: 'Dresses', query: 'dress' },
-  { label: 'Sarees', query: 'saree' },
-  { label: 'Kurtas', query: 'kurta' },
-  { label: 'New Arrivals', query: 'new' },
-  { label: 'Sale', query: 'sale' },
+  { label: 'Minimal black dress', query: 'minimal black dress' },
+  { label: 'Linen outfit', query: 'linen outfit' },
+  { label: 'Oversized shirt', query: 'oversized shirt' },
+  { label: 'Quiet luxury', query: 'quiet luxury' },
+  { label: 'Office wear', query: 'office wear' },
+  { label: 'Silk blouse', query: 'silk blouse' },
+  { label: 'Wedding guest', query: 'wedding guest' },
+  { label: 'Summer casual', query: 'summer casual' },
 ];
 
 const RECENT_STORAGE_KEY = 'lumen_recent_searches';
@@ -211,13 +214,21 @@ export function SearchOverlay() {
                 {/* Quick links */}
                 <div className="pt-2 border-t border-line">
                   <div className="grid grid-cols-2 gap-2">
-                    <Link href="/products?new=true" onClick={closeOverlay} className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-ink hover:bg-ink/5 rounded-md transition-colors u-focus">
+                    <Link href="/products?sort=newest" onClick={closeOverlay} className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-ink hover:bg-ink/5 rounded-md transition-colors u-focus">
                       <span className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center text-accent text-xs font-medium">New</span>
                       New Arrivals
                     </Link>
-                    <Link href="/products?featured=true" onClick={closeOverlay} className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-ink hover:bg-ink/5 rounded-md transition-colors u-focus">
+                    <Link href="/products?sort=popular" onClick={closeOverlay} className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-ink hover:bg-ink/5 rounded-md transition-colors u-focus">
                       <span className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center text-accent text-xs font-medium">Hot</span>
                       Bestsellers
+                    </Link>
+                    <Link href="/style-quiz" onClick={closeOverlay} className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-ink hover:bg-ink/5 rounded-md transition-colors u-focus">
+                      <span className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center text-accent text-xs font-medium">Quiz</span>
+                      Style Quiz
+                    </Link>
+                    <Link href="/occasions" onClick={closeOverlay} className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-ink hover:bg-ink/5 rounded-md transition-colors u-focus">
+                      <span className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center text-accent text-xs font-medium">Shop</span>
+                      By Occasion
                     </Link>
                   </div>
                 </div>

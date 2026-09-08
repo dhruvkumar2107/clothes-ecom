@@ -8,6 +8,7 @@ import { Heart, ShoppingBag, Truck, RotateCcw, Shield, ChevronRight, X, Shirt, C
 import { Button } from '@/components/ui/Button';
 import { QtyStepper } from '@/components/ui/QtyStepper';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/Accordion';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useToast } from '@/app/providers';
 import { apiPost } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/utils';
@@ -420,21 +421,44 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Suspense fallback={null}>
-                <FabricZoomViewer images={product.images} selectedColor={selectedColor} productName={product.name} />
-                {product.sizeGuide && <AnimatedSizeSlider chart={product.sizeGuide} productName={product.name} />}
-                <FitPredictor productId={product.id} productName={product.name} sizeChart={product.sizeGuide} />
-                <AIStylist currentProduct={{ id: product.id, name: product.name, category: product.gender, color: selectedColor, imageUrl: product.images[0]?.url || '' }} />
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={null}>
+                  <FabricZoomViewer images={product.images} selectedColor={selectedColor} productName={product.name} />
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={null}>
+                  {product.sizeGuide && <AnimatedSizeSlider chart={product.sizeGuide} productName={product.name} />}
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={null}>
+                  <FitPredictor productId={product.id} productName={product.name} sizeChart={product.sizeGuide} />
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={null}>
+                  <AIStylist currentProduct={{ id: product.id, name: product.name, category: product.gender, color: selectedColor, imageUrl: product.images[0]?.url || '' }} />
+                </Suspense>
+              </ErrorBoundary>
             </div>
 
             <Accordion type="single" collapsible className="border border-line rounded-lg overflow-hidden">
+              {product.story && (
+                <AccordionItem value="story">
+                  <AccordionTrigger className="py-4">The Story</AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    <div className="prose prose-sm max-w-none text-muted">
+                      <p className="whitespace-pre-wrap leading-relaxed">{product.story}</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
               <AccordionItem value="details">
                 <AccordionTrigger className="py-4">Details</AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <div className="prose prose-sm max-w-none text-muted">
                     <p className="whitespace-pre-wrap">{product.description}</p>
-                    {product.story && <p className="mt-4 whitespace-pre-wrap">{product.story}</p>}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -481,19 +505,50 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                   </div>
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="model-info">
+                <AccordionTrigger className="py-4">Model Information</AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="space-y-2 text-sm text-muted">
+                    <p><strong>Model is wearing:</strong> Size M</p>
+                    <p><strong>Model&apos;s height:</strong> 5&apos;11&quot; (180 cm)</p>
+                    <p><strong>Model&apos;s chest:</strong> 38&quot; (96 cm)</p>
+                    <p className="text-xs text-muted-2 mt-3">The model is wearing a sample size. Fit may vary based on individual body measurements.</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
+
+            {/* Fit & Confidence indicators */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="text-center p-3 border border-line rounded-lg">
+                <p className="u-label text-[10px] mb-1">Fabric</p>
+                <p className="text-sm text-ink font-medium">{product.fabric ? product.fabric.split(',')[0] : 'Premium'}</p>
+              </div>
+              <div className="text-center p-3 border border-line rounded-lg">
+                <p className="u-label text-[10px] mb-1">Fit</p>
+                <p className="text-sm text-ink font-medium capitalize">{product.fit || 'Regular'}</p>
+              </div>
+              <div className="text-center p-3 border border-line rounded-lg">
+                <p className="u-label text-[10px] mb-1">Occasion</p>
+                <p className="text-sm text-ink font-medium capitalize">{product.occasion || 'Versatile'}</p>
+              </div>
+            </div>
           </div>
         </div>
 
         {product.sustainability && (
           <div className="mt-12 border-t border-line pt-12">
-            <Suspense fallback={null}><SustainabilityTags data={product.sustainability} /></Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={null}><SustainabilityTags data={product.sustainability} /></Suspense>
+            </ErrorBoundary>
           </div>
         )}
 
         {product.shopTheLook && product.shopTheLook.items.length > 0 && (
           <div className="mt-12 border-t border-line pt-12">
-            <Suspense fallback={null}><ShopTheLook outfitName={product.shopTheLook.name} items={product.shopTheLook.items} heroImage={product.images[0]?.url || ''} /></Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={null}><ShopTheLook outfitName={product.shopTheLook.name} items={product.shopTheLook.items} heroImage={product.images[0]?.url || ''} /></Suspense>
+            </ErrorBoundary>
           </div>
         )}
       </div>

@@ -8,6 +8,7 @@ import { Plus, X, GripVertical, Trash2, ShoppingBag, Eye, Sparkles, Filter } fro
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/app/providers';
 import { apiGet, apiPost, apiDelete } from '@/lib/api-client';
+import { formatCurrency } from '@/lib/utils';
 
 interface WardrobeItem {
   id: string;
@@ -263,7 +264,7 @@ export default function VirtualWardrobePage() {
                         <span className="text-[10px] text-muted">{item.size}</span>
                       </div>
                       <p className="text-xs text-ink mt-1">
-                        ₹{(item.price / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {formatCurrency(item.price)}
                       </p>
                     </div>
                   </motion.div>

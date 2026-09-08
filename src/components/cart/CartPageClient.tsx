@@ -8,7 +8,7 @@ import { Plus, Minus, Trash2, Heart, ChevronRight, Loader2, RotateCcw } from 'lu
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { formatCurrency } from '@/lib/utils';
-import { apiGet, apiPatch, apiDelete } from '@/lib/api-client';
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api-client';
 import { useCartStore, useToast } from '@/app/providers';
 import type { CartView } from '@/lib/cart';
 import type { PricedLine, CartTotals } from '@/lib/pricing';
@@ -396,7 +396,16 @@ export function CartPageClient({ initialCart }: CartPageClientProps) {
                           <p className="text-sm text-ink font-medium">{formatCurrency(item.unitPrice)}</p>
                         </div>
                         <button
-                          onClick={() => {}}
+                          onClick={async () => {
+                            try {
+                              await apiPost('/api/cart', { variantId: item.itemId, qty: 1 });
+                              await apiDelete('/api/cart', { itemId: item.itemId });
+                              await refreshCart();
+                              toast({ title: 'Moved to bag', message: `${item.productName} moved back to your bag`, tone: 'success' });
+                            } catch {
+                              toast({ title: 'Error', message: 'Failed to move item', tone: 'danger' });
+                            }
+                          }}
                           className="text-xs text-accent hover:underline flex-shrink-0"
                         >
                           Move to Bag

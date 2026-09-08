@@ -8,6 +8,7 @@ import { UserPlus, ExternalLink, ShoppingBag, Heart, Star, Filter, ChevronRight 
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/app/providers';
 import { apiGet, apiPost } from '@/lib/api-client';
+import { formatCurrency } from '@/lib/utils';
 
 interface Creator {
   id: string;
@@ -185,7 +186,7 @@ export default function CreatorsPage() {
                   </div>
                   <h3 className="text-sm font-medium text-ink group-hover:text-accent transition-colors">{product.name}</h3>
                   <p className="text-xs text-muted mt-1 italic">"{product.curatorNote}"</p>
-                  <p className="text-sm text-ink mt-1">₹{(product.price / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-sm text-ink mt-1">{formatCurrency(product.price)}</p>
                 </Link>
               ))}
             </div>

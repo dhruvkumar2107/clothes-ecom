@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChevronRight, ShoppingCart, Heart, RefreshCw, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { apiPost, apiGet } from '@/lib/api-client';
+import { formatCurrency } from '@/lib/utils';
 import { useCartStore } from '@/app/providers';
 
 interface OutfitItem {
@@ -197,7 +198,7 @@ export function AIStylist({ currentProduct, className }: AIStylistProps) {
                           <div className="text-right">
                             <p className="u-label text-xs text-muted">Outfit Total</p>
                             <p className="u-display text-lg text-ink font-medium">
-                              ₹{(rec.total / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              {formatCurrency(rec.total)}
                             </p>
                           </div>
                         </div>
@@ -242,7 +243,7 @@ export function AIStylist({ currentProduct, className }: AIStylistProps) {
                               </div>
                               <p className="text-[11px] text-ink font-medium truncate">{item.name}</p>
                               <p className="text-[10px] text-muted">
-                                ₹{(item.price / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                {formatCurrency(item.price)}
                               </p>
                             </div>
                           ))}

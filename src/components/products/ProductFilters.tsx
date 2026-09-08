@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ChevronDown, ChevronUp, X, SlidersHorizontal } from 'lucide-react';
 import { Button, Input, Checkbox } from '@/components/ui';
+import { Drawer } from '@/components/ui/Drawer';
 import { formatCurrency } from '@/lib/utils';
 
 interface ProductFiltersProps {
@@ -44,43 +45,37 @@ export function ProductFilters({ categories, collections, initialParams, onChang
     price: true,
   });
   const [priceRange, setPriceRange] = useState({ min: 0, max: 50000 });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleChange = (key: string, value: string | null) => {
+  const handleChange = useCallback((key: string, value: string | null) => {
     const newParams = { ...initialParams };
     if (value) newParams[key] = value;
     else delete newParams[key];
     newParams.page = '1';
     onChange(newParams);
-  };
+  }, [initialParams, onChange]);
 
-  const handleMultiChange = (key: string, values: string[]) => {
+  const handleMultiChange = useCallback((key: string, values: string[]) => {
     const newParams = { ...initialParams };
     if (values.length > 0) newParams[key] = values.join(',');
     else delete newParams[key];
     newParams.page = '1';
     onChange(newParams);
-  };
+  }, [initialParams, onChange]);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     onChange({});
-  };
+  }, [onChange]);
 
   const hasActiveFilters = Object.keys(initialParams).length > 0;
 
-  return (
-    <aside className="space-y-6" role="complementary" aria-label="Product filters">
-      {/* Mobile filter toggle */}
-      <div className="lg:hidden">
-        <Button variant="outline" className="w-full justify-between" onClick={() => {}}>
-          <span>Filters</span>
-          <ChevronDown className="w-4 h-4" aria-hidden="true" />
-        </Button>
-      </div>
+  const activeFilterCount = Object.keys(initialParams).filter(k => k !== 'page' && k !== 'sort').length;
 
+  const FilterContent = () => (
+    <div className="space-y-6">
       {/* Category */}
       <FilterSection
         title="Category"
-        key="category"
         expanded={expanded.category}
         onToggle={() => setExpanded(p => ({ ...p, category: !p.category }))}
       >
@@ -100,7 +95,6 @@ export function ProductFilters({ categories, collections, initialParams, onChang
       {/* Collection */}
       <FilterSection
         title="Collection"
-        key="collection"
         expanded={expanded.collection}
         onToggle={() => setExpanded(p => ({ ...p, collection: !p.collection }))}
       >
@@ -120,7 +114,6 @@ export function ProductFilters({ categories, collections, initialParams, onChang
       {/* Gender */}
       <FilterSection
         title="Gender"
-        key="gender"
         expanded={expanded.gender ?? true}
         onToggle={() => setExpanded(p => ({ ...p, gender: !p.gender }))}
       >
@@ -140,7 +133,6 @@ export function ProductFilters({ categories, collections, initialParams, onChang
       {/* Occasion */}
       <FilterSection
         title="Occasion"
-        key="occasion"
         expanded={expanded.occasion}
         onToggle={() => setExpanded(p => ({ ...p, occasion: !p.occasion }))}
       >
@@ -164,7 +156,6 @@ export function ProductFilters({ categories, collections, initialParams, onChang
       {/* Size */}
       <FilterSection
         title="Size"
-        key="size"
         expanded={expanded.size}
         onToggle={() => setExpanded(p => ({ ...p, size: !p.size }))}
       >
@@ -192,7 +183,6 @@ export function ProductFilters({ categories, collections, initialParams, onChang
       {/* Color */}
       <FilterSection
         title="Color"
-        key="color"
         expanded={expanded.color}
         onToggle={() => setExpanded(p => ({ ...p, color: !p.color }))}
       >
@@ -227,7 +217,6 @@ export function ProductFilters({ categories, collections, initialParams, onChang
       {/* Price Range */}
       <FilterSection
         title="Price Range"
-        key="price"
         expanded={expanded.price}
         onToggle={() => setExpanded(p => ({ ...p, price: !p.price }))}
       >
@@ -276,7 +265,7 @@ export function ProductFilters({ categories, collections, initialParams, onChang
       </FilterSection>
 
       {/* Sort */}
-      <FilterSection title="Sort By" key="sort">
+      <FilterSection title="Sort By">
         <select
           value={initialParams.sort || 'newest'}
           onChange={(e) => handleChange('sort', e.target.value === 'newest' ? null : e.target.value)}
@@ -295,7 +284,43 @@ export function ProductFilters({ categories, collections, initialParams, onChang
           Clear All Filters
         </Button>
       )}
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      <aside className="space-y-6" role="complementary" aria-label="Product filters">
+        {/* Mobile filter toggle */}
+        <div className="lg:hidden">
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            onClick={() => setMobileOpen(true)}
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-accent text-paper">
+                  {activeFilterCount}
+                </span>
+              )}
+            </span>
+            <ChevronDown className="w-4 h-4" aria-hidden="true" />
+          </Button>
+        </div>
+
+        {/* Desktop filters */}
+        <div className="hidden lg:block">
+          <FilterContent />
+        </div>
+      </aside>
+
+      {/* Mobile filter drawer */}
+      <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} side="left" title="Filters">
+        <FilterContent />
+      </Drawer>
+    </>
   );
 }
 

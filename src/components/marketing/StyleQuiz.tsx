@@ -17,7 +17,7 @@ interface QuizStep {
 const QUIZ_STEPS: QuizStep[] = [
   {
     id: 'occasion',
-    question: 'What场合场合 (occasion) are you shopping for?',
+    question: 'What occasion are you shopping for?',
     subtitle: 'We will curate picks based on where you will wear it.',
     icon: MapPin,
     options: [
@@ -25,7 +25,7 @@ const QUIZ_STEPS: QuizStep[] = [
       { value: 'casual', label: 'Casual & Everyday', emoji: '🌿', description: 'Relaxed, everyday comfort' },
       { value: 'festive', label: 'Festive & Celebrations', emoji: '✨', description: 'Bold, celebratory pieces' },
       { value: 'wedding', label: 'Weddings & Events', emoji: '💒', description: 'Statement formal wear' },
-      { value: 'travel', label: 'Travel &度假', emoji: '✈️', description: 'Packable, versatile pieces' },
+      { value: 'travel', label: 'Travel & Holiday', emoji: '✈️', description: 'Packable, versatile pieces' },
     ],
   },
   {
