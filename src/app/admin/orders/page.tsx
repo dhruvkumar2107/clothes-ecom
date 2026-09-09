@@ -1,23 +1,31 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
-import { Eye } from 'lucide-react';
+import { Eye, Search, Filter, ArrowUpDown } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 const PER_PAGE = 25;
 
 interface PageProps {
-  searchParams: Promise<{ page?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; status?: string; q?: string }>;
 }
 
 export default async function AdminOrdersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
   const status = params.status || '';
+  const q = (params.q ?? '').trim().slice(0, 80);
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, any> = {};
   if (status) where.status = status;
+  if (q) {
+    where.OR = [
+      { orderNumber: { contains: q, mode: 'insensitive' } },
+      { user: { name: { contains: q, mode: 'insensitive' } } },
+      { user: { email: { contains: q, mode: 'insensitive' } } },
+    ];
+  }
 
   const [orders, total] = await Promise.all([
     db.order.findMany({
@@ -26,14 +34,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
       select: {
-        id: true,
-        orderNumber: true,
-        placedAt: true,
-        grandTotal: true,
-        status: true,
-        paymentStatus: true,
+        id: true, orderNumber: true, placedAt: true, grandTotal: true, status: true,
+        paymentStatus: true, paymentMethod: true, shippingTotal: true, discountTotal: true,
+        items: { select: { qty: true, name: true, size: true, color: true } },
         user: { select: { name: true, email: true } },
-        items: { select: { qty: true } },
       },
     }),
     db.order.count({ where }),
@@ -41,111 +45,128 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 
-  const href = (next: Partial<{ page: number; status: string }>) => {
-    const merged = { page, status, ...next };
+  const href = (next: Partial<{ page: number; status: string; q: string }>) => {
+    const merged = { page, status, q, ...next };
     const search = new URLSearchParams();
-    if (merged.page > 1) search.set('page', String(merged.page));
+    if (merged.page && merged.page > 1) search.set('page', String(merged.page));
     if (merged.status) search.set('status', merged.status);
+    if (merged.q) search.set('q', merged.q);
     const query = search.toString();
     return query ? `/admin/orders?${query}` : '/admin/orders';
   };
 
   const statuses = ['', 'pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled', 'returned'];
 
+  const statusColors: Record<string, string> = {
+    pending: 'bg-[#D4A853]/10 text-[#9C7C4E] border border-[#D4A853]/20',
+    confirmed: 'bg-blue-50 text-blue-600 border border-blue-200',
+    processing: 'bg-purple-50 text-purple-600 border border-purple-200',
+    packed: 'bg-indigo-50 text-indigo-600 border border-indigo-200',
+    shipped: 'bg-indigo-50 text-indigo-600 border border-indigo-200',
+    delivered: 'bg-emerald-50 text-emerald-600 border border-emerald-200',
+    cancelled: 'bg-red-50 text-red-600 border border-red-200',
+    returned: 'bg-orange-50 text-orange-600 border border-orange-200',
+  };
+
+  const paymentColors: Record<string, string> = {
+    paid: 'bg-emerald-50 text-emerald-600 border border-emerald-200',
+    unpaid: 'bg-[#D4A853]/10 text-[#9C7C4E] border border-[#D4A853]/20',
+    refunded: 'bg-purple-50 text-purple-600 border border-purple-200',
+    partially_refunded: 'bg-purple-50 text-purple-600 border border-purple-200',
+    failed: 'bg-red-50 text-red-600 border border-red-200',
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between pb-6 border-b border-zinc-800/80">
+    <div className="space-y-4 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-zinc-100 tracking-wide">Orders & Refunds Control</h1>
-          <p className="text-xs text-zinc-400 mt-1">{total} total orders — review purchases, issue refunds, manage fulfillment.</p>
+          <h1 className="text-lg font-semibold text-[#0A0A0A]" style={{ fontFamily: "'Playfair Display', serif" }}>Orders</h1>
+          <p className="text-[12px] text-[#7A7468] mt-0.5">{total} total orders</p>
         </div>
       </div>
 
-      <div className="flex gap-1.5 flex-wrap">
+      {/* Search */}
+      <form method="GET" action="/admin/orders" className="flex gap-2 max-w-md">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9E9789]" />
+          <input name="q" defaultValue={q} placeholder="Search by order number, customer..."
+            className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E8E5DE] rounded-lg text-[11px] text-[#0A0A0A] placeholder-[#9E9789] focus:outline-none focus:border-[#9C7C4E]/50 transition-colors" />
+        </div>
+        {status ? <input type="hidden" name="status" value={status} /> : null}
+        <button type="submit" className="px-3 py-1.5 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white rounded-lg text-[11px] font-medium transition-colors">Search</button>
+      </form>
+
+      {/* Status Filters */}
+      <div className="flex gap-1 flex-wrap">
         {statuses.map((s) => (
-          <Link
-            key={s || 'all'}
-            href={href({ status: s, page: 1 })}
-            className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider border transition-colors ${
+          <Link key={s || 'all'} href={href({ status: s, page: 1 })}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-colors ${
               status === s
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'text-zinc-400 border-zinc-800 hover:bg-zinc-800'
-            }`}
-          >
+                ? 'bg-[#9C7C4E]/10 text-[#9C7C4E] border border-[#9C7C4E]/20'
+                : 'text-[#7A7468] border border-[#E8E5DE] hover:bg-[#F3F1ED]'
+            }`}>
             {s || 'All'}
           </Link>
         ))}
       </div>
 
-      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl overflow-hidden shadow-2xl">
+      {/* Orders Table */}
+      <div className="bg-white rounded-xl border border-[#E8E5DE] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-zinc-300">
-            <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+          <table className="w-full text-left text-[11px]">
+            <thead className="bg-[#FAF9F7] text-[#7A7468] uppercase text-[9px] tracking-wider border-b border-[#E8E5DE]">
               <tr>
-                <th className="px-6 py-4">Order #</th>
-                <th className="px-6 py-4">Customer</th>
-                <th className="px-6 py-4">Items</th>
-                <th className="px-6 py-4">Total</th>
-                <th className="px-6 py-4">Fulfillment</th>
-                <th className="px-6 py-4">Payment</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-4 py-2.5 font-medium">Order</th>
+                <th className="px-4 py-2.5 font-medium">Customer</th>
+                <th className="px-4 py-2.5 font-medium">Items</th>
+                <th className="px-4 py-2.5 font-medium">Total</th>
+                <th className="px-4 py-2.5 font-medium">Payment</th>
+                <th className="px-4 py-2.5 font-medium">Status</th>
+                <th className="px-4 py-2.5 font-medium">Date</th>
+                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60">
+            <tbody className="divide-y divide-[#F3F1ED]">
               {orders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-zinc-500">
-                    No orders found.
-                  </td>
-                </tr>
-              ) : (
-                orders.map((order) => {
-                  const totalItems = order.items.reduce((acc, item) => acc + item.qty, 0);
-                  return (
-                    <tr key={order.id} className="hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-amber-300">
-                        #{order.orderNumber}
-                        <span className="block text-[10px] text-zinc-500 font-sans font-normal mt-0.5">
-                          {new Date(order.placedAt).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-medium text-zinc-100 block">{order.user.name}</span>
-                        <span className="text-[10px] text-zinc-400 font-mono">{order.user.email}</span>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-zinc-200">{totalItems} items</td>
-                      <td className="px-6 py-4 font-mono font-semibold text-zinc-100">{formatMoney(order.grandTotal)}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          order.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                          : order.status === 'cancelled' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                          : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          order.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : order.paymentStatus === 'refunded' || order.paymentStatus === 'partially_refunded' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                          : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        }`}>
-                          {order.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link
-                          href={`/admin/orders/${order.id}`}
-                          className="inline-flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-zinc-700/60"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-amber-400" /> Details
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-[#9E9789]">No orders found.</td></tr>
+              ) : orders.map((order) => {
+                const totalItems = order.items.reduce((acc, item) => acc + item.qty, 0);
+                const itemSummary = order.items.slice(0, 2).map(i => i.name).join(', ') + (order.items.length > 2 ? ` +${order.items.length - 2} more` : '');
+                return (
+                  <tr key={order.id} className="hover:bg-[#FAF9F7] transition-colors">
+                    <td className="px-4 py-2.5">
+                      <Link href={`/admin/orders/${order.id}`} className="font-mono font-semibold text-[#9C7C4E] hover:underline text-[11px]">#{order.orderNumber}</Link>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="font-medium text-[#0A0A0A] block text-[11px]">{order.user.name}</span>
+                      <span className="text-[9px] text-[#9E9789]">{order.user.email}</span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="text-[#0A0A0A]">{totalItems} items</span>
+                      <span className="block text-[9px] text-[#9E9789] truncate max-w-[16ch]">{itemSummary}</span>
+                    </td>
+                    <td className="px-4 py-2.5 font-semibold text-[#0A0A0A]">{formatMoney(order.grandTotal)}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider ${paymentColors[order.paymentStatus] || 'bg-gray-50 text-gray-600'}`}>
+                        {order.paymentStatus}
+                      </span>
+                      <span className="block text-[9px] text-[#9E9789] mt-0.5 capitalize">{order.paymentMethod || '—'}</span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider ${statusColors[order.status] || 'bg-gray-50 text-gray-600'}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-[10px] text-[#7A7468]">{new Date(order.placedAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      <Link href={`/admin/orders/${order.id}`}
+                        className="inline-flex items-center gap-1 bg-[#F3F1ED] hover:bg-[#E8E5DE] text-[#0A0A0A] px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors">
+                        <Eye className="w-3 h-3" /> View
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -153,17 +174,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
 
       {totalPages > 1 && (
         <nav className="flex items-center justify-between" aria-label="Pagination">
-          {page > 1 ? (
-            <Link href={href({ page: page - 1 })} className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors">
-              Previous
-            </Link>
-          ) : <span />}
-          <span className="text-xs text-zinc-500">Page {page} of {totalPages}</span>
-          {page < totalPages ? (
-            <Link href={href({ page: page + 1 })} className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors">
-              Next
-            </Link>
-          ) : <span />}
+          <p className="text-[10px] text-[#9E9789]">Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} of {total}</p>
+          <div className="flex items-center gap-1">
+            {page > 1 && <Link href={href({ page: page - 1 })} className="px-3 py-1.5 text-[10px] bg-white border border-[#E8E5DE] hover:bg-[#F3F1ED] rounded-lg transition-colors">Previous</Link>}
+            {page < totalPages && <Link href={href({ page: page + 1 })} className="px-3 py-1.5 text-[10px] bg-white border border-[#E8E5DE] hover:bg-[#F3F1ED] rounded-lg transition-colors">Next</Link>}
+          </div>
         </nav>
       )}
     </div>

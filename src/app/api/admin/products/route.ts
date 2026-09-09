@@ -14,12 +14,17 @@ const CreateProductSchema = z.object({
   story: z.string().optional(),
   basePrice: z.string().min(1),
   compareAtPrice: z.string().optional(),
+  costPrice: z.string().optional(),
   fabric: z.string().optional(),
   occasion: z.string().optional(),
   fit: z.string().optional(),
   gender: z.string().optional(),
   categoryId: z.string().cuid(),
   imageUrl: z.string().url().optional(),
+  collectionIds: z.array(z.string()).optional(),
+  tags: z.string().optional(),
+  featured: z.boolean().optional(),
+  status: z.string().optional(),
   variants: z.array(z.object({
     size: z.string().optional(),
     color: z.string().optional(),
@@ -38,40 +43,25 @@ export async function POST(req: Request) {
     }
 
     const {
-      name,
-      slug,
-      subtitle,
-      description,
-      story,
-      basePrice,
-      compareAtPrice,
-      fabric,
-      occasion,
-      fit,
-      gender,
-      categoryId,
-      imageUrl,
-      variants,
+      name, slug, subtitle, description, story, basePrice, compareAtPrice, costPrice,
+      fabric, occasion, fit, gender, categoryId, imageUrl, collectionIds, tags, featured, status, variants,
     } = parsed.data;
 
-    const basePricePaise = Math.round(parseFloat(basePrice) * 100);
-    const compareAtPricePaise = compareAtPrice ? Math.round(parseFloat(compareAtPrice) * 100) : null;
+    const basePricePaise = Math.round(parseFloat(basePrice));
+    const compareAtPricePaise = compareAtPrice ? Math.round(parseFloat(compareAtPrice)) : null;
+    const costPricePaise = costPrice ? Math.round(parseFloat(costPrice)) : null;
 
     const imageList = imageUrl
-      ? [{ url: imageUrl, alt: name, kind: 'gallery', sortOrder: 1 }]
-      : [
-          {
-            url: '/images/product-linen-shirt.webp',
-            alt: name,
-            kind: 'gallery',
-            sortOrder: 1,
-          },
-        ];
+      ? [{ url: imageUrl, alt: name, kind: 'gallery', colorKey: null, sortOrder: 1 }]
+      : [{
+          url: `/api/img/product/${slug.toLowerCase()}/800x1000.svg?label=${encodeURIComponent(name)}`,
+          alt: name, kind: 'gallery', colorKey: null, sortOrder: 1,
+        }];
 
     const variantList =
       Array.isArray(variants) && variants.length > 0
         ? variants.map((v) => ({
-            sku: `${slug.toUpperCase()}-${(v.size || 'M').toUpperCase()}-${(v.color || 'BLACK').toUpperCase().slice(0, 3)}`,
+            sku: `${slug.toUpperCase()}-${(v.size || 'M').toUpperCase()}-${(v.color || 'BLK').toUpperCase().slice(0, 3)}`,
             size: v.size || 'M',
             color: v.color || 'Default',
             colorHex: v.colorHex || '#111111',
@@ -93,15 +83,19 @@ export async function POST(req: Request) {
         story,
         basePrice: basePricePaise,
         compareAtPrice: compareAtPricePaise,
+        costPrice: costPricePaise,
         fabric: fabric || 'Premium Cotton Blend',
         occasion: occasion || 'casual',
         fit: fit || 'regular',
         gender: gender || 'unisex',
-        status: 'active',
-        featured: true,
+        status: status || 'active',
+        featured: featured || false,
         categoryId,
         images: { create: imageList },
         variants: { create: variantList },
+        collections: collectionIds && collectionIds.length > 0
+          ? { create: collectionIds.map(collectionId => ({ collectionId })) }
+          : undefined,
       },
     });
 

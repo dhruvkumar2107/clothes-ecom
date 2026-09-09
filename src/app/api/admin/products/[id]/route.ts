@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { apiOk, apiError } from '@/lib/api';
@@ -14,6 +14,7 @@ const UpdateProductSchema = z.object({
   story: z.string().optional(),
   basePrice: z.coerce.number().min(0).optional(),
   compareAtPrice: z.coerce.number().min(0).optional().nullable(),
+  costPrice: z.coerce.number().min(0).optional().nullable(),
   fabric: z.string().optional(),
   occasion: z.string().optional(),
   fit: z.string().optional(),
@@ -21,6 +22,20 @@ const UpdateProductSchema = z.object({
   status: z.enum(['active', 'draft', 'archived']).optional(),
   featured: z.boolean().optional(),
   categoryId: z.string().cuid().optional(),
+  collectionIds: z.array(z.string()).optional(),
+  variants: z.array(z.object({
+    size: z.string().optional(),
+    color: z.string().optional(),
+    colorHex: z.string().optional(),
+    stock: z.coerce.number().min(0).optional(),
+  })).optional(),
+  images: z.array(z.object({
+    url: z.string(),
+    alt: z.string().optional(),
+    kind: z.string().optional(),
+    colorKey: z.string().nullable().optional(),
+    sortOrder: z.number().optional(),
+  })).optional(),
 });
 
 export async function PATCH(
@@ -36,9 +51,63 @@ export async function PATCH(
       return apiError('VALIDATION_ERROR', 'Invalid input', 400, { details: parsed.error.flatten().fieldErrors });
     }
 
-    const product = await db.product.update({
-      where: { id },
-      data: parsed.data,
+    const { collectionIds, variants, images, ...updateData } = parsed.data;
+
+    const product = await db.$transaction(async (tx) => {
+      // Update product fields
+      const updated = await tx.product.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // Update collections if provided
+      if (collectionIds !== undefined) {
+        await tx.productCollection.deleteMany({ where: { productId: id } });
+        if (collectionIds.length > 0) {
+          await tx.productCollection.createMany({
+            data: collectionIds.map(collectionId => ({ productId: id, collectionId })),
+          });
+        }
+      }
+
+      // Update variants if provided
+      if (variants !== undefined) {
+        await tx.productVariant.deleteMany({ where: { productId: id } });
+        if (variants.length > 0) {
+          await tx.productVariant.createMany({
+            data: variants.map((v, i) => ({
+              productId: id,
+              sku: `${updated.slug.toUpperCase()}-${(v.size || 'M').toUpperCase()}-${(v.color || 'DEF').toUpperCase().slice(0, 3)}`,
+              size: v.size || 'M',
+              color: v.color || 'Default',
+              colorHex: v.colorHex || '#111111',
+              priceDelta: 0,
+              stock: v.stock || 10,
+              weightGrams: 300,
+              sortOrder: i,
+            })),
+          });
+        }
+      }
+
+      // Update images if provided
+      if (images !== undefined) {
+        await tx.productImage.deleteMany({ where: { productId: id } });
+        if (images.length > 0) {
+          await tx.productImage.createMany({
+            data: images.map((img, i) => ({
+              productId: id,
+              url: img.url,
+              alt: img.alt || updated.name,
+              kind: img.kind || 'gallery',
+              colorKey: img.colorKey || null,
+              sortOrder: img.sortOrder ?? i,
+            })),
+          });
+        }
+      }
+
+      return updated;
     });
 
     return apiOk({ data: product });
@@ -59,9 +128,7 @@ export async function DELETE(
     await requireAdmin(['products.delete']);
     const { id } = await params;
 
-    await db.product.delete({
-      where: { id },
-    });
+    await db.product.delete({ where: { id } });
 
     return apiOk({ deleted: true });
   } catch (error: any) {

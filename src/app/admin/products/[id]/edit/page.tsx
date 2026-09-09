@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function EditProductPage({ params }: EditProductPageProps) {
   const { id } = await params;
 
-  const [product, categories] = await Promise.all([
+  const [product, categories, collections, productCollections] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: {
@@ -24,11 +24,18 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
       orderBy: { name: 'asc' },
       select: { id: true, name: true, slug: true },
     }),
+    db.collection.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: 'asc' },
+      select: { id: true, name: true, slug: true },
+    }),
+    db.productCollection.findMany({
+      where: { productId: id },
+      select: { collectionId: true },
+    }),
   ]);
 
-  if (!product) {
-    notFound();
-  }
+  if (!product) notFound();
 
   const formattedProduct = {
     name: product.name,
@@ -36,14 +43,19 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     subtitle: product.subtitle || '',
     description: product.description || '',
     story: product.story || '',
-    basePrice: (product.basePrice / 100).toFixed(2),
-    compareAtPrice: product.compareAtPrice ? (product.compareAtPrice / 100).toFixed(2) : '',
+    basePrice: String(product.basePrice),
+    compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : '',
+    costPrice: product.costPrice ? String(product.costPrice) : '',
     fabric: product.fabric || '',
     occasion: product.occasion || 'casual',
     fit: product.fit || 'regular',
     gender: product.gender || 'unisex',
     categoryId: product.categoryId,
     imageUrl: product.images[0]?.url || '',
+    collectionIds: productCollections.map(pc => pc.collectionId),
+    tags: '',
+    featured: product.featured,
+    status: product.status,
   };
 
   const formattedVariants = product.variants.map((v) => ({
@@ -54,16 +66,14 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   }));
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="pb-6 border-b border-zinc-800/80 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-zinc-100 tracking-wide">Edit Product</h1>
-          <p className="text-xs text-zinc-400 mt-1">Modify product details, pricing, variants, and imagery.</p>
-        </div>
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-5">
+        <h1 className="text-lg font-semibold text-[#0A0A0A]" style={{ fontFamily: "'Playfair Display', serif" }}>Edit Product</h1>
+        <p className="text-[12px] text-[#7A7468] mt-0.5">Modify product details, pricing, variants, and imagery</p>
       </div>
-
       <ProductForm
         categories={categories}
+        collections={collections}
         initialData={formattedProduct}
         initialVariants={formattedVariants}
         productId={id}

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { Plus, Layers, GripVertical, Edit, Trash2, Eye, Shield } from 'lucide-react';
+import { Plus, GripVertical, Edit, Trash2, Eye } from 'lucide-react';
+import { SmartImage } from '@/components/ui/SmartImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,114 +15,99 @@ export default async function AdminCollectionsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-zinc-100 tracking-wide">Collections</h1>
-          <p className="text-xs text-zinc-400 mt-1">Organize products into curated collections for storefront display.</p>
+          <h1 className="text-xl font-semibold text-[#0A0A0A]" style={{ fontFamily: "'Playfair Display', serif" }}>Collections</h1>
+          <p className="text-[13px] text-[#7A7468] mt-0.5">Curate products for storefront display</p>
         </div>
         <Link
           href="/admin/collections/new"
-          className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-4 py-2 rounded-lg text-xs font-semibold shadow-md shadow-amber-500/10 transition-all self-start sm:self-auto"
+          className="flex items-center justify-center gap-1.5 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-[12px] font-medium transition-colors self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           Create Collection
         </Link>
       </div>
 
-      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-xl border border-[#E8E5DE] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-zinc-300">
-            <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+          <table className="w-full text-left text-[12px]">
+            <thead className="bg-[#FAF9F7] text-[#7A7468] uppercase text-[10px] tracking-wider border-b border-[#E8E5DE]">
               <tr>
-                <th className="px-6 py-4 w-10">Sort</th>
-                <th className="px-6 py-4">Collection</th>
-                <th className="px-6 py-4">Slug</th>
-                <th className="px-6 py-4">Products</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Featured</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-5 py-3 w-10 font-medium"></th>
+                <th className="px-5 py-3 font-medium">Collection</th>
+                <th className="px-5 py-3 font-medium">Slug</th>
+                <th className="px-5 py-3 font-medium">Products</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Featured</th>
+                <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60">
+            <tbody className="divide-y divide-[#F3F1ED]">
               {collections.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-zinc-500">
-                    No collections created yet. Click "Create Collection" to start.
+                  <td colSpan={7} className="px-5 py-16 text-center text-[#9E9789]">
+                    No collections yet. Click "Create Collection" to start.
                   </td>
                 </tr>
               ) : (
                 collections.map((collection) => (
-                  <tr key={collection.id} className="hover:bg-zinc-800/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <GripVertical className="w-4 h-4 text-zinc-500 cursor-grab hover:text-amber-400 mx-auto" />
+                  <tr key={collection.id} className="hover:bg-[#FAF9F7] transition-colors">
+                    <td className="px-5 py-3">
+                      <GripVertical className="w-3.5 h-3.5 text-[#E8E5DE] cursor-grab mx-auto" />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         {collection.heroImage && (
-                          <div className="relative w-10 h-10 rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/60 shrink-0">
-                            <img
-                              src={collection.heroImage}
-                              alt={collection.name}
-                              className="w-full h-full object-cover"
-                            />
+                          <div className="relative w-9 h-9 rounded-md overflow-hidden bg-[#F3F1ED] shrink-0">
+                            <SmartImage src={collection.heroImage} alt={collection.name} fill sizes="36px" className="object-cover" />
                           </div>
                         )}
                         <div>
-                          <span className="font-semibold text-zinc-100 block text-sm">{collection.name}</span>
+                          <span className="font-medium text-[#0A0A0A] block text-[13px]">{collection.name}</span>
                           {collection.description && (
-                            <span className="text-[10px] text-zinc-400 line-clamp-1">{collection.description}</span>
+                            <span className="text-[10px] text-[#9E9789] line-clamp-1">{collection.description}</span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-mono text-zinc-400">
-                      /{collection.slug}
-                    </td>
-                    <td className="px-6 py-4 font-mono font-medium text-zinc-200">
-                      {collection._count.products}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          collection.active
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                        }`}
-                      >
+                    <td className="px-5 py-3 font-mono text-[#7A7468] text-[11px]">/{collection.slug}</td>
+                    <td className="px-5 py-3 font-medium text-[#0A0A0A]">{collection._count.products}</td>
+                    <td className="px-5 py-3">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                        collection.active
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          : 'bg-[#F3F1ED] text-[#7A7468] border border-[#E8E5DE]'
+                      }`}>
                         {collection.active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          collection.featured
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                        }`}
-                      >
+                    <td className="px-5 py-3">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                        collection.featured
+                          ? 'bg-[#D4A853]/10 text-[#9C7C4E] border border-[#D4A853]/20'
+                          : 'bg-[#F3F1ED] text-[#7A7468] border border-[#E8E5DE]'
+                      }`}>
                         {collection.featured ? 'Yes' : 'No'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-5 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <Link
                           href={`/collections/${collection.slug}`}
                           target="_blank"
-                          className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded transition-colors"
-                          title="View on Storefront"
+                          className="p-1.5 text-[#7A7468] hover:text-[#9C7C4E] hover:bg-[#F3F1ED] rounded-md transition-colors"
+                          title="View"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3.5 h-3.5" />
                         </Link>
                         <Link
                           href={`/admin/collections/${collection.id}/edit`}
-                          className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-zinc-800 rounded transition-colors"
-                          title="Edit Collection"
+                          className="p-1.5 text-[#7A7468] hover:text-[#9C7C4E] hover:bg-[#F3F1ED] rounded-md transition-colors"
+                          title="Edit"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5" />
                         </Link>
-                        <button className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded transition-colors" title="Delete Collection">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>

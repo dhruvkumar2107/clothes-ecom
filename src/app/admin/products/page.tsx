@@ -3,11 +3,14 @@ import { SmartImage } from '@/components/ui/SmartImage';
 import { db } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { DeleteRowButton } from '@/components/admin/DeleteRowButton';
-import { Plus, Edit, ExternalLink, Search, AlertTriangle } from 'lucide-react';
+import {
+  Plus, Edit, ExternalLink, Search, AlertTriangle, Grid, List,
+  Star, Sparkles, Tag, Eye, MoreHorizontal, Copy,
+} from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-const PER_PAGE = 25;
+const PER_PAGE = 24;
 
 const STATUSES = [
   { value: '', label: 'All' },
@@ -16,11 +19,10 @@ const STATUSES = [
   { value: 'archived', label: 'Archived' },
 ];
 
-/** Below this, the row is flagged so the operator can reorder. */
 const LOW_STOCK = 5;
 
 interface PageProps {
-  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string; gender?: string; collection?: string; view?: string }>;
 }
 
 export default async function AdminProductsPage({ searchParams }: PageProps) {
@@ -28,271 +30,298 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const q = (params.q ?? '').trim().slice(0, 80);
   const status = STATUSES.some((s) => s.value === params.status) ? params.status! : '';
   const page = Math.max(1, Number(params.page) || 1);
+  const gender = params.gender || '';
+  const view = params.view || 'list';
 
-  const where = {
-    ...(status ? { status } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: 'insensitive' as const } },
-            { slug: { contains: q, mode: 'insensitive' as const } },
-            // SKUs live on the variants, so a SKU search matches through them.
-            { variants: { some: { sku: { contains: q, mode: 'insensitive' as const } } } },
-          ],
-        }
-      : {}),
-  };
+  const where: Record<string, any> = {};
+  if (status) where.status = status;
+  if (gender) where.gender = gender;
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: 'insensitive' } },
+      { slug: { contains: q, mode: 'insensitive' } },
+      { variants: { some: { sku: { contains: q, mode: 'insensitive' } } } },
+      { category: { name: { contains: q, mode: 'insensitive' } } },
+    ];
+  }
 
-  // Paginated — the catalogue only grows, and an unbounded findMany here would
-  // eventually time out the admin.
-  const [products, total] = await Promise.all([
+  const [products, total, collections] = await Promise.all([
     db.product.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
       select: {
-        id: true,
-        slug: true,
-        name: true,
-        basePrice: true,
-        status: true,
-        category: { select: { name: true } },
-        images: { take: 1, orderBy: { sortOrder: 'asc' }, select: { url: true } },
-        variants: { select: { sku: true, stock: true, reserved: true } },
+        id: true, slug: true, name: true, basePrice: true, compareAtPrice: true, status: true,
+        featured: true, gender: true, soldCount: true, ratingAvg: true, createdAt: true,
+        category: { select: { name: true, slug: true } },
+        images: { take: 1, orderBy: { sortOrder: 'asc' }, select: { url: true, colorKey: true } },
+        variants: { select: { sku: true, stock: true, reserved: true, color: true, colorHex: true, size: true } },
+        collections: { select: { collection: { select: { name: true, slug: true } } } },
+        _count: { select: { images: true, variants: true } },
       },
     }),
     db.product.count({ where }),
+    db.collection.findMany({ where: { active: true }, select: { id: true, name: true, slug: true }, orderBy: { sortOrder: 'asc' } }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const href = (next: Partial<{ q: string; status: string; page: number }>) => {
-    const merged = { q, status, page, ...next };
+
+  const href = (next: Partial<{ q: string; status: string; page: number; gender: string; view: string }>) => {
+    const merged = { q, status, page, gender, view, ...next };
     const search = new URLSearchParams();
     if (merged.q) search.set('q', merged.q);
     if (merged.status) search.set('status', merged.status);
-    if (merged.page > 1) search.set('page', String(merged.page));
+    if (merged.gender) search.set('gender', merged.gender);
+    if (merged.page && merged.page > 1) search.set('page', String(merged.page));
+    if (merged.view) search.set('view', merged.view);
     const query = search.toString();
     return query ? `/admin/products?${query}` : '/admin/products';
   };
 
+  const getUniqueColors = (variants: { color: string; colorHex: string }[]) => {
+    const seen = new Set<string>();
+    return variants.filter(v => { if (seen.has(v.color)) return false; seen.add(v.color); return true; });
+  };
+
+  const getStatusBadge = (product: any) => {
+    const available = product.variants.reduce((acc: number, v: any) => acc + Math.max(0, v.stock - v.reserved), 0);
+    const badges: string[] = [];
+    if (product.featured) badges.push('FEATURED');
+    if (product.soldCount > 20) badges.push('BEST SELLER');
+    if (product.compareAtPrice) badges.push('SALE');
+    const daysSinceCreation = Math.floor((Date.now() - new Date(product.createdAt).getTime()) / 86400000);
+    if (daysSinceCreation <= 14) badges.push('NEW');
+    if (available === 0) badges.push('OUT OF STOCK');
+    else if (available <= LOW_STOCK) badges.push('LOW STOCK');
+    return badges;
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-zinc-100 tracking-wide">
-            Product Catalogue
-          </h1>
-          <p className="text-xs text-zinc-400 mt-1">
-            {total} {total === 1 ? 'product' : 'products'} — manage listings, inventory, prices and
-            imagery.
-          </p>
+          <h1 className="text-lg font-semibold text-[#0A0A0A]" style={{ fontFamily: "'Playfair Display', serif" }}>Products</h1>
+          <p className="text-[12px] text-[#7A7468] mt-0.5">{total} products in catalogue</p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-4 py-2 rounded-lg text-xs font-semibold shadow-md shadow-amber-500/10 transition-all self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          Add Product
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={href({ view: view === 'grid' ? 'list' : 'grid' })} className="flex items-center gap-1.5 bg-white border border-[#E8E5DE] text-[#0A0A0A] px-3 py-1.5 rounded-lg text-[11px] font-medium hover:bg-[#F3F1ED] transition-colors">
+            {view === 'grid' ? <List className="w-3.5 h-3.5" /> : <Grid className="w-3.5 h-3.5" />}
+            {view === 'grid' ? 'List' : 'Grid'}
+          </Link>
+          <Link href="/admin/products/new" className="flex items-center gap-1.5 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors">
+            <Plus className="w-3 h-3" /> Add Product
+          </Link>
+        </div>
       </div>
 
-      {/* Filters. A GET form and links, so every view has a shareable URL. */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
         <form method="GET" action="/admin/products" className="flex gap-2 flex-1 max-w-md">
-          <label htmlFor="admin-product-q" className="sr-only">
-            Search products
-          </label>
           <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500"
-              aria-hidden="true"
-            />
-            <input
-              id="admin-product-q"
-              name="q"
-              defaultValue={q}
-              placeholder="Name, slug or SKU"
-              className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-amber-500/60"
-            />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9E9789]" />
+            <input name="q" defaultValue={q} placeholder="Search name, SKU, category..."
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E8E5DE] rounded-lg text-[11px] text-[#0A0A0A] placeholder-[#9E9789] focus:outline-none focus:border-[#9C7C4E]/50 transition-colors" />
           </div>
           {status ? <input type="hidden" name="status" value={status} /> : null}
-          <button
-            type="submit"
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-200 transition-colors"
-          >
-            Search
-          </button>
+          {gender ? <input type="hidden" name="gender" value={gender} /> : null}
+          <button type="submit" className="px-3 py-1.5 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white rounded-lg text-[11px] font-medium transition-colors">Search</button>
         </form>
 
-        <div className="flex gap-1.5">
-          {STATUSES.map((s) => (
-            <Link
-              key={s.value || 'all'}
-              href={href({ status: s.value, page: 1 })}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider border transition-colors ${
-                status === s.value
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                  : 'text-zinc-400 border-zinc-800 hover:bg-zinc-800'
-              }`}
-            >
-              {s.label}
-            </Link>
-          ))}
+        <div className="flex items-center gap-1.5">
+          <div className="flex bg-white border border-[#E8E5DE] rounded-lg overflow-hidden">
+            {STATUSES.map((s) => (
+              <Link key={s.value || 'all'} href={href({ status: s.value, page: 1 })}
+                className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${status === s.value ? 'bg-[#9C7C4E]/10 text-[#9C7C4E]' : 'text-[#7A7468] hover:bg-[#F3F1ED]'}`}>
+                {s.label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex bg-white border border-[#E8E5DE] rounded-lg overflow-hidden">
+            {['', 'men', 'women', 'unisex'].map((g) => (
+              <Link key={g || 'all'} href={href({ gender: g, page: 1 })}
+                className={`px-2.5 py-1 text-[10px] font-medium capitalize transition-colors ${gender === g ? 'bg-[#9C7C4E]/10 text-[#9C7C4E]' : 'text-[#7A7468] hover:bg-[#F3F1ED]'}`}>
+                {g || 'All'}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl overflow-hidden shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-zinc-300">
-            <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
-              <tr>
-                <th className="px-6 py-4">Product</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Base Price</th>
-                <th className="px-6 py-4">Available</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/60">
-              {products.length === 0 ? (
+      {/* Grid View */}
+      {view === 'grid' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {products.map((product) => {
+            const mainImage = product.images[0]?.url ?? null;
+            const available = product.variants.reduce((acc, v) => acc + Math.max(0, v.stock - v.reserved), 0);
+            const badges = getStatusBadge(product);
+            const colors = getUniqueColors(product.variants);
+            return (
+              <div key={product.id} className="bg-white rounded-xl border border-[#E8E5DE] overflow-hidden group hover:shadow-md transition-all">
+                <div className="relative aspect-[3/4] bg-[#F3F1ED] overflow-hidden">
+                  {mainImage ? <SmartImage src={mainImage} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" /> : null}
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                    {badges.slice(0, 2).map((b) => (
+                      <span key={b} className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                        b === 'FEATURED' ? 'bg-[#9C7C4E] text-white' :
+                        b === 'BEST SELLER' ? 'bg-[#0A0A0A] text-white' :
+                        b === 'SALE' ? 'bg-red-500 text-white' :
+                        b === 'NEW' ? 'bg-blue-500 text-white' :
+                        b === 'OUT OF STOCK' ? 'bg-red-600 text-white' :
+                        'bg-[#D4A853] text-white'
+                      }`}>{b}</span>
+                    ))}
+                  </div>
+                  <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <Link href={`/admin/products/${product.id}`} className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-[#0A0A0A] hover:bg-white"><Edit className="w-3 h-3" /></Link>
+                    <Link href={`/products/${product.slug}`} target="_blank" className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-[#0A0A0A] hover:bg-white"><ExternalLink className="w-3 h-3" /></Link>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <div className="flex items-center gap-1 mb-1">
+                    {colors.slice(0, 4).map((c) => (
+                      <span key={c.color} className="w-3 h-3 rounded-full border border-[#E8E5DE]" style={{ backgroundColor: c.colorHex }} title={c.color} />
+                    ))}
+                    {colors.length > 4 && <span className="text-[8px] text-[#9E9789]">+{colors.length - 4}</span>}
+                  </div>
+                  <Link href={`/admin/products/${product.id}`} className="text-[11px] font-medium text-[#0A0A0A] hover:text-[#9C7C4E] line-clamp-1 block transition-colors">{product.name}</Link>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] font-semibold text-[#0A0A0A]">{formatMoney(product.basePrice)}</span>
+                    {product.compareAtPrice && <span className="text-[9px] text-[#9E9789] line-through">{formatMoney(product.compareAtPrice)}</span>}
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[9px] text-[#7A7468]">{product.category?.name || '—'}</span>
+                    <span className={`text-[9px] font-bold ${available === 0 ? 'text-red-500' : available <= LOW_STOCK ? 'text-[#9C7C4E]' : 'text-[#3D6B4D]'}`}>
+                      {available} in stock
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* List View */
+        <div className="bg-white rounded-xl border border-[#E8E5DE] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[11px]">
+              <thead className="bg-[#FAF9F7] text-[#7A7468] uppercase text-[9px] tracking-wider border-b border-[#E8E5DE]">
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
-                    {q || status
-                      ? 'No products match this filter.'
-                      : 'No products added yet. Click “Add Product” to create your first listing.'}
-                  </td>
+                  <th className="px-4 py-2.5 font-medium">Product</th>
+                  <th className="px-4 py-2.5 font-medium">Category</th>
+                  <th className="px-4 py-2.5 font-medium">Colors</th>
+                  <th className="px-4 py-2.5 font-medium">Price</th>
+                  <th className="px-4 py-2.5 font-medium">Stock</th>
+                  <th className="px-4 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 font-medium">Badges</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                 </tr>
-              ) : (
-                products.map((product) => {
+              </thead>
+              <tbody className="divide-y divide-[#F3F1ED]">
+                {products.length === 0 ? (
+                  <tr><td colSpan={8} className="px-4 py-12 text-center text-[#9E9789]">
+                    {q || status ? 'No products match this filter.' : 'No products yet. Click "Add Product" to create your first listing.'}
+                  </td></tr>
+                ) : products.map((product) => {
                   const mainImage = product.images[0]?.url ?? null;
-                  // Reserved units are already promised to open carts and orders.
-                  const available = product.variants.reduce(
-                    (acc, v) => acc + Math.max(0, v.stock - v.reserved),
-                    0,
-                  );
+                  const available = product.variants.reduce((acc, v) => acc + Math.max(0, v.stock - v.reserved), 0);
                   const low = available <= LOW_STOCK;
-
+                  const badges = getStatusBadge(product);
+                  const colors = getUniqueColors(product.variants);
                   return (
-                    <tr key={product.id} className="hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3.5">
-                          <div className="relative w-12 h-14 rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/60 shrink-0">
-                            {mainImage ? (
-                              <SmartImage
-                                src={mainImage}
-                                alt=""
-                                fill
-                                sizes="48px"
-                                className="object-cover"
-                              />
-                            ) : null}
+                    <tr key={product.id} className="hover:bg-[#FAF9F7] transition-colors">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative w-9 h-11 rounded-md overflow-hidden bg-[#F3F1ED] shrink-0">
+                            {mainImage ? <SmartImage src={mainImage} alt="" fill sizes="36px" className="object-cover" /> : null}
                           </div>
                           <div className="min-w-0">
-                            <Link
-                              href={`/admin/products/${product.id}`}
-                              className="font-medium text-zinc-100 hover:text-amber-400 transition-colors block truncate max-w-[22ch]"
-                            >
-                              {product.name}
-                            </Link>
-                            <p className="text-[10px] text-zinc-500 mt-0.5">
-                              {product.variants[0]?.sku ?? product.slug}
-                            </p>
+                            <Link href={`/admin/products/${product.id}`} className="font-medium text-[#0A0A0A] hover:text-[#9C7C4E] transition-colors block truncate max-w-[20ch] text-[11px]">{product.name}</Link>
+                            <p className="text-[9px] text-[#9E9789] mt-0.5">{product.variants[0]?.sku ?? product.slug}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-zinc-400">
-                        {product.category?.name ?? '—'}
+                      <td className="px-4 py-2.5 text-[#7A7468]">{product.category?.name ?? '—'}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-0.5">
+                          {colors.slice(0, 3).map((c) => (
+                            <span key={c.color} className="w-3.5 h-3.5 rounded-full border border-[#E8E5DE]" style={{ backgroundColor: c.colorHex }} title={c.color} />
+                          ))}
+                          {colors.length > 3 && <span className="text-[8px] text-[#9E9789] ml-0.5">+{colors.length - 3}</span>}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-zinc-200 tabular-nums">
-                        {formatMoney(product.basePrice)}
+                      <td className="px-4 py-2.5">
+                        <span className="font-medium text-[#0A0A0A]">{formatMoney(product.basePrice)}</span>
+                        {product.compareAtPrice && <span className="block text-[9px] text-[#9E9789] line-through">{formatMoney(product.compareAtPrice)}</span>}
                       </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1 tabular-nums ${
-                            available === 0
-                              ? 'text-rose-400'
-                              : low
-                                ? 'text-amber-400'
-                                : 'text-zinc-200'
-                          }`}
-                        >
-                          {low ? (
-                            <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-                          ) : null}
-                          {available} units
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-flex items-center gap-0.5 tabular-nums font-medium ${available === 0 ? 'text-red-600' : low ? 'text-[#9C7C4E]' : 'text-[#0A0A0A]'}`}>
+                          {low && available > 0 && <AlertTriangle className="w-2.5 h-2.5" />}
+                          {available}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                            product.status === 'active'
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                          }`}
-                        >
-                          {product.status}
-                        </span>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider ${
+                          product.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                          product.status === 'draft' ? 'bg-yellow-50 text-yellow-600 border border-yellow-200' :
+                          'bg-[#F3F1ED] text-[#7A7468] border border-[#E8E5DE]'
+                        }`}>{product.status}</span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/admin/products/${product.id}`}
-                            className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded transition-colors"
-                            title="Edit product"
-                          >
-                            <Edit className="w-4 h-4" aria-hidden="true" />
-                          </Link>
-                          <Link
-                            href={`/products/${product.slug}`}
-                            target="_blank"
-                            className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded transition-colors"
-                            title="View on storefront"
-                          >
-                            <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                          </Link>
-                          <DeleteRowButton
-                            endpoint={`/api/admin/products/${product.id}`}
-                            name={product.name}
-                            kind="product"
-                          />
+                      <td className="px-4 py-2.5">
+                        <div className="flex flex-wrap gap-0.5">
+                          {badges.slice(0, 3).map((b) => (
+                            <span key={b} className={`text-[8px] font-bold uppercase px-1 py-0.5 rounded ${
+                              b === 'FEATURED' ? 'bg-[#9C7C4E]/10 text-[#9C7C4E]' :
+                              b === 'BEST SELLER' ? 'bg-[#0A0A0A]/10 text-[#0A0A0A]' :
+                              b === 'SALE' ? 'bg-red-50 text-red-600' :
+                              b === 'NEW' ? 'bg-blue-50 text-blue-600' :
+                              b === 'OUT OF STOCK' ? 'bg-red-50 text-red-600' :
+                              'bg-[#D4A853]/10 text-[#9C7C4E]'
+                            }`}>{b}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Link href={`/admin/products/${product.id}`} className="p-1.5 text-[#7A7468] hover:text-[#9C7C4E] hover:bg-[#F3F1ED] rounded-md transition-colors" title="Edit"><Edit className="w-3 h-3" /></Link>
+                          <Link href={`/products/${product.slug}`} target="_blank" className="p-1.5 text-[#7A7468] hover:text-[#9C7C4E] hover:bg-[#F3F1ED] rounded-md transition-colors" title="View on store"><ExternalLink className="w-3 h-3" /></Link>
+                          <DeleteRowButton endpoint={`/api/admin/products/${product.id}`} name={product.name} kind="product" />
                         </div>
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
+      {/* Pagination */}
       {totalPages > 1 ? (
         <nav className="flex items-center justify-between" aria-label="Pagination">
-          {page > 1 ? (
-            <Link
-              href={href({ page: page - 1 })}
-              className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors"
-            >
-              Previous
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-xs text-zinc-500">
-            Page {page} of {totalPages}
-          </span>
-          {page < totalPages ? (
-            <Link
-              href={href({ page: page + 1 })}
-              className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors"
-            >
-              Next
-            </Link>
-          ) : (
-            <span />
-          )}
+          <p className="text-[10px] text-[#9E9789]">
+            Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} of {total}
+          </p>
+          <div className="flex items-center gap-1">
+            {page > 1 && (
+              <Link href={href({ page: page - 1 })} className="px-3 py-1.5 text-[10px] bg-white border border-[#E8E5DE] hover:bg-[#F3F1ED] text-[#0A0A0A] rounded-lg transition-colors">Previous</Link>
+            )}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const p = page <= 3 ? i + 1 : page + i - 2;
+              if (p < 1 || p > totalPages) return null;
+              return (
+                <Link key={p} href={href({ page: p })}
+                  className={`px-2.5 py-1.5 text-[10px] rounded-lg transition-colors ${p === page ? 'bg-[#9C7C4E] text-white font-semibold' : 'bg-white border border-[#E8E5DE] hover:bg-[#F3F1ED] text-[#0A0A0A]'}`}>
+                  {p}
+                </Link>
+              );
+            })}
+            {page < totalPages && (
+              <Link href={href({ page: page + 1 })} className="px-3 py-1.5 text-[10px] bg-white border border-[#E8E5DE] hover:bg-[#F3F1ED] text-[#0A0A0A] rounded-lg transition-colors">Next</Link>
+            )}
+          </div>
         </nav>
       ) : null}
     </div>

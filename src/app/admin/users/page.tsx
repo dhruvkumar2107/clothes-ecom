@@ -67,26 +67,24 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-zinc-100 tracking-wide">Customer Roster</h1>
-          <p className="text-xs text-zinc-400 mt-1">{total} customers — manage accounts, view history, monitor referrals.</p>
-        </div>
+      <div>
+        <h1 className="text-xl font-semibold text-[#0A0A0A]" style={{ fontFamily: "'Playfair Display', serif" }}>Customers</h1>
+        <p className="text-[13px] text-[#7A7468] mt-0.5">{total} customers</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <form method="GET" action="/admin/users" className="flex gap-2 flex-1 max-w-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9E9789]" />
             <input
               name="q"
               defaultValue={q}
-              placeholder="Name, email, phone, referral code"
-              className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-amber-500/60"
+              placeholder="Search by name, email, phone..."
+              className="w-full pl-9 pr-3 py-2 bg-[#F3F1ED] border border-transparent rounded-lg text-[12px] text-[#0A0A0A] placeholder-[#9E9789] focus:outline-none focus:border-[#9C7C4E]/50 focus:bg-white transition-all"
             />
           </div>
           {status ? <input type="hidden" name="status" value={status} /> : null}
-          <button type="submit" className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-200 transition-colors">
+          <button type="submit" className="px-4 py-2 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white rounded-lg text-[12px] font-medium transition-colors">
             Search
           </button>
         </form>
@@ -95,10 +93,10 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
             <Link
               key={s || 'all'}
               href={href({ status: s, page: 1 })}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider border transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-colors ${
                 status === s
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                  : 'text-zinc-400 border-zinc-800 hover:bg-zinc-800'
+                  ? 'bg-[#9C7C4E]/10 text-[#9C7C4E] border border-[#9C7C4E]/20'
+                  : 'text-[#7A7468] border border-[#E8E5DE] hover:bg-[#F3F1ED]'
               }`}
             >
               {s || 'All'}
@@ -107,65 +105,65 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-xl border border-[#E8E5DE] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-zinc-300">
-            <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+          <table className="w-full text-left text-[12px]">
+            <thead className="bg-[#FAF9F7] text-[#7A7468] uppercase text-[10px] tracking-wider border-b border-[#E8E5DE]">
               <tr>
-                <th className="px-6 py-4">Customer</th>
-                <th className="px-6 py-4">Contact</th>
-                <th className="px-6 py-4">Orders</th>
-                <th className="px-6 py-4">Lifetime Spend</th>
-                <th className="px-6 py-4">Wallet</th>
-                <th className="px-6 py-4">Referral Code</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-5 py-3 font-medium">Customer</th>
+                <th className="px-5 py-3 font-medium">Contact</th>
+                <th className="px-5 py-3 font-medium">Orders</th>
+                <th className="px-5 py-3 font-medium">Spend</th>
+                <th className="px-5 py-3 font-medium">Wallet</th>
+                <th className="px-5 py-3 font-medium">Referral</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60">
+            <tbody className="divide-y divide-[#F3F1ED]">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-zinc-500">No customers found.</td>
+                  <td colSpan={8} className="px-5 py-16 text-center text-[#9E9789]">No customers found.</td>
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="hover:bg-zinc-800/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-xs">
+                  <tr key={user.id} className="hover:bg-[#FAF9F7] transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-[#9C7C4E]/10 flex items-center justify-center text-[#9C7C4E] font-semibold text-[10px]">
                           {user.name?.charAt(0) || (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
                         </div>
                         <div>
-                          <span className="font-medium text-zinc-100 block text-sm">{user.name || 'Unnamed'}</span>
-                          <span className="text-[10px] text-zinc-400 font-mono">Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                          <span className="font-medium text-[#0A0A0A] block text-[12px]">{user.name || 'Unnamed'}</span>
+                          <span className="text-[10px] text-[#9E9789]">Joined {new Date(user.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-[11px] text-zinc-300 font-mono block">{user.email}</span>
-                      {user.phone && <span className="text-[10px] text-zinc-500 font-mono">{user.phone}</span>}
+                    <td className="px-5 py-3">
+                      <span className="text-[11px] text-[#7A7468] block">{user.email}</span>
+                      {user.phone && <span className="text-[10px] text-[#9E9789]">{user.phone}</span>}
                     </td>
-                    <td className="px-6 py-4 font-mono font-medium text-zinc-200">{user._count.orders}</td>
-                    <td className="px-6 py-4 font-mono font-semibold text-zinc-100">{formatMoney(user.lifetimeSpend)}</td>
-                    <td className="px-6 py-4 font-mono text-emerald-400">{formatMoney(user.wallet?.balance || 0)}</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700/50 text-zinc-300 font-mono text-xs">
+                    <td className="px-5 py-3 font-medium text-[#0A0A0A]">{user._count.orders}</td>
+                    <td className="px-5 py-3 font-semibold text-[#0A0A0A]">{formatMoney(user.lifetimeSpend)}</td>
+                    <td className="px-5 py-3 text-[#3D6B4D]">{formatMoney(user.wallet?.balance || 0)}</td>
+                    <td className="px-5 py-3">
+                      <span className="px-2 py-0.5 rounded bg-[#F3F1ED] border border-[#E8E5DE] text-[#7A7468] font-mono text-[10px]">
                         {user.referralCode || '—'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                        user.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : user.status === 'banned' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                        : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                    <td className="px-5 py-3">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                        user.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                        : user.status === 'banned' ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-[#F3F1ED] text-[#7A7468] border border-[#E8E5DE]'
                       }`}>
                         {user.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-5 py-3 text-right">
                       <Link
                         href={`/admin/users/${user.id}`}
-                        className="inline-flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-zinc-700/60"
+                        className="inline-flex items-center gap-1 bg-[#F3F1ED] hover:bg-[#E8E5DE] text-[#0A0A0A] px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
                       >
                         View
                       </Link>
@@ -181,13 +179,13 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       {totalPages > 1 && (
         <nav className="flex items-center justify-between" aria-label="Pagination">
           {page > 1 ? (
-            <Link href={href({ page: page - 1 })} className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors">
+            <Link href={href({ page: page - 1 })} className="px-4 py-2 bg-white border border-[#E8E5DE] rounded-lg text-[12px] font-medium text-[#0A0A0A] hover:bg-[#F3F1ED] transition-colors">
               Previous
             </Link>
           ) : <span />}
-          <span className="text-xs text-zinc-500">Page {page} of {totalPages}</span>
+          <span className="text-[12px] text-[#7A7468]">Page {page} of {totalPages}</span>
           {page < totalPages ? (
-            <Link href={href({ page: page + 1 })} className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors">
+            <Link href={href({ page: page + 1 })} className="px-4 py-2 bg-white border border-[#E8E5DE] rounded-lg text-[12px] font-medium text-[#0A0A0A] hover:bg-[#F3F1ED] transition-colors">
               Next
             </Link>
           ) : <span />}

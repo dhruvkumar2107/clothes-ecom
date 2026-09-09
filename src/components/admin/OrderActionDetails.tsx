@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatMoney } from '@/lib/money';
-import { RotateCcw, Truck, Check, Loader2, DollarSign, X } from 'lucide-react';
+import { RotateCcw, Truck, Check, Loader2, X } from 'lucide-react';
 
 interface OrderActionProps {
   orderId: string;
@@ -86,15 +86,15 @@ export function OrderActionDetails({
 
   return (
     <div className="space-y-4">
-      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-[#E8E5DE] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs text-zinc-400 block font-medium">Update Fulfillment Status</span>
-          <div className="flex items-center gap-3 mt-1.5">
+          <span className="text-[11px] text-[#7A7468] block font-medium mb-1.5">Fulfillment Status</span>
+          <div className="flex items-center gap-3">
             <select
               value={status}
               disabled={updatingStatus}
               onChange={(e) => handleStatusChange(e.target.value)}
-              className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:border-amber-500/60 focus:outline-none"
+              className="bg-[#FAF9F7] border border-[#E8E5DE] rounded-lg px-3 py-1.5 text-[12px] text-[#0A0A0A] focus:border-[#9C7C4E]/50 focus:outline-none transition-colors"
             >
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
@@ -103,7 +103,7 @@ export function OrderActionDetails({
               <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
             </select>
-            {updatingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />}
+            {updatingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9C7C4E]" />}
           </div>
         </div>
 
@@ -111,50 +111,45 @@ export function OrderActionDetails({
           <button
             type="button"
             onClick={() => setShowRefundModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-zinc-100 px-4 py-2 rounded-lg text-xs font-semibold shadow-lg shadow-purple-500/10 transition-all"
+            className="flex items-center gap-1.5 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-[12px] font-medium transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Issue Order Refund
+            Process Refund
           </button>
         )}
       </div>
 
       {showRefundModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-lg p-6 space-y-6 relative shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                  <RotateCcw className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-zinc-100">Process Order Refund</h3>
-                  <p className="text-[11px] text-zinc-400">Order #{orderNumber}</p>
-                </div>
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E8E5DE] rounded-xl w-full max-w-lg p-6 space-y-5 relative shadow-xl">
+            <div className="flex items-center justify-between pb-4 border-b border-[#E8E5DE]">
+              <div>
+                <h3 className="text-[13px] font-semibold text-[#0A0A0A]">Process Refund</h3>
+                <p className="text-[11px] text-[#7A7468]">Order #{orderNumber}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowRefundModal(false)}
-                className="text-zinc-400 hover:text-zinc-100"
+                className="p-1.5 text-[#9E9789] hover:text-[#0A0A0A] rounded-md hover:bg-[#F3F1ED] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {refundError && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-[12px]">
                 {refundError}
               </div>
             )}
 
-            <form onSubmit={handleProcessRefund} className="space-y-4 text-xs text-zinc-300">
-              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 flex items-center justify-between font-mono">
-                <span className="text-zinc-400 text-[11px]">Max Refundable Amount:</span>
-                <span className="text-amber-300 font-bold">{formatMoney(remainingRefundablePaise)}</span>
+            <form onSubmit={handleProcessRefund} className="space-y-4 text-[12px]">
+              <div className="bg-[#FAF9F7] p-3 rounded-lg border border-[#E8E5DE] flex items-center justify-between">
+                <span className="text-[#7A7468] text-[11px]">Max Refundable</span>
+                <span className="font-semibold text-[#9C7C4E]">{formatMoney(remainingRefundablePaise)}</span>
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-zinc-400 mb-1">Refund Amount (₹) *</label>
+                <label className="block text-[11px] font-medium text-[#7A7468] mb-1">Amount (INR) *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -162,47 +157,47 @@ export function OrderActionDetails({
                   max={(remainingRefundablePaise / 100).toString()}
                   value={refundAmount}
                   onChange={(e) => setRefundAmount(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono focus:border-purple-500/60 focus:outline-none"
+                  className="w-full bg-[#FAF9F7] border border-[#E8E5DE] rounded-lg px-3 py-2 text-[#0A0A0A] font-mono text-[12px] focus:border-[#9C7C4E]/50 focus:outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-zinc-400 mb-1">Refund Method</label>
+                <label className="block text-[11px] font-medium text-[#7A7468] mb-1">Method</label>
                 <select
                   value={refundMode}
                   onChange={(e) => setRefundMode(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 focus:border-purple-500/60 focus:outline-none"
+                  className="w-full bg-[#FAF9F7] border border-[#E8E5DE] rounded-lg px-3 py-2 text-[#0A0A0A] text-[12px] focus:border-[#9C7C4E]/50 focus:outline-none transition-colors"
                 >
-                  <option value="wallet">Customer Store Wallet Balance (Instant)</option>
-                  <option value="source">Original Payment Gateway Source</option>
+                  <option value="wallet">Store Wallet (Instant)</option>
+                  <option value="source">Original Payment Source</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-zinc-400 mb-1">Refund Reason / Audit Note</label>
+                <label className="block text-[11px] font-medium text-[#7A7468] mb-1">Reason</label>
                 <textarea
                   rows={2}
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 focus:border-purple-500/60 focus:outline-none"
+                  className="w-full bg-[#FAF9F7] border border-[#E8E5DE] rounded-lg px-3 py-2 text-[#0A0A0A] text-[12px] focus:border-[#9C7C4E]/50 focus:outline-none transition-colors resize-y"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E8E5DE]">
                 <button
                   type="button"
                   onClick={() => setShowRefundModal(false)}
-                  className="px-4 py-2 rounded-lg border border-zinc-800 text-zinc-400 hover:text-zinc-100"
+                  className="px-4 py-2 rounded-lg border border-[#E8E5DE] text-[#7A7468] hover:bg-[#F3F1ED] text-[12px] font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={processingRefund}
-                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white px-5 py-2 rounded-lg font-semibold shadow-md"
+                  className="flex items-center gap-1.5 bg-[#0A0A0A] hover:bg-[#1A1A1A] disabled:opacity-50 text-white px-5 py-2 rounded-lg text-[12px] font-medium transition-colors"
                 >
                   {processingRefund && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Confirm & Process Refund
+                  Confirm Refund
                 </button>
               </div>
             </form>
