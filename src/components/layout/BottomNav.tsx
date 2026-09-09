@@ -19,7 +19,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-[50] bg-paper/95 backdrop-blur-sm border-t border-line safe-area-pb"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-paper/95 backdrop-blur-md border-t border-line safe-area-pb"
       aria-label="Mobile navigation"
     >
       <div className="flex items-center justify-around h-14">
@@ -36,9 +36,9 @@ export function BottomNav() {
               aria-current={isActive ? 'page' : undefined}
             >
               <div className="relative">
-                <item.icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.5} aria-hidden="true" />
+                <item.icon className="w-[18px] h-[18px]" strokeWidth={isActive ? 2 : 1.5} aria-hidden="true" />
                 {item.label === 'Bag' && count > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-1 bg-accent text-paper text-[8px] font-medium rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 px-1 bg-ink text-paper text-[8px] font-medium rounded-full flex items-center justify-center tabular-nums">
                     {count > 99 ? '99+' : count}
                   </span>
                 )}

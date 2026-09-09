@@ -1,18 +1,31 @@
 import type { Metadata, Viewport } from 'next';
-import { getSetting, getSettings } from '@/lib/settings';
+import { Playfair_Display, Inter } from 'next/font/google';
+import { getSettings } from '@/lib/settings';
 import { Providers } from '@/app/providers';
 import './globals.css';
 
-// Cache layout shell for 30s at the edge. Settings changes appear within 30s
-// while visitors get dramatically faster TTFB from cached HTML.
 export const revalidate = 30;
 
 const MainContentId = 'main-content';
 
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+  weight: ['300', '400', '500', '600'],
+});
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0b0b0c',
+  themeColor: '#0a0a0a',
 };
 
 export const metadata: Metadata = {
@@ -21,7 +34,7 @@ export const metadata: Metadata = {
     template: '%s | LUMEN&CO',
   },
   description: 'Future-facing luxury fashion. Engineered fabrics, sculptural silhouettes, and limited drops — shipped across India.',
-  keywords: ['luxury fashion', 'designer clothing', 'indian fashion', 'couture', 'womens wear', 'mens wear'],
+  keywords: ['luxury fashion', 'designer clothing', 'indian fashion', 'couture', 'womens wear', 'mens wear', 'premium fashion'],
   authors: [{ name: 'LUMEN&CO' }],
   creator: 'LUMEN&CO',
   publisher: 'LUMEN&CO',
@@ -92,8 +105,6 @@ export default async function RootLayout({
   const accentSecondary = theme['theme.accentSecondary'] as string;
   const accentTertiary = theme['theme.accentTertiary'] as string;
   const enableGrain = theme['theme.enableGrain'] as boolean;
-  const storeName = theme['store.name'] as string;
-  const tagline = theme['store.tagline'] as string;
   const locale = theme['store.defaultLocale'] as string;
   const currency = theme['store.defaultCurrency'] as string;
 
@@ -104,12 +115,11 @@ export default async function RootLayout({
   } as React.CSSProperties;
 
   return (
-    <html lang={locale} style={style} className={enableGrain ? 'u-grain' : ''}>
-      <head>
-        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        <link rel="preload" as="image" href="/images/hero-banner.webp" />
-      </head>
+    <html
+      lang={locale}
+      style={style}
+      className={`${playfair.variable} ${inter.variable} ${enableGrain ? 'u-grain' : ''}`}
+    >
       <body className="min-h-screen flex flex-col antialiased">
         <a
           href={`#${MainContentId}`}

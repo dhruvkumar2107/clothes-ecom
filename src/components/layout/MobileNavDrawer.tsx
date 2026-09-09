@@ -2,26 +2,29 @@
 
 import Link from 'next/link';
 import { useMobileNav, useSearchOverlay } from '@/app/providers';
-import { X, ChevronRight, ShoppingBag, Heart, User, Search, Sparkles, Tag, Star, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { X, Search } from 'lucide-react';
 
 const MOBILE_NAV = [
-  { label: 'Shop All', href: '/products', icon: ShoppingBag, highlight: false },
-  { label: 'New Arrivals', href: '/products?new=true', icon: Sparkles, highlight: true },
-  { label: 'Bestsellers', href: '/products?featured=true', icon: Star, highlight: false },
-  { label: 'Collections', href: '/collections', icon: null, highlight: false },
-  { label: 'Creator Storefronts', href: '/creators', icon: null, highlight: false },
-  { label: 'Virtual Try-On', href: '/virtual-try-on', icon: null, highlight: false },
-  { label: 'Virtual Wardrobe', href: '/wardrobe', icon: null, highlight: false },
-  { label: 'Style Quiz', href: '/style-quiz', icon: null, highlight: false },
-  { label: 'Sale', href: '/products?sale=true', icon: Tag, highlight: true },
+  { label: 'Women', href: '/products' },
+  { label: 'Men', href: '/products?gender=men' },
+  { label: 'New Arrivals', href: '/products?new=true' },
+  { label: 'Collections', href: '/collections' },
+  { label: 'Best Sellers', href: '/products?featured=true' },
+  { label: 'Sale', href: '/products?sale=true' },
 ];
 
-const QUICK_LINKS = [
-  { label: 'Dresses', href: '/products?category=dresses' },
-  { label: 'Kurtas', href: '/products?category=kurtas' },
-  { label: 'Sarees', href: '/products?category=sarees' },
-  { label: 'Tops', href: '/products?category=tops' },
+const HELP_LINKS = [
+  { label: 'Track Order', href: '/track' },
+  { label: 'Size Guide', href: '/size-guide' },
+  { label: 'Contact Us', href: '/contact' },
+  { label: 'FAQs', href: '/faq' },
+];
+
+const ACCOUNT_LINKS = [
+  { label: 'My Account', href: '/account' },
+  { label: 'Orders', href: '/account/orders' },
+  { label: 'Wishlist', href: '/account/wishlist' },
+  { label: 'Addresses', href: '/account/addresses' },
 ];
 
 export function MobileNavDrawer() {
@@ -31,94 +34,100 @@ export function MobileNavDrawer() {
 
   return (
     <>
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-ink/50 z-[90] animate-in backdrop-blur-sm"
+        className="fixed inset-0 bg-ink/40 z-[90] animate-fade-in backdrop-blur-sm"
         onClick={closeNav}
         aria-hidden="true"
       />
+
+      {/* Drawer */}
       <aside
-        className="fixed left-0 top-0 h-full w-full max-w-sm bg-paper z-[100] flex flex-col shadow-xl animate-in-left"
+        className="fixed left-0 top-0 h-full w-full max-w-sm bg-paper z-[100] flex flex-col shadow-2xl animate-slide-in-left"
         role="dialog"
         aria-label="Mobile navigation"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between p-4 border-b border-line">
-          <h2 className="u-display text-xl font-medium">Menu</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
+          <span className="u-display text-lg">Menu</span>
           <button
             onClick={closeNav}
-            className="w-10 h-10 rounded-md hover:bg-ink-2 flex items-center justify-center transition-colors u-focus"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-paper-2 transition-colors u-focus"
             aria-label="Close menu"
           >
-            <X className="w-5 h-5 text-ink" aria-hidden="true" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1" role="navigation">
-          {MOBILE_NAV.map((item, i) => (
-            <Link
-              key={i}
-              href={item.href}
-              onClick={closeNav}
-              className={'flex items-center gap-3 px-4 py-3 rounded-md transition-colors u-focus ' + (item.highlight ? 'text-accent hover:bg-accent/5' : 'text-ink hover:bg-ink-2')}
-            >
-              {item.icon ? (
-                <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-              ) : (
-                <div className="w-5 h-5" />
-              )}
-              <span className="font-medium">{item.label}</span>
-              <ChevronRight className="w-4 h-4 text-muted ml-auto" aria-hidden="true" />
-            </Link>
-          ))}
-
-          {/* Quick category links */}
-          <div className="pt-4 border-t border-line mt-4">
-            <p className="u-label px-4 mb-3">Quick Links</p>
-            <div className="grid grid-cols-2 gap-2 px-4">
-              {QUICK_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeNav}
-                  className="px-3 py-2 text-sm text-ink bg-ink/5 rounded-md hover:bg-ink/10 transition-colors u-focus text-center"
-                >
-                  {link.label}
-                </Link>
+        {/* Content */}
+        <nav className="flex-1 overflow-y-auto" role="navigation">
+          {/* Main Navigation */}
+          <div className="px-6 py-6">
+            <ul className="space-y-1">
+              {MOBILE_NAV.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={closeNav}
+                    className="block py-3 text-base text-ink hover:text-accent transition-colors u-focus"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          <div className="pt-4 border-t border-line">
-            <Link
-              href="/account/wishlist"
-              onClick={closeNav}
-              className="flex items-center gap-3 px-4 py-3 rounded-md text-ink hover:bg-ink-2 transition-colors u-focus"
-            >
-              <Heart className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-              <span className="font-medium">Wishlist</span>
-            </Link>
-            <Link
-              href="/account"
-              onClick={closeNav}
-              className="flex items-center gap-3 px-4 py-3 rounded-md text-ink hover:bg-ink-2 transition-colors u-focus"
-            >
-              <User className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-              <span className="font-medium">My Account</span>
-            </Link>
+          {/* Account Links */}
+          <div className="px-6 py-6 border-t border-line">
+            <h3 className="u-label mb-4">Account</h3>
+            <ul className="space-y-1">
+              {ACCOUNT_LINKS.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={closeNav}
+                    className="block py-2 text-sm text-muted hover:text-ink transition-colors u-focus"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Help Links */}
+          <div className="px-6 py-6 border-t border-line">
+            <h3 className="u-label mb-4">Help</h3>
+            <ul className="space-y-1">
+              {HELP_LINKS.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={closeNav}
+                    className="block py-2 text-sm text-muted hover:text-ink transition-colors u-focus"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </nav>
 
-        <div className="p-4 border-t border-line space-y-3">
-          <Button variant="outline" className="w-full justify-center gap-2" onClick={() => { useMobileNav.getState().closeNav(); useSearchOverlay.getState().openOverlay(); }}>
+        {/* Footer Actions */}
+        <div className="border-t border-line p-6 space-y-3">
+          <button
+            onClick={() => {
+              closeNav();
+              useSearchOverlay.getState().openOverlay();
+            }}
+            className="btn-secondary w-full text-xs"
+          >
             <Search className="w-4 h-4" aria-hidden="true" />
             Search
-          </Button>
-          <Link href="/cart" onClick={closeNav} className="block">
-            <Button className="w-full justify-center gap-2">
-              <ShoppingBag className="w-4 h-4" aria-hidden="true" />
-              Shopping Bag
-            </Button>
-          </Link>
+          </button>
         </div>
       </aside>
     </>

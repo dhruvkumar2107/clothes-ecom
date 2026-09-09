@@ -1,38 +1,19 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { SmartImage } from '@/components/ui/SmartImage';
-import { Button } from '@/components/ui/Button';
-import { Rating } from '@/components/ui/Rating';
 import { ProductCard } from '@/components/products/ProductCard';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 import { CountdownDrop } from '@/components/products/CountdownDrop';
 import { RecentlyViewed } from '@/components/products/RecentlyViewed';
 import { getHomepage } from '@/lib/api-server';
-import { ChevronRight, Truck, Shield, RotateCcw, Heart, Quote, ArrowRight } from 'lucide-react';
+import { ChevronRight, ArrowRight } from 'lucide-react';
 
-// Cache homepage for 30s. Merchandising changes appear almost
-// immediately while visitors get cached fast loads.
 export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: 'LUMEN&CO — Light as couture',
-  description:
-    'Future-facing luxury fashion. Engineered fabrics, sculptural silhouettes, and limited drops — shipped across India.',
+  description: 'Future-facing luxury fashion. Engineered fabrics, sculptural silhouettes, and limited drops — shipped across India.',
 };
-
-const FEATURES = [
-  { icon: Truck, title: 'Free Shipping', desc: 'On orders above ₹2,999 across India' },
-  { icon: Shield, title: 'Secure Payment', desc: 'UPI, cards, netbanking, wallets & COD' },
-  { icon: RotateCcw, title: 'Easy Returns', desc: '14-day hassle-free return policy' },
-  { icon: Heart, title: 'Loyalty Rewards', desc: 'Earn points on every purchase' },
-];
-
-const OCCASIONS = [
-  { slug: 'office', name: 'Office Edit', description: 'Polished, professional', color: '#2a2b2e', emoji: '💼' },
-  { slug: 'festive', name: 'Festive Edit', description: 'Bold, celebratory', color: '#8c5f56', emoji: '✨' },
-  { slug: 'wedding', name: 'Wedding Edit', description: 'Statement pieces', color: '#b08d57', emoji: '💒' },
-  { slug: 'casual', name: 'Everyday', description: 'Relaxed comfort', color: '#7c8b7a', emoji: '🌿' },
-];
 
 const FALLBACK_HERO = {
   eyebrow: null as string | null,
@@ -45,20 +26,9 @@ const FALLBACK_HERO = {
   accentHex: null as string | null,
 };
 
-const MOODS = [
-  { slug: 'minimal', name: 'Minimal', description: 'Clean lines, quiet luxury', color: '#e8e4dc', icon: '◻' },
-  { slug: 'bold', name: 'Bold', description: 'Statement-making confidence', color: '#8f2f2a', icon: '◆' },
-  { slug: 'effortless', name: 'Effortless', description: 'Undone elegance', color: '#7c8b7a', icon: '○' },
-  { slug: 'structured', name: 'Structured', description: 'Architectural precision', color: '#2a2b2e', icon: '△' },
-  { slug: 'romantic', name: 'Romantic', description: 'Soft, expressive beauty', color: '#e8b4b8', icon: '♡' },
-  { slug: 'artisanal', name: 'Artisanal', description: 'Crafted with intention', color: '#8c5f56', icon: '◇' },
-];
-
-const FABRICS = [
-  { name: 'Linen', slug: 'linen', description: 'Breathable, textured, natural' },
-  { name: 'Silk', slug: 'silk', description: 'Luminous, fluid, refined' },
-  { name: 'Merino Wool', slug: 'merino-wool', description: 'Soft, warm, resilient' },
-  { name: 'Cotton', slug: 'cotton', description: 'Everyday comfort, engineered' },
+const CATEGORIES = [
+  { slug: 'women', name: 'Women', image: '/images/product-wrap-dress.webp' },
+  { slug: 'men', name: 'Men', image: '/images/product-linen-shirt.webp' },
 ];
 
 export default async function HomePage() {
@@ -66,24 +36,19 @@ export default async function HomePage() {
 
   const hero = banner ?? FALLBACK_HERO;
   const showcase = collections[0] ?? null;
-
-  const heroImage =
-    hero.imageUrl ?? showcase?.heroImage ?? newArrivals[0]?.images[0]?.url ?? null;
+  const heroImage = hero.imageUrl ?? showcase?.heroImage ?? newArrivals[0]?.images[0]?.url ?? null;
 
   const liveCategories = categories.filter((c) => c.count > 0);
-  const catCols =
-    liveCategories.length >= 4 ? 'md:grid-cols-4' : liveCategories.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2';
-
   const arrivals = newArrivals.filter((p) => !featured.some((f) => f.id === p.id)).slice(0, 4);
   const editorialPicks = featured.slice(0, 3);
 
   return (
     <div className="flex-1">
       {/* ═══════════════════════════════════════════════════════════════════
-       * HERO — Full-bleed editorial with magazine-style typography
+       * HERO — Full-viewport editorial
        * ═══════════════════════════════════════════════════════════════════ */}
       <section
-        className="relative min-h-[100vh] flex items-end md:items-center overflow-hidden bg-ink"
+        className="relative min-h-[100dvh] flex items-end md:items-center overflow-hidden bg-ink"
         aria-labelledby="hero-title"
       >
         {heroImage ? (
@@ -94,71 +59,62 @@ export default async function HomePage() {
             priority
             fetchPriority="high"
             sizes="100vw"
-            quality={80}
-            placeholder="blur"
-            blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0MDAnIGhlaWdodD0nMjI1Jz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjMWExYjFlJy8+PC9zdmc+"
+            quality={85}
             className="object-cover object-center"
           />
         ) : (
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(135deg, ${hero.accentHex ?? '#1a1b1e'} 0%, #0b0b0c 70%)`,
+              background: `linear-gradient(160deg, ${hero.accentHex ?? '#1a1a1a'} 0%, #0a0a0a 70%)`,
             }}
             aria-hidden="true"
           />
         )}
 
-        {/* Layered gradients for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent md:bg-gradient-to-r md:from-ink/80 md:via-ink/40 md:to-transparent" aria-hidden="true" />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent md:bg-gradient-to-r md:from-ink/70 md:via-ink/30 md:to-transparent" aria-hidden="true" />
 
-        {/* Editorial typography — large, serif, fashion-magazine style */}
-        <div className="u-container relative z-10 pb-20 md:py-0 w-full">
-          <div className="max-w-3xl">
+        {/* Content */}
+        <div className="u-container relative z-10 pb-24 md:py-0 w-full">
+          <div className="max-w-2xl">
             {hero.eyebrow ? (
-              <span className="u-label text-accent mb-4 block">
-                {hero.eyebrow}
-              </span>
+              <span className="u-label text-accent mb-4 block">{hero.eyebrow}</span>
             ) : null}
 
-            {/* Magazine-style headline — ultra-large serif */}
             <h1
               id="hero-title"
-              className="u-display text-5xl md:text-7xl lg:text-[9rem] font-light text-paper leading-[0.88] mb-6 tracking-[-0.02em]"
+              className="u-display text-5xl md:text-7xl lg:text-[8rem] font-normal text-paper leading-[0.9] mb-6 tracking-[-0.02em]"
             >
               {hero.headline}
             </h1>
 
             {hero.subhead ? (
-              <p className="text-base md:text-lg text-paper/60 mb-8 max-w-md leading-relaxed font-light">
+              <p className="text-sm md:text-base text-paper/60 mb-8 max-w-md leading-relaxed font-light">
                 {hero.subhead}
               </p>
             ) : null}
 
             <div className="flex flex-wrap gap-3">
               <Link href={hero.ctaHref ?? '/products'}>
-                <Button size="lg" className="gap-2 bg-paper text-ink hover:bg-paper/90 text-sm tracking-wide">
+                <button className="btn-primary bg-paper text-ink hover:bg-paper/90 text-xs">
                   {hero.ctaLabel ?? 'Shop the collection'}
                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                </Button>
+                </button>
               </Link>
-              <Link href="/size-guide">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="bg-transparent border-paper/20 text-paper hover:bg-paper/10 gap-2 text-sm tracking-wide"
-                >
-                  Find your size
-                </Button>
+              <Link href="/products">
+                <button className="btn-secondary border-paper/30 text-paper hover:bg-paper/10 text-xs">
+                  Explore All
+                </button>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Scroll indicator */}
+        {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-paper/30">
           <span className="text-[10px] uppercase tracking-[0.2em]">Scroll</span>
-          <div className="w-px h-8 bg-paper/15 animate-pulse" />
+          <div className="w-px h-6 bg-paper/20" />
         </div>
       </section>
 
@@ -166,25 +122,24 @@ export default async function HomePage() {
        * EDITORIAL GRID — Asymmetric magazine layout
        * ═══════════════════════════════════════════════════════════════════ */}
       {editorialPicks.length >= 2 && (
-        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="editorial-title">
+        <section className="section-padding u-content-visibility" aria-labelledby="editorial-title">
           <div className="u-container">
-            <div className="flex items-end justify-between gap-6 mb-12">
+            <div className="flex items-end justify-between gap-6 mb-10">
               <div>
-                <span className="u-label text-accent mb-3 block">The Edit</span>
-                <h2 id="editorial-title" className="u-display text-3xl md:text-5xl">
+                <span className="u-label text-accent mb-2 block">The Edit</span>
+                <h2 id="editorial-title" className="u-display text-3xl md:text-4xl">
                   Editor&apos;s Picks
                 </h2>
               </div>
               <Link
                 href="/products?featured=true"
-                className="u-label hover:text-accent transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
+                className="u-label hover:text-ink transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
               >
                 View all
                 <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
 
-            {/* Asymmetric editorial grid — large + 2 stacked */}
             <div className="grid md:grid-cols-2 gap-4 md:gap-6">
               <div className="md:row-span-2">
                 <ProductCard
@@ -206,46 +161,42 @@ export default async function HomePage() {
                 />
               </div>
               {editorialPicks[1] && (
-                <div>
-                  <ProductCard
-                    id={editorialPicks[1].id}
-                    slug={editorialPicks[1].slug}
-                    name={editorialPicks[1].name}
-                    subtitle={editorialPicks[1].subtitle}
-                    basePrice={editorialPicks[1].basePrice}
-                    compareAtPrice={editorialPicks[1].compareAtPrice}
-                    images={editorialPicks[1].images}
-                    gender={editorialPicks[1].gender}
-                    occasion={editorialPicks[1].occasion ?? undefined}
-                    ratingAvg={editorialPicks[1].ratingAvg}
-                    ratingCount={editorialPicks[1].ratingCount}
-                    variants={editorialPicks[1].variants}
-                    inStock={editorialPicks[1].hasStock}
-                    colors={editorialPicks[1].colors}
-                    sizes={editorialPicks[1].sizes}
-                  />
-                </div>
+                <ProductCard
+                  id={editorialPicks[1].id}
+                  slug={editorialPicks[1].slug}
+                  name={editorialPicks[1].name}
+                  subtitle={editorialPicks[1].subtitle}
+                  basePrice={editorialPicks[1].basePrice}
+                  compareAtPrice={editorialPicks[1].compareAtPrice}
+                  images={editorialPicks[1].images}
+                  gender={editorialPicks[1].gender}
+                  occasion={editorialPicks[1].occasion ?? undefined}
+                  ratingAvg={editorialPicks[1].ratingAvg}
+                  ratingCount={editorialPicks[1].ratingCount}
+                  variants={editorialPicks[1].variants}
+                  inStock={editorialPicks[1].hasStock}
+                  colors={editorialPicks[1].colors}
+                  sizes={editorialPicks[1].sizes}
+                />
               )}
               {editorialPicks[2] && (
-                <div>
-                  <ProductCard
-                    id={editorialPicks[2].id}
-                    slug={editorialPicks[2].slug}
-                    name={editorialPicks[2].name}
-                    subtitle={editorialPicks[2].subtitle}
-                    basePrice={editorialPicks[2].basePrice}
-                    compareAtPrice={editorialPicks[2].compareAtPrice}
-                    images={editorialPicks[2].images}
-                    gender={editorialPicks[2].gender}
-                    occasion={editorialPicks[2].occasion ?? undefined}
-                    ratingAvg={editorialPicks[2].ratingAvg}
-                    ratingCount={editorialPicks[2].ratingCount}
-                    variants={editorialPicks[2].variants}
-                    inStock={editorialPicks[2].hasStock}
-                    colors={editorialPicks[2].colors}
-                    sizes={editorialPicks[2].sizes}
-                  />
-                </div>
+                <ProductCard
+                  id={editorialPicks[2].id}
+                  slug={editorialPicks[2].slug}
+                  name={editorialPicks[2].name}
+                  subtitle={editorialPicks[2].subtitle}
+                  basePrice={editorialPicks[2].basePrice}
+                  compareAtPrice={editorialPicks[2].compareAtPrice}
+                  images={editorialPicks[2].images}
+                  gender={editorialPicks[2].gender}
+                  occasion={editorialPicks[2].occasion ?? undefined}
+                  ratingAvg={editorialPicks[2].ratingAvg}
+                  ratingCount={editorialPicks[2].ratingCount}
+                  variants={editorialPicks[2].variants}
+                  inStock={editorialPicks[2].hasStock}
+                  colors={editorialPicks[2].colors}
+                  sizes={editorialPicks[2].sizes}
+                />
               )}
             </div>
           </div>
@@ -253,196 +204,27 @@ export default async function HomePage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-       * COUNTDOWN DROP — Limited-time drop with countdown timer
+       * NEW ARRIVALS
        * ═══════════════════════════════════════════════════════════════════ */}
-      <CountdownDrop
-        id="winter-capsule"
-        name="Winter Capsule"
-        tagline="A 12-piece collection of engineered warmth. Available for 48 hours only."
-        heroImage=""
-        launchAt="2026-12-01T12:00:00.000Z"
-        slug="winter-capsule"
-      />
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * OCCASION SHOPPING — Curated collections by occasion
-       * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 bg-ink text-paper u-content-visibility" aria-labelledby="occasions-title">
-        <div className="u-container">
-          <div className="text-center mb-12">
-            <span className="u-label text-accent mb-3 block">Shop by Occasion</span>
-            <h2 id="occasions-title" className="u-display text-3xl md:text-5xl">
-              Dress for the Moment
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {OCCASIONS.map((occasion, i) => (
-              <Link
-                key={occasion.slug}
-                href={`/products?occasion=${occasion.slug}`}
-                className="group relative aspect-[3/4] rounded-lg overflow-hidden u-focus"
-              >
-                <div
-                  className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-                  style={{
-                    background: `linear-gradient(135deg, ${occasion.color} 0%, #0b0b0c 80%)`,
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                  <span className="text-4xl mb-3" aria-hidden="true">{occasion.emoji}</span>
-                  <h3 className="u-display text-xl md:text-2xl text-paper mb-1">{occasion.name}</h3>
-                  <p className="text-sm text-paper/50">{occasion.description}</p>
-                  <span className="mt-4 flex items-center gap-1 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
-                    Explore <ChevronRight className="w-3 h-3" aria-hidden="true" />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * FULL-BLEED COLLECTION — Editorial magazine spread
-       * ═══════════════════════════════════════════════════════════════════ */}
-      {showcase && (
-        <section className="relative min-h-[70vh] flex items-center overflow-hidden u-content-visibility" aria-labelledby="collection-title">
-          {showcase.heroImage ? (
-            <SmartImage
-              src={showcase.heroImage}
-              alt=""
-              fill
-              sizes="100vw"
-              className="object-cover"
-            />
-          ) : (
-            <div
-              className="absolute inset-0"
-              style={{
-                background: `linear-gradient(135deg, ${showcase.accentHex ?? '#1a1b1e'} 0%, #0b0b0c 75%)`,
-              }}
-              aria-hidden="true"
-            />
-          )}
-          <div className="absolute inset-0 bg-ink/50" aria-hidden="true" />
-
-          <div className="u-container relative z-10 py-20 text-paper">
-            <div className="max-w-xl">
-              <span className="u-label mb-3 block" style={{ color: showcase.accentHex ?? undefined }}>
-                {showcase.kind === 'drop'
-                  ? 'Latest Drop'
-                  : showcase.kind === 'lookbook'
-                    ? 'Lookbook'
-                    : showcase.kind === 'editorial'
-                      ? 'Editorial'
-                      : 'New Collection'}
-              </span>
-              <h2 id="collection-title" className="u-display text-4xl md:text-6xl lg:text-7xl mb-6">
-                {showcase.name}
-              </h2>
-              <p className="text-paper/70 text-lg mb-8 leading-relaxed">
-                {showcase.description ??
-                  showcase.tagline ??
-                  'A curated selection of weightless fabrics and architectural forms.'}
-              </p>
-              <Link href={`/collections/${showcase.slug}`}>
-                <Button
-                  variant="outline"
-                  className="border-paper/30 text-paper hover:bg-paper/10 gap-2"
-                >
-                  Shop the Collection
-                  <ArrowRight className="w-5 h-5" aria-hidden="true" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * SHOP BY CATEGORY — Horizontal scroll cards
-       * ═══════════════════════════════════════════════════════════════════ */}
-      {liveCategories.length > 0 ? (
-        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="categories-title">
+      {arrivals.length > 0 && (
+        <section className="section-padding bg-paper-2 u-content-visibility" aria-labelledby="arrivals-title">
           <div className="u-container">
-            <div className="flex items-end justify-between gap-6 mb-12">
+            <div className="flex items-end justify-between gap-6 mb-10">
               <div>
-                <span className="u-label text-accent mb-3 block">Browse</span>
-                <h2 id="categories-title" className="u-display text-3xl md:text-4xl">
-                  Shop by Category
-                </h2>
-              </div>
-              <Link
-                href="/products"
-                className="u-label hover:text-accent transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
-              >
-                View All
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
-            </div>
-            <ul className={`grid grid-cols-2 ${catCols} gap-4 md:gap-6`}>
-              {liveCategories.map((cat, i) => (
-                <li key={cat.slug}>
-                  <Link
-                    href={`/products?category=${cat.slug}`}
-                    className="group block relative rounded-lg overflow-hidden bg-ink-2 u-focus"
-                  >
-                    <div className="aspect-[3/4] relative overflow-hidden">
-                      {cat.image ? (
-                        <SmartImage
-                          src={cat.image}
-                          alt=""
-                          fill
-                          sizes="(max-width: 768px) 50vw, 25vw"
-                          loading={i < 2 ? 'eager' : 'lazy'}
-                          className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                        />
-                      ) : null}
-                      <div
-                        className="absolute inset-0 bg-gradient-to-t from-ink via-ink/25 to-transparent"
-                        aria-hidden="true"
-                      />
-                      <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                        <h3 className="u-display text-xl md:text-2xl font-medium text-paper">
-                          {cat.name}
-                        </h3>
-                        <p className="text-sm text-paper/60 mt-1">
-                          {cat.count} {cat.count === 1 ? 'style' : 'styles'}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : null}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * NEW ARRIVALS — Horizontal product scroll
-       * ═══════════════════════════════════════════════════════════════════ */}
-      {arrivals.length > 0 ? (
-        <section className="py-16 md:py-24 bg-paper-2 u-content-visibility" aria-labelledby="arrivals-title">
-          <div className="u-container">
-            <div className="flex items-end justify-between gap-6 mb-12">
-              <div>
-                <span className="u-label text-accent mb-3 block">Just landed</span>
+                <span className="u-label text-accent mb-2 block">Just landed</span>
                 <h2 id="arrivals-title" className="u-display text-3xl md:text-4xl">
                   New Arrivals
                 </h2>
               </div>
               <Link
                 href="/products?sort=newest"
-                className="u-label hover:text-accent transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
+                className="u-label hover:text-ink transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
               >
-                See Everything
+                See everything
                 <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
-            <ul className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6">
+            <ul className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6">
               {arrivals.map((p) => (
                 <li key={p.id}>
                   <ProductCard
@@ -467,198 +249,140 @@ export default async function HomePage() {
             </ul>
           </div>
         </section>
-      ) : null}
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-       * TRENDING NOW — Most popular pieces this week
+       * FULL-BLEED COLLECTION — Editorial spread
        * ═══════════════════════════════════════════════════════════════════ */}
-      {arrivals.length > 0 && (
-        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="trending-title">
-          <div className="u-container">
-            <div className="flex items-end justify-between gap-6 mb-12">
-              <div>
-                <span className="u-label text-accent mb-3 block">Most wanted</span>
-                <h2 id="trending-title" className="u-display text-3xl md:text-4xl">
-                  Trending Now
-                </h2>
-              </div>
-              <Link
-                href="/products?sort=popular"
-                className="u-label hover:text-accent transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
-              >
-                See all trending
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+      {showcase && (
+        <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center overflow-hidden u-content-visibility" aria-labelledby="collection-title">
+          {showcase.heroImage ? (
+            <SmartImage
+              src={showcase.heroImage}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover"
+            />
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(160deg, ${showcase.accentHex ?? '#1a1a1a'} 0%, #0a0a0a 75%)`,
+              }}
+              aria-hidden="true"
+            />
+          )}
+          <div className="absolute inset-0 bg-ink/50" aria-hidden="true" />
+
+          <div className="u-container relative z-10 py-20 text-paper">
+            <div className="max-w-xl">
+              <span className="u-label mb-3 block text-accent">
+                {showcase.kind === 'drop' ? 'Latest Drop' : showcase.kind === 'lookbook' ? 'Lookbook' : 'New Collection'}
+              </span>
+              <h2 id="collection-title" className="u-display text-4xl md:text-5xl lg:text-6xl mb-6">
+                {showcase.name}
+              </h2>
+              <p className="text-paper/70 text-sm md:text-base mb-8 leading-relaxed max-w-md">
+                {showcase.description ?? showcase.tagline ?? 'A curated selection of weightless fabrics and architectural forms.'}
+              </p>
+              <Link href={`/collections/${showcase.slug}`}>
+                <button className="btn-secondary border-paper/30 text-paper hover:bg-paper/10 text-xs">
+                  Shop the Collection
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
               </Link>
             </div>
-            <ul className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6">
-              {arrivals.slice(0, 4).map((p) => (
-                <li key={p.id}>
-                  <ProductCard
-                    id={p.id}
-                    slug={p.slug}
-                    name={p.name}
-                    subtitle={p.subtitle}
-                    basePrice={p.basePrice}
-                    compareAtPrice={p.compareAtPrice}
-                    images={p.images}
-                    gender={p.gender}
-                    occasion={p.occasion ?? undefined}
-                    ratingAvg={p.ratingAvg}
-                    ratingCount={p.ratingCount}
-                    variants={p.variants}
-                    inStock={p.hasStock}
-                    colors={p.colors}
-                    sizes={p.sizes}
-                  />
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-       * SHOP BY MOOD — Discovery through aesthetic language
+       * SHOP BY CATEGORY
        * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 bg-ink text-paper u-content-visibility" aria-labelledby="moods-title">
-        <div className="u-container">
-          <div className="text-center mb-12">
-            <span className="u-label text-accent mb-3 block">Discover by aesthetic</span>
-            <h2 id="moods-title" className="u-display text-3xl md:text-5xl">
-              Shop by Mood
-            </h2>
-            <p className="text-paper/50 mt-3 max-w-lg mx-auto">
-              Not sure what you are looking for? Start with how you want to feel.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {MOODS.map((mood) => (
-              <Link
-                key={mood.slug}
-                href={`/products?mood=${mood.slug}`}
-                className="group relative aspect-[3/4] rounded-lg overflow-hidden u-focus"
-              >
-                <div
-                  className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-                  style={{
-                    background: `linear-gradient(160deg, ${mood.color} 0%, ${mood.color}33 100%)`,
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                  <span className="text-3xl mb-2 text-paper/80" aria-hidden="true">{mood.icon}</span>
-                  <h3 className="u-display text-lg text-paper mb-1">{mood.name}</h3>
-                  <p className="text-[11px] text-paper/50 leading-tight">{mood.description}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * SHOP BY FABRIC — Material-first discovery
-       * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="fabrics-title">
-        <div className="u-container">
-          <div className="flex items-end justify-between gap-6 mb-12">
-            <div>
-              <span className="u-label text-accent mb-3 block">Feel the difference</span>
-              <h2 id="fabrics-title" className="u-display text-3xl md:text-4xl">
-                Shop by Fabric
-              </h2>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {FABRICS.map((fabric) => (
-              <Link
-                key={fabric.slug}
-                href={`/products?fabric=${fabric.slug}`}
-                className="group p-6 border border-line rounded-lg hover:border-accent transition-all duration-500 u-focus"
-              >
-                <h3 className="u-display text-xl mb-2 group-hover:text-accent transition-colors">{fabric.name}</h3>
-                <p className="text-sm text-muted">{fabric.description}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
-                  Explore <ChevronRight className="w-3 h-3" aria-hidden="true" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * STYLE QUIZ CTA — Personalization entry point
-       * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-20 bg-paper-2 u-content-visibility" aria-labelledby="quiz-cta-title">
-        <div className="u-container">
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
-            <div className="flex-1 text-center md:text-left">
-              <span className="u-label text-accent mb-3 block">Know your style</span>
-              <h2 id="quiz-cta-title" className="u-display text-3xl md:text-4xl mb-4">
-                Find Your Style Profile
-              </h2>
-              <p className="text-muted text-lg mb-6 max-w-md">
-                Answer four quick questions. We will curate a collection that fits your taste, occasion, and lifestyle.
-              </p>
-              <Link href="/style-quiz">
-                <Button size="lg" className="gap-2">
-                  Take the Style Quiz
-                  <ChevronRight className="w-5 h-5" aria-hidden="true" />
-                </Button>
-              </Link>
-            </div>
-            <div className="flex-1 relative">
-              <div className="aspect-[4/3] rounded-lg bg-ink/5 flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="text-6xl mb-4" aria-hidden="true">◻ ♡ ◆</div>
-                  <p className="text-sm text-muted">4 questions. 30 seconds. A wardrobe that understands you.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * TRUST STRIP
-       * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-12 md:py-16 border-y border-line u-content-visibility" aria-label="Why shop with us">
-        <div className="u-container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {FEATURES.map((feature) => (
-              <div key={feature.title} className="text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-lg bg-ink flex items-center justify-center">
-                  <feature.icon className="w-7 h-7 text-accent" aria-hidden="true" />
-                </div>
-                <h3 className="u-label mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-       * OTHER COLLECTIONS
-       * ═══════════════════════════════════════════════════════════════════ */}
-      {collections.length > 1 ? (
-        <section className="py-16 md:py-24 u-content-visibility" aria-labelledby="more-collections-title">
+      {liveCategories.length > 0 && (
+        <section className="section-padding u-content-visibility" aria-labelledby="categories-title">
           <div className="u-container">
-            <div className="flex items-end justify-between gap-6 mb-12">
-              <h2 id="more-collections-title" className="u-display text-3xl md:text-4xl">
-                Collections
+            <div className="text-center mb-10">
+              <span className="u-label text-accent mb-2 block">Browse</span>
+              <h2 id="categories-title" className="u-display text-3xl md:text-4xl">
+                Shop by Category
               </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
+              {CATEGORIES.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={`/products?category=${cat.slug}`}
+                  className="group relative aspect-[3/4] rounded-lg overflow-hidden bg-ink u-focus"
+                >
+                  <SmartImage
+                    src={cat.image}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" aria-hidden="true" />
+                  <div className="absolute inset-x-0 bottom-0 p-6">
+                    <h3 className="u-display text-2xl text-paper mb-1">{cat.name}</h3>
+                    <span className="inline-flex items-center gap-1 text-xs text-paper/60 group-hover:text-paper transition-colors">
+                      Shop Now <ChevronRight className="w-3 h-3" aria-hidden="true" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * BRAND STORY — Editorial typography
+       * ═══════════════════════════════════════════════════════════════════ */}
+      <section className="section-padding bg-ink text-paper u-content-visibility">
+        <div className="u-container">
+          <div className="max-w-3xl mx-auto text-center">
+            <span className="u-label text-accent mb-4 block">Our Philosophy</span>
+            <h2 className="u-display text-3xl md:text-5xl lg:text-6xl mb-6">
+              Fashion should feel like freedom
+            </h2>
+            <p className="text-paper/50 text-sm md:text-base leading-relaxed max-w-lg mx-auto mb-8">
+              Every piece is designed to move with you. Engineered fabrics. Sculptural silhouettes.
+              A commitment to craft that never compromises on comfort.
+            </p>
+            <Link href="/about">
+              <button className="btn-secondary border-paper/30 text-paper hover:bg-paper/10 text-xs">
+                Our Story
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+       * COLLECTIONS
+       * ═══════════════════════════════════════════════════════════════════ */}
+      {collections.length > 1 && (
+        <section className="section-padding u-content-visibility" aria-labelledby="collections-title">
+          <div className="u-container">
+            <div className="flex items-end justify-between gap-6 mb-10">
+              <div>
+                <span className="u-label text-accent mb-2 block">Curated</span>
+                <h2 id="collections-title" className="u-display text-3xl md:text-4xl">
+                  Collections
+                </h2>
+              </div>
               <Link
                 href="/collections"
-                className="u-label hover:text-accent transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
+                className="u-label hover:text-ink transition-colors flex items-center gap-1 u-focus whitespace-nowrap"
               >
                 All Collections
                 <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
-            <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {collections.slice(1).map((c) => (
                 <li key={c.slug}>
                   <Link
@@ -671,25 +395,22 @@ export default async function HomePage() {
                         alt=""
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                        className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                       />
                     ) : (
                       <div
                         className="absolute inset-0"
                         style={{
-                          background: `linear-gradient(135deg, ${c.accentHex ?? '#2a2b2e'} 0%, #0b0b0c 80%)`,
+                          background: `linear-gradient(160deg, ${c.accentHex ?? '#2d2d2d'} 0%, #0a0a0a 80%)`,
                         }}
                         aria-hidden="true"
                       />
                     )}
-                    <div
-                      className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent"
-                      aria-hidden="true"
-                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" aria-hidden="true" />
                     <div className="absolute inset-x-0 bottom-0 p-6">
-                      <h3 className="u-display text-2xl text-paper">{c.name}</h3>
+                      <h3 className="u-display text-xl md:text-2xl text-paper">{c.name}</h3>
                       {c.tagline ? (
-                        <p className="text-sm text-paper/65 mt-1 line-clamp-2">{c.tagline}</p>
+                        <p className="text-xs text-paper/50 mt-1 line-clamp-2">{c.tagline}</p>
                       ) : null}
                     </div>
                   </Link>
@@ -698,25 +419,31 @@ export default async function HomePage() {
             </ul>
           </div>
         </section>
-      ) : null}
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-       * REVIEWS
+       * REVIEWS — Social proof
        * ═══════════════════════════════════════════════════════════════════ */}
-      {reviews.length > 0 ? (
-        <section className="py-16 md:py-24 bg-paper-2 u-content-visibility" aria-labelledby="reviews-title">
+      {reviews.length > 0 && (
+        <section className="section-padding bg-paper-2 u-content-visibility" aria-labelledby="reviews-title">
           <div className="u-container">
-            <h2 id="reviews-title" className="u-display text-3xl md:text-4xl mb-12 text-center">
+            <h2 id="reviews-title" className="u-display text-3xl md:text-4xl mb-10 text-center">
               What Our Customers Say
             </h2>
-            <ul className="grid md:grid-cols-3 gap-6">
+            <ul className="grid md:grid-cols-3 gap-4 md:gap-6">
               {reviews.map((r) => (
                 <li key={r.id} className="rounded-lg border border-line p-6 bg-paper">
-                  <Quote className="w-6 h-6 text-accent mb-4" aria-hidden="true" />
-                  <Rating value={r.rating} count={0} size="sm" />
-                  {r.title ? <h3 className="u-label mt-4">{r.title}</h3> : null}
-                  <p className="text-sm text-ink/70 mt-2 leading-relaxed line-clamp-5">{r.body}</p>
-                  <p className="text-xs text-muted-2 mt-4">
+                  {/* Stars */}
+                  <div className="flex items-center gap-0.5 mb-3" aria-label={r.rating + ' out of 5 stars'}>
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className="w-4 h-4" fill={i < r.rating ? '#9c7c4e' : 'none'} stroke="#9c7c4e" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    ))}
+                  </div>
+                  {r.title ? <h3 className="u-label mb-2">{r.title}</h3> : null}
+                  <p className="text-sm text-ink/70 leading-relaxed line-clamp-4">{r.body}</p>
+                  <p className="text-xs text-muted mt-4">
                     {r.authorName} —{' '}
                     <Link href={`/products/${r.productSlug}`} className="hover:text-accent u-focus">
                       {r.productName}
@@ -727,22 +454,22 @@ export default async function HomePage() {
             </ul>
           </div>
         </section>
-      ) : null}
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════
        * NEWSLETTER
        * ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 border-t border-line u-content-visibility" aria-labelledby="newsletter-title">
+      <section className="section-padding border-t border-line u-content-visibility" aria-labelledby="newsletter-title">
         <div className="u-container">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 id="newsletter-title" className="u-display text-3xl md:text-4xl mb-4">
+          <div className="max-w-xl mx-auto text-center">
+            <h2 id="newsletter-title" className="u-display text-3xl md:text-4xl mb-3">
               Join the Collective
             </h2>
-            <p className="text-muted text-lg mb-8">
+            <p className="text-muted text-sm mb-8">
               Early access to drops, exclusive previews, and styling inspiration — delivered weekly.
             </p>
-            <NewsletterForm id="home-email" source="popup" className="max-w-md mx-auto" />
-            <p className="text-xs text-muted-2 mt-4">
+            <NewsletterForm id="home-email" source="popup" className="max-w-sm mx-auto" />
+            <p className="text-[11px] text-muted-2 mt-3">
               By subscribing you agree to our{' '}
               <Link href="/privacy" className="underline underline-offset-2 hover:text-ink u-focus">
                 Privacy Policy
@@ -753,9 +480,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * RECENTLY VIEWED
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* Recently Viewed */}
       <RecentlyViewed />
     </div>
   );

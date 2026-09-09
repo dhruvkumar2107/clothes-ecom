@@ -1,149 +1,140 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore, useSearchOverlay, useMobileNav } from '@/app/providers';
-import { Button } from '@/components/ui/Button';
-import { Search, Menu, X, User, Heart, ShoppingBag, ChevronRight } from 'lucide-react';
+import { Search, Menu, X, User, Heart, ShoppingBag } from 'lucide-react';
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [hidden, setHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const { count, refresh } = useCartStore();
-  const { open: searchOpen, closeOverlay } = useSearchOverlay();
-  const { open: mobileOpen, closeNav } = useMobileNav();
+  const { open: searchOpen } = useSearchOverlay();
+  const { open: mobileOpen } = useMobileNav();
   const router = useRouter();
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 8);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setScrolled(currentScrollY > 16);
+
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setHidden(true);
+      } else {
+        setHidden(false);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [lastScrollY]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-    }
-  };
+  const handleSearchClick = useCallback(() => {
+    useSearchOverlay.getState().openOverlay();
+  }, []);
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-[50] transition-all duration-300 ${
-        scrolled ? 'bg-paper/95 backdrop-blur-sm border-b border-line shadow-sm' : 'bg-transparent'
-      }`}
-      style={{ top: scrolled ? 0 : '32px' }}
+      className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
+        hidden ? '-translate-y-full' : 'translate-y-0'
+      } ${scrolled ? 'bg-paper/95 backdrop-blur-md shadow-[0_1px_0_0_var(--color-line)]' : 'bg-paper'}`}
+      style={{ top: 0 }}
       role="banner"
     >
+      {/* Main Navigation */}
       <div className="u-container">
-        <div className="flex items-center justify-between h-16 md:h-20 gap-4">
+        <div className="flex items-center justify-between h-14 md:h-16 gap-4">
+          {/* Mobile Menu */}
+          <button
+            onClick={() => useMobileNav.getState().openNav()}
+            className="flex items-center justify-center w-10 h-10 md:hidden transition-colors u-focus"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" aria-hidden="true" />
+          </button>
+
           {/* Logo */}
           <Link
             href="/"
             className="flex items-center gap-2 shrink-0 u-focus"
             aria-label="LUMEN&CO Home"
           >
-            <span className="u-display text-2xl md:text-3xl font-light tracking-tight text-ink">
+            <span className="u-display text-xl md:text-2xl font-normal tracking-[-0.02em] text-ink">
               LUMEN&CO
             </span>
-            <span className="u-label text-xs md:text-sm ml-1 hidden lg:inline">Light as couture</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8" role="navigation" aria-label="Main navigation">
+          <nav className="hidden md:flex items-center gap-8 ml-8" role="navigation" aria-label="Main navigation">
             <Link href="/products" className="u-label hover:text-ink transition-colors u-focus">
-              Shop
+              Women
+            </Link>
+            <Link href="/products?gender=men" className="u-label hover:text-ink transition-colors u-focus">
+              Men
+            </Link>
+            <Link href="/products?new=true" className="u-label hover:text-ink transition-colors u-focus">
+              New Arrivals
             </Link>
             <Link href="/collections" className="u-label hover:text-ink transition-colors u-focus">
               Collections
             </Link>
-            <Link href="/products?new=true" className="u-label hover:text-ink transition-colors u-focus">
-              New
-            </Link>
             <Link href="/products?featured=true" className="u-label hover:text-ink transition-colors u-focus">
-              Bestsellers
+              Best Sellers
+            </Link>
+            <Link href="/products?sale=true" className="u-label text-danger hover:text-danger/80 transition-colors u-focus">
+              Sale
             </Link>
           </nav>
 
-          {/* Desktop Search Bar */}
-          <form
-            onSubmit={handleSearch}
-            className="hidden md:flex items-center flex-1 max-w-xs lg:max-w-sm mx-4"
-            role="search"
-          >
-            <div className="relative w-full group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-2 group-focus-within:text-ink transition-colors" aria-hidden="true" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="w-full pl-9 pr-4 py-2 text-sm bg-paper-2 border border-line rounded-full focus:bg-paper focus:border-ink/20 focus:outline-none transition-all placeholder:text-muted-2"
-                aria-label="Search products"
-              />
-            </div>
-          </form>
-
-          {/* Actions */}
-          <div className="flex items-center gap-1 md:gap-3 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => useSearchOverlay.getState().openOverlay()}
+          {/* Right Actions */}
+          <div className="flex items-center gap-1 md:gap-2 shrink-0">
+            {/* Search */}
+            <button
+              onClick={handleSearchClick}
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-paper-2 transition-colors u-focus"
               aria-label="Search"
-              className="md:hidden u-focus"
             >
-              <Search className="w-5 h-5" aria-hidden="true" />
-            </Button>
+              <Search className="w-[18px] h-[18px] text-ink" aria-hidden="true" />
+            </button>
 
-            <Link
-              href="/account/wishlist"
-              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-md hover:bg-ink-2 transition-colors u-focus"
-              aria-label="Wishlist"
-            >
-              <Heart className="w-5 h-5 text-ink" aria-hidden="true" />
-            </Link>
-
+            {/* Account */}
             <Link
               href="/account"
-              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-md hover:bg-ink-2 transition-colors u-focus"
+              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full hover:bg-paper-2 transition-colors u-focus"
               aria-label="My Account"
             >
-              <User className="w-5 h-5 text-ink" aria-hidden="true" />
+              <User className="w-[18px] h-[18px] text-ink" aria-hidden="true" />
             </Link>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => useCartStore.getState().openDrawer()}
-              aria-label={`Shopping bag, ${count} items`}
-              className="relative u-focus"
+            {/* Wishlist */}
+            <Link
+              href="/account/wishlist"
+              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full hover:bg-paper-2 transition-colors u-focus"
+              aria-label="Wishlist"
             >
-              <ShoppingBag className="w-5 h-5 text-ink" aria-hidden="true" />
+              <Heart className="w-[18px] h-[18px] text-ink" aria-hidden="true" />
+            </Link>
+
+            {/* Cart */}
+            <button
+              onClick={() => useCartStore.getState().openDrawer()}
+              className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-paper-2 transition-colors u-focus"
+              aria-label={`Shopping bag, ${count} items`}
+            >
+              <ShoppingBag className="w-[18px] h-[18px] text-ink" aria-hidden="true" />
               {count > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-accent text-paper text-[10px] font-medium rounded-full flex items-center justify-center animate-fade-in">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-ink text-paper text-[9px] font-medium rounded-full flex items-center justify-center animate-fade-in tabular-nums">
                   {count > 99 ? '99+' : count}
                 </span>
               )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => useMobileNav.getState().openNav()}
-              aria-label="Menu"
-              className="md:hidden u-focus"
-            >
-              <Menu className="w-6 h-6 text-ink" aria-hidden="true" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>
