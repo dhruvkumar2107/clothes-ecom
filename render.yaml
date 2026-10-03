@@ -1,6 +1,6 @@
 # Render blueprint — https://render.com/docs/blueprint-spec
 #
-# The database is Supabase (external), so no Render database is declared here.
+# The database is Neon (external), so no Render database is declared here.
 # Values marked `sync: false` are NOT stored in this file — set them in the
 # Render dashboard under the service's Environment tab.
 #
@@ -18,22 +18,15 @@ services:
     dockerContext: .
     healthCheckPath: /api/health
     autoDeployTrigger: commit
-
-  # Keeps the web service warm by pinging /health every 10 minutes.
-  # Render free/starter services spin down after ~15 min of inactivity;
-  # this cron prevents that from happening.
-  - type: cron
-    name: keep-alive
-    schedule: "*/10 * * * *"
-    startCommand: curl -sf https://lumen-and-co.onrender.com/health || true
-
     envVars:
       # ── Required ──────────────────────────────────────────────────────────
-      # Supabase connection string. Use the POOLER URI (port 6543) with
-      # ?pgbouncer=true&connection_limit=5&pool_timeout=20 — Render containers
-      # are short-lived and the direct 5432 connection will exhaust Supabase's limit.
-      # connection_limit=5 allows parallel queries; pool_timeout=20 extends the wait.
+      # Neon pooled connection string. Use the pooled endpoint and Prisma pool
+      # compatibility parameters documented in .env.example for runtime requests.
       - key: DATABASE_URL
+        sync: false
+
+      # Neon unpooled connection string used only by Prisma schema operations.
+      - key: DIRECT_URL
         sync: false
 
       # Public origin of the deployed service, e.g. https://lumen-and-co.onrender.com
@@ -118,3 +111,11 @@ services:
         sync: false
       - key: RAZORPAYX_KEY_SECRET
         sync: false
+
+  # Keeps the web service warm by pinging /health every 10 minutes.
+  # Render free/starter services spin down after ~15 min of inactivity;
+  # this cron prevents that from happening.
+  - type: cron
+    name: keep-alive
+    schedule: "*/10 * * * *"
+    startCommand: curl -sf https://lumen-and-co.onrender.com/health || true

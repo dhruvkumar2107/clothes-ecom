@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // LUMEN&CO — data model
 //
-// Provider is PostgreSQL (Supabase). The schema keeps the portable conventions it
+// Provider is PostgreSQL (Neon). The schema keeps the portable conventions it
 // was first written with under SQLite, so it migrates cleanly either way. Two
 // conventions carry over:
 //
@@ -22,12 +22,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Runtime goes through the Supavisor transaction pooler (IPv4, port 6543).
-  // Render has no outbound IPv6 and db.<ref>.supabase.co is AAAA-only, so the
-  // direct host is unreachable from the container — the pooler is mandatory there.
+  // Runtime uses Neon's pooled endpoint to share database connections.
   url       = env("DATABASE_URL")
-  // Migrations and `db push` need a session connection; DDL over a transaction
-  // pooler is unreliable. Falls back to DATABASE_URL when DIRECT_URL is unset.
+  // Migrations and `db push` use the unpooled endpoint for session-safe DDL.
   directUrl = env("DIRECT_URL")
 }
 

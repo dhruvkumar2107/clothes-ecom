@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     if (databaseFailure === 'unavailable') {
       return apiError(
         'DATABASE_UNAVAILABLE',
-        'Admin sign-in cannot reach the database. Check that DATABASE_URL uses the correct Supabase transaction-pooler host, username, password, and port (6543), then retry.',
+        'Admin sign-in cannot reach the database. Check that DATABASE_URL uses the correct Neon pooled endpoint and credentials, then retry.',
         503,
       );
     }

@@ -294,105 +294,166 @@ async function seedCatalog() {
 
   if (process.argv.includes('--dry-run')) return;
 
-  await prisma.$transaction(async (tx) => {
-    const roots = new Map<string, { id: string }>();
-    for (const [slug, name, description, sortOrder] of [
-      ['women', 'Women', 'Elevated womenswear', 1],
-      ['men', 'Men', 'Refined menswear', 2],
-      ['unisex', 'Unisex', 'Gender-inclusive pieces', 3],
-    ] as const) {
-      roots.set(slug, await tx.category.upsert({
-        where: { slug },
-        update: { active: true },
-        create: { slug, name, description, sortOrder, active: true },
-        select: { id: true },
-      }));
-    }
-
-    const categoryIds = new Map<string, string>();
-    for (const category of categories) {
-      const parent = roots.get(category.gender);
-      if (!parent) throw new Error(`Missing parent category for ${category.slug}`);
-      const saved = await tx.category.upsert({
-        where: { slug: category.slug },
-        update: { active: true, parentId: parent.id },
-        create: {
-          slug: category.slug,
-          name: category.name,
-          description: category.description,
-          sortOrder: category.sortOrder,
-          active: true,
-          parentId: parent.id,
-        },
-        select: { id: true },
-      });
-      categoryIds.set(category.slug, saved.id);
-    }
-
-    for (const tag of tagSeeds) {
-      await tx.tag.upsert({
-        where: { slug: tag.slug },
-        update: {},
-        create: { ...tag, kind: 'style' },
-      });
-    }
-
-    const collection = await tx.collection.upsert({
-      where: { slug: CATALOG_COLLECTION },
+  const roots = new Map<string, { id: string }>();
+  for (const [slug, name, description, sortOrder] of [
+    ['women', 'Women', 'Elevated womenswear', 1],
+    ['men', 'Men', 'Refined menswear', 2],
+    ['unisex', 'Unisex', 'Gender-inclusive pieces', 3],
+  ] as const) {
+    roots.set(slug, await prisma.category.upsert({
+      where: { slug },
       update: { active: true },
+      create: { slug, name, description, sortOrder, active: true },
+      select: { id: true },
+    }));
+  }
+
+  const categoryIds = new Map<string, string>();
+  for (const category of categories) {
+    const parent = roots.get(category.gender);
+    if (!parent) throw new Error(`Missing parent category for ${category.slug}`);
+    const saved = await prisma.category.upsert({
+      where: { slug: category.slug },
+      update: { active: true, parentId: parent.id },
       create: {
-        slug: CATALOG_COLLECTION,
-        name: 'The Essential Wardrobe',
-        kind: 'curated',
-        tagline: 'Considered pieces for everyday dressing',
-        description: 'An edit of versatile silhouettes in premium, comfortable fabrics.',
-        heroImage: '/images/collection-essentials.jpg',
-        featured: true,
-        sortOrder: 20,
+        slug: category.slug,
+        name: category.name,
+        description: category.description,
+        sortOrder: category.sortOrder,
         active: true,
+        parentId: parent.id,
       },
       select: { id: true },
     });
+    categoryIds.set(category.slug, saved.id);
+  }
 
-    for (const product of products) {
-      const categoryId = categoryIds.get(product.categorySlug);
-      if (!categoryId) throw new Error(`Missing category record for ${product.categorySlug}`);
+  for (const tag of tagSeeds) {
+    await prisma.tag.upsert({
+      where: { slug: tag.slug },
+      update: {},
+      create: { ...tag, kind: 'style' },
+    });
+  }
 
-      await tx.product.upsert({
-        where: { slug: product.slug },
-        update: {},
-        create: {
-          slug: product.slug,
-          name: product.name,
-          subtitle: `${product.fabric} in a ${product.fit} silhouette`,
-          description: `${product.name} is thoughtfully made from ${product.fabric}. Designed with ${product.fit} proportions and an easy ${product.occasion} wardrobe in mind, it pairs lasting comfort with considered details.`,
-          story: `A versatile ${product.gender} wardrobe piece, designed to be worn often and kept for seasons.`,
-          careJson: '["Cold gentle wash","Wash with similar colours","Dry in shade","Warm iron if needed"]',
-          categoryId,
-          basePrice: product.basePrice,
-          compareAtPrice: product.compareAtPrice,
-          costPrice: product.costPrice,
-          fabric: product.fabric,
-          occasion: product.occasion,
-          fit: product.fit,
-          gender: product.gender,
-          hsnCode: product.hsnCode,
-          gstRate: 5,
-          status: 'active',
-          featured: product.featured,
-          publishedAt: new Date(),
-          seoTitle: `${product.name} | LUMEN&CO`,
-          seoDescription: `${product.name} in ${product.fabric}. Explore considered ${product.gender} fashion at LUMEN&CO.`,
-          images: { create: product.images },
-          variants: { create: createVariants(product) },
-          tags: { create: product.tags.map((slug) => ({ tag: { connect: { slug } } })) },
-          collections: { create: [{ collectionId: collection.id }] },
-        },
-      });
+  const collection = await prisma.collection.upsert({
+    where: { slug: CATALOG_COLLECTION },
+    update: { active: true },
+    create: {
+      slug: CATALOG_COLLECTION,
+      name: 'The Essential Wardrobe',
+      kind: 'curated',
+      tagline: 'Considered pieces for everyday dressing',
+      description: 'An edit of versatile silhouettes in premium, comfortable fabrics.',
+      heroImage: '/images/collection-essentials.jpg',
+      featured: true,
+      sortOrder: 20,
+      active: true,
+    },
+    select: { id: true },
+  });
+
+  const productData = products.map((product) => {
+    const categoryId = categoryIds.get(product.categorySlug);
+    if (!categoryId) throw new Error(`Missing category record for ${product.categorySlug}`);
+    return {
+      ...product,
+      categoryId,
+      subtitle: `${product.fabric} in a ${product.fit} silhouette`,
+      description: `${product.name} is thoughtfully made from ${product.fabric}. Designed with ${product.fit} proportions and an easy ${product.occasion} wardrobe in mind, it pairs lasting comfort with considered details.`,
+      story: `A versatile ${product.gender} wardrobe piece, designed to be worn often and kept for seasons.`,
+      careJson: '["Cold gentle wash","Wash with similar colours","Dry in shade","Warm iron if needed"]',
+      gstRate: 5,
+      status: 'active',
+      publishedAt: new Date(),
+      seoTitle: `${product.name} | LUMEN&CO`,
+      seoDescription: `${product.name} in ${product.fabric}. Explore considered ${product.gender} fashion at LUMEN&CO.`,
+    };
+  });
+
+  await prisma.product.createMany({
+    data: productData.map(({ categorySlug: _categorySlug, images: _images, tags: _tags, colors: _colors, sizes: _sizes, ...data }) => data),
+    skipDuplicates: true,
+  });
+
+  const savedProducts = await prisma.product.findMany({
+    where: { slug: { in: products.map((product) => product.slug) } },
+    select: {
+      id: true,
+      slug: true,
+      images: { select: { url: true, sortOrder: true } },
+      variants: { select: { sku: true } },
+      tags: { select: { tag: { select: { slug: true } } } },
+      collections: { select: { collectionId: true } },
+    },
+  });
+  const savedBySlug = new Map(savedProducts.map((product) => [product.slug, product]));
+  const tagIds = new Map((await prisma.tag.findMany({
+    where: { slug: { in: tagSeeds.map((tag) => tag.slug) } },
+    select: { id: true, slug: true },
+  })).map((tag) => [tag.slug, tag.id]));
+  const missingImages = [];
+  const missingVariants = [];
+  const missingTags = [];
+  const missingCollections = [];
+
+  for (const product of products) {
+    const saved = savedBySlug.get(product.slug);
+    if (!saved) throw new Error(`Product upsert did not return ${product.slug}`);
+    const imageKeys = new Set(saved.images.map((image) => `${image.sortOrder}:${image.url}`));
+    const variantSkus = new Set(saved.variants.map((variant) => variant.sku));
+    const existingTags = new Set(saved.tags.map(({ tag }) => tag.slug));
+    const images = product.images
+      .filter((image) => !imageKeys.has(`${image.sortOrder}:${image.url}`))
+      .map((image) => ({
+        ...image,
+        id: `catalog-${saved.id}-${image.sortOrder}`,
+        productId: saved.id,
+      }));
+    const variants = createVariants(product)
+      .filter((variant) => !variantSkus.has(variant.sku))
+      .map((variant) => ({ ...variant, productId: saved.id }));
+
+    missingImages.push(...images);
+    missingVariants.push(...variants);
+    missingTags.push(...product.tags
+      .filter((slug) => !existingTags.has(slug))
+      .map((slug) => {
+        const tagId = tagIds.get(slug);
+        if (!tagId) throw new Error(`Missing tag record for ${slug}`);
+        return { productId: saved.id, tagId };
+      }));
+    if (!saved.collections.some(({ collectionId }) => collectionId === collection.id)) {
+      missingCollections.push({ productId: saved.id, collectionId: collection.id });
     }
-  }, { maxWait: 10_000, timeout: 120_000 });
+  }
 
-  console.log(`Catalog seed complete. Upserted ${products.length} products (safe to run again).`);
+  if (missingImages.length) {
+    await prisma.productImage.createMany({ data: missingImages, skipDuplicates: true });
+  }
+  if (missingVariants.length) {
+    await prisma.productVariant.createMany({ data: missingVariants, skipDuplicates: true });
+  }
+  if (missingTags.length) {
+    await prisma.productTag.createMany({ data: missingTags, skipDuplicates: true });
+  }
+  if (missingCollections.length) {
+    await prisma.productCollection.createMany({ data: missingCollections, skipDuplicates: true });
+  }
+
+  const totals = await prisma.product.groupBy({
+    by: ['gender'],
+    where: { slug: { in: products.map((product) => product.slug) } },
+    _count: { _all: true },
+  });
+  const countsByGender = new Map(totals.map(({ gender, _count }) => [gender, _count._all]));
+  for (const department of ['women', 'men', 'unisex'] as const) {
+    const count = countsByGender.get(department) ?? 0;
+    if (count !== TOTAL_PER_DEPARTMENT) {
+      throw new Error(`Expected ${TOTAL_PER_DEPARTMENT} seeded ${department} products, found ${count}`);
+    }
+  }
+  console.log(`Catalog seed complete. Verified ${products.length} products, 50 per department.`);
 }
 
 seedCatalog()

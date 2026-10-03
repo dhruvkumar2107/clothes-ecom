@@ -14,6 +14,7 @@
     "db:reset": "prisma db push --force-reset && npm run db:seed",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:catalog": "tsx prisma/seed-catalog.ts",
+    "db:bootstrap-admin": "tsx prisma/bootstrap-admin.ts",
     "db:studio": "prisma studio",
     "setup": "prisma generate && prisma db push && npm run db:seed"
   },
@@ -23,12 +24,12 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1116.0",
     "@aws-sdk/s3-request-presigner": "^3.1116.0",
+    "@neon/config": "^1.8.3",
+    "@neon/env": "^1.5.0",
     "@prisma/client": "^6.6.0",
     "@radix-ui/react-radio-group": "^1.4.7",
     "@radix-ui/react-slider": "^1.4.7",
     "@react-pdf/renderer": "^4.8.1",
-    "@supabase/ssr": "^0.12.5",
-    "@supabase/supabase-js": "^2.112.4",
     "@upstash/redis": "^1.39.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.10.1",
