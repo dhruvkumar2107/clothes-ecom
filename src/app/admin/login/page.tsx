@@ -25,10 +25,15 @@ export default function AdminLoginPage() {
         credentials: 'include',
       });
 
-      const data = await res.json();
+      const data: {
+        error?: { message?: string };
+        ok?: boolean;
+      } = await res.json();
 
       if (!res.ok) {
-        setError(data.error?.message || 'Invalid credentials');
+        setError(data.error?.message || (res.status >= 500
+          ? 'The sign-in service is temporarily unavailable. Please try again shortly.'
+          : 'Invalid email or password.'));
         return;
       }
 
@@ -40,7 +45,7 @@ export default function AdminLoginPage() {
       router.push(redirectTo);
       router.refresh();
     } catch {
-      setError('An unexpected error occurred');
+      setError('Unable to reach the sign-in service. Check your connection and try again.');
     } finally {
       setLoading(false);
     }

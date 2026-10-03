@@ -13,6 +13,33 @@ const StaffLoginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+const DATABASE_CONNECTION_CODES = new Set([
+  'P1000',
+  'P1001',
+  'P1002',
+  'P1003',
+  'P1017',
+  'ENOTFOUND',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EHOSTUNREACH',
+]);
+
+function isDatabaseUnavailable(error: unknown): boolean {
+  let current = error;
+  while (current && typeof current === 'object') {
+    const value = current as { code?: unknown; name?: unknown; cause?: unknown };
+    if (
+      value.name === 'PrismaClientInitializationError' ||
+      (typeof value.code === 'string' && DATABASE_CONNECTION_CODES.has(value.code))
+    ) {
+      return true;
+    }
+    current = value.cause;
+  }
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   if (!process.env.AUTH_SECRET?.trim()) {
     return apiError('SERVER_MISCONFIGURED', 'AUTH_SECRET env var is missing — admin login is disabled until it is set. Add it in the Render dashboard.', 500);
@@ -54,9 +81,18 @@ export async function POST(request: NextRequest) {
         role: session.roleSlug,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Staff login error:', error);
-    const detail = process.env.NODE_ENV !== 'production' ? error?.message : undefined;
+    if (isDatabaseUnavailable(error)) {
+      return apiError(
+        'DATABASE_UNAVAILABLE',
+        'Admin sign-in is temporarily unavailable because the database connection failed. Check the DATABASE_URL configured for this service, then retry.',
+        503,
+      );
+    }
+    const detail = process.env.NODE_ENV !== 'production' && error instanceof Error
+      ? error.message
+      : undefined;
     return apiError('INTERNAL_ERROR', detail || 'An unexpected error occurred', 500);
   }
 }
