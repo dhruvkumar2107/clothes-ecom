@@ -65,9 +65,9 @@ export function Footer() {
 
       {/* Main Footer */}
       <div className="u-container py-12 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 md:gap-12">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-6 md:gap-12 xl:grid-cols-12">
           {/* Brand Column */}
-          <div className="col-span-2 md:col-span-4">
+          <div className="col-span-2 md:col-span-6 xl:col-span-4">
             <Link href="/" className="inline-block u-focus" aria-label="LUMEN&CO Home">
               <span className="u-display text-2xl tracking-[-0.02em]">LUMEN&CO</span>
             </Link>
@@ -93,7 +93,7 @@ export function Footer() {
           </div>
 
           {/* Link Columns */}
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1 md:col-span-2 xl:col-span-2">
             <h3 className="u-label text-paper/70 mb-4">Shop</h3>
             <nav aria-label="Shop links">
               <ul className="space-y-2.5">
@@ -108,7 +108,7 @@ export function Footer() {
             </nav>
           </div>
 
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1 md:col-span-2 xl:col-span-2">
             <h3 className="u-label text-paper/70 mb-4">Help</h3>
             <nav aria-label="Help links">
               <ul className="space-y-2.5">
@@ -123,7 +123,7 @@ export function Footer() {
             </nav>
           </div>
 
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1 md:col-span-2 xl:col-span-2">
             <h3 className="u-label text-paper/70 mb-4">About</h3>
             <nav aria-label="About links">
               <ul className="space-y-2.5">
@@ -139,7 +139,7 @@ export function Footer() {
           </div>
 
           {/* Newsletter Column */}
-          <div className="col-span-2 md:col-span-2">
+          <div className="col-span-2 md:col-span-6 xl:col-span-2">
             <h3 className="u-label text-paper/70 mb-4">Newsletter</h3>
             <p className="text-sm text-paper/50 mb-4">
               Early access to drops and exclusive previews.

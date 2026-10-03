@@ -77,22 +77,6 @@ export function Header() {
           ]},
         ],
       },
-      {
-        label: 'Men',
-        sublinks: [
-          { label: 'Clothing', sublinks: [
-            { label: 'Shirts', href: '/products?category=men-shirts' },
-            { label: 'Trousers', href: '/products?category=men-trousers' },
-            { label: 'Outerwear', href: '/products?category=men-outerwear' },
-            { label: 'Knitwear', href: '/products?category=men-knitwear' },
-          ]},
-          { label: 'Shop by:', sublinks: [
-            { label: 'New Arrivals', href: '/products?sort=newest' },
-            { label: 'Best Sellers', href: '/products?featured=true' },
-            { label: 'Under ₹1999', href: '/products?minPrice=0&maxPrice=199999' },
-          ]},
-        ],
-      },
     ],
     men: [
       {
@@ -103,22 +87,6 @@ export function Header() {
             { label: 'Trousers', href: '/products?category=men-trousers' },
             { label: 'Outerwear', href: '/products?category=men-outerwear' },
             { label: 'Knitwear', href: '/products?category=men-knitwear' },
-          ]},
-          { label: 'Shop by:', sublinks: [
-            { label: 'New Arrivals', href: '/products?sort=newest' },
-            { label: 'Best Sellers', href: '/products?featured=true' },
-            { label: 'Under ₹1999', href: '/products?minPrice=0&maxPrice=199999' },
-          ]},
-        ],
-      },
-      {
-        label: 'Women',
-        sublinks: [
-          { label: 'Clothing', sublinks: [
-            { label: 'Dresses', href: '/products?category=women-dresses' },
-            { label: 'Tops', href: '/products?category=women-tops' },
-            { label: 'Bottoms', href: '/products?category=women-bottoms' },
-            { label: 'Jackets', href: '/products?category=women-outerwear' },
           ]},
           { label: 'Shop by:', sublinks: [
             { label: 'New Arrivals', href: '/products?sort=newest' },
@@ -223,30 +191,44 @@ export function Header() {
 }
 
 function MegaNav({ megaMenus, navigate, isMobile }: { megaMenus: Record<string, MegaMenuItem[]>; navigate: (href: string) => void; isMobile: boolean }) {
+  const [openGender, setOpenGender] = useState<string | null>(null);
+
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onMouseLeave={() => setOpenGender(null)}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') setOpenGender(null);
+      }}
+    >
       <ul className="flex items-center gap-8 md:gap-0">
         {['women', 'men'].map((gender) => (
-          <li key={gender} className="relative group">
+          <li
+            key={gender}
+            className="relative"
+            onMouseEnter={() => setOpenGender(gender)}
+          >
             <button
+              type="button"
+              aria-expanded={openGender === gender}
+              aria-controls={`mega-menu-${gender}`}
+              onFocus={() => setOpenGender(gender)}
+              onClick={() => setOpenGender(gender)}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isMobile ? 'hidden' : ''} u-focus`}
               aria-label={gender === 'women' ? 'Women' : 'Men'}
             >
               {gender === 'women' ? 'Women' : 'Men'}
-              <ChevronDown className="w-3 h-3 ml-1 transition-transform" aria-hidden="true" />
+              <ChevronDown
+                className={`w-3 h-3 ml-1 transition-transform ${openGender === gender ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
             </button>
 
-            {isMobile ? (
-              <MobileMegaMenu
-                gender={gender}
-                menus={megaMenus[gender] ?? []}
-                navigate={navigate}
-              />
-            ) : (
+            {!isMobile && openGender === gender && (
               <DesktopMegaMenu
                 gender={gender}
                 menus={megaMenus[gender] ?? []}
-                navigate={navigate}
+                onClose={() => setOpenGender(null)}
               />
             )}
           </li>
@@ -256,48 +238,69 @@ function MegaNav({ megaMenus, navigate, isMobile }: { megaMenus: Record<string, 
   );
 }
 
-function DesktopMegaMenu({ gender, menus, navigate }: { gender: string; menus: MegaMenuItem[]; navigate: (href: string) => void }) {
+function DesktopMegaMenu({ gender, menus, onClose }: { gender: string; menus: MegaMenuItem[]; onClose: () => void }) {
   return (
-    <div className="hidden sm:block w-44 md:w-auto bg-ink p-6 md:p-8 rounded-lg border border-line min-w-64">
-      {menus.map((menu, mi) => (
-        <div key={mi} className="mb-8">
-          <h3 className="u-label text-accent text-xs uppercase tracking-wider mb-4">{menu.label}</h3>
-          <div className="space-y-3">
-            {menu.sublinks?.map((sublink, si) => (
-              <React.Fragment key={si}>
-                {sublink.href ? (
-                  <Link
-                    key={si}
-                    href={sublink.href}
-                    className={`flex items-center gap-2 text-paper/60 hover:text-ink transition-colors text-sm ${
-                      si === 0 ? 'pb-2 border-b border-line' : 'pt-2'
-                    }`}
-                    aria-label={sublink.label}
-                  >
-                    {sublink.label}
-                    <ChevronRight className="w-3 h-3" aria-hidden="true" />
-                  </Link>
-                ) : null}
-                {!sublink.href && sublink.sublinks && (
-                  <div key={si} className="flex items-center gap-2 text-paper/60 hover:text-ink transition-colors text-sm">
-                    {sublink.label}
-                    <ChevronRight className="w-3 h-3" aria-hidden="true" />
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-            {!menu.sublinks && (
-              <Link
-                href="/products?gender="
-                  className="flex items-center gap-2 text-paper/60 hover:text-ink transition-colors text-sm"
-                >
-                  Shop All
-                  <ChevronRight className="w-3 h-3" aria-hidden="true" />
-                </Link>
-              )}
-          </div>
-        </div>
-      ))}
+    <div
+      id={`mega-menu-${gender}`}
+      role="region"
+      aria-label={`${gender} shopping categories`}
+      className="absolute left-1/2 top-full z-[60] w-[min(480px,calc(100vw-2rem))] -translate-x-1/2 pt-3"
+    >
+      <div className="grid max-h-[calc(100vh-5rem)] grid-cols-1 gap-8 overflow-y-auto rounded-sm border border-line bg-paper p-6 shadow-xl md:p-8">
+        {menus.map((menu, mi) => (
+          <section key={mi}>
+            <h3 className="u-label mb-5 border-b border-line pb-3 text-xs uppercase tracking-wider text-accent">
+              {menu.label}
+            </h3>
+            <div className="space-y-5">
+              {menu.sublinks?.map((group, gi) => (
+                <div key={gi}>
+                  {group.href ? (
+                    <Link
+                      href={group.href}
+                      onClick={onClose}
+                      className="text-sm font-medium text-ink hover:text-accent"
+                    >
+                      {group.label}
+                    </Link>
+                  ) : (
+                    <>
+                      <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/50">
+                        {group.label}
+                      </h4>
+                      <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {group.sublinks?.map((item, ii) => (
+                          <li key={ii}>
+                            {item.href ? (
+                              <Link
+                                href={item.href}
+                                onClick={onClose}
+                                className="text-sm text-ink/75 transition-colors hover:text-accent"
+                              >
+                                {item.label}
+                              </Link>
+                            ) : (
+                              <span className="text-sm text-ink/75">{item.label}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Link
+              href={`/products?gender=${menu.label.toLowerCase()}`}
+              onClick={onClose}
+              className="mt-6 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-ink hover:text-accent"
+            >
+              Shop all {menu.label.toLowerCase()}
+              <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            </Link>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

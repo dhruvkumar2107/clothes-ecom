@@ -37,7 +37,11 @@ export default async function HomePage() {
 
   const hero = banner ?? FALLBACK_HERO;
   const showcase = collections[0] ?? null;
-  const heroImage = hero.imageUrl ?? showcase?.heroImage ?? newArrivals[0]?.images[0]?.url ?? null;
+  const heroImage =
+    hero.imageUrl ??
+    showcase?.heroImage ??
+    newArrivals[0]?.images[0]?.url ??
+    '/images/hero-banner.webp';
 
   const liveCategories = categories.filter((c) => c.count > 0);
   const arrivals = newArrivals.filter((p) => !featured.some((f) => f.id === p.id)).slice(0, 4);
@@ -60,7 +64,7 @@ export default async function HomePage() {
             priority
             fetchPriority="high"
             sizes="100vw"
-            quality={85}
+            quality={75}
             className="object-cover object-center"
           />
         ) : (

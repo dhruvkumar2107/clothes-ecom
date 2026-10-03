@@ -113,7 +113,7 @@ export function NewsletterForm({
           disabled={status === 'sending'}
           className={
             dark
-              ? 'px-6 py-3 bg-accent text-paper font-medium rounded-md hover:bg-accent/90 disabled:opacity-60 transition-colors u-focus whitespace-nowrap inline-flex items-center justify-center gap-2'
+              ? 'w-full sm:w-auto px-6 py-3 bg-accent text-paper font-medium rounded-md hover:bg-accent/90 disabled:opacity-60 transition-colors u-focus whitespace-nowrap inline-flex items-center justify-center gap-2'
               : 'px-8 py-4 bg-ink text-paper font-medium rounded-md hover:bg-ink-2 disabled:opacity-60 transition-colors u-focus whitespace-nowrap inline-flex items-center justify-center gap-2'
           }
         >
