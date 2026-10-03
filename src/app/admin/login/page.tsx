@@ -25,13 +25,18 @@ export default function AdminLoginPage() {
         credentials: 'include',
       });
 
-      const data: {
-        error?: { message?: string };
-        ok?: boolean;
-      } = await res.json();
+      let data: { error?: { message?: string }; ok?: boolean } | null = null;
+      try {
+        data = await res.json();
+      } catch {
+        setError(res.ok
+          ? 'The sign-in service returned an invalid response. Please try again shortly.'
+          : `The sign-in service returned an error (${res.status}). Please try again shortly.`);
+        return;
+      }
 
       if (!res.ok) {
-        setError(data.error?.message || (res.status >= 500
+        setError(data?.error?.message || (res.status >= 500
           ? 'The sign-in service is temporarily unavailable. Please try again shortly.'
           : 'Invalid email or password.'));
         return;

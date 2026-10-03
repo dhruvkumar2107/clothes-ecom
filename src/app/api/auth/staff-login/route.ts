@@ -18,31 +18,53 @@ const DATABASE_CONNECTION_CODES = new Set([
   'P1001',
   'P1002',
   'P1003',
+  'P1008',
+  'P1011',
+  'P1013',
   'P1017',
+  'P2024',
   'ENOTFOUND',
   'ECONNREFUSED',
   'ETIMEDOUT',
   'EHOSTUNREACH',
 ]);
 
-function isDatabaseUnavailable(error: unknown): boolean {
-  let current = error;
-  while (current && typeof current === 'object') {
-    const value = current as { code?: unknown; name?: unknown; cause?: unknown };
-    if (
-      value.name === 'PrismaClientInitializationError' ||
-      (typeof value.code === 'string' && DATABASE_CONNECTION_CODES.has(value.code))
-    ) {
-      return true;
+const DATABASE_SCHEMA_CODES = new Set(['P2021', 'P2022']);
+
+function getDatabaseFailure(error: unknown): 'unavailable' | 'schema' | null {
+  const pending: unknown[] = [error];
+  const seen = new Set<object>();
+
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current || typeof current !== 'object' || seen.has(current)) continue;
+    seen.add(current);
+
+    const value = current as {
+      code?: unknown;
+      name?: unknown;
+      cause?: unknown;
+      meta?: unknown;
+    };
+    if (value.name === 'PrismaClientInitializationError') return 'unavailable';
+    if (typeof value.code === 'string') {
+      if (DATABASE_CONNECTION_CODES.has(value.code)) return 'unavailable';
+      if (DATABASE_SCHEMA_CODES.has(value.code)) return 'schema';
     }
-    current = value.cause;
+    pending.push(value.cause, value.meta);
   }
-  return false;
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.AUTH_SECRET?.trim()) {
-    return apiError('SERVER_MISCONFIGURED', 'AUTH_SECRET env var is missing — admin login is disabled until it is set. Add it in the Render dashboard.', 500);
+  const authSecret = process.env.AUTH_SECRET?.trim();
+  if (!authSecret || authSecret.length < 32) {
+    return apiError(
+      'SERVER_MISCONFIGURED',
+      'Admin sign-in is not configured correctly. Set AUTH_SECRET to a value of at least 32 characters in the hosting environment.',
+      503,
+    );
   }
 
   const rl = await authRateLimit(request, { limit: 10, window: '1m', keyPrefix: 'auth:staff-login' });
@@ -83,10 +105,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('Staff login error:', error);
-    if (isDatabaseUnavailable(error)) {
+    const databaseFailure = getDatabaseFailure(error);
+    if (databaseFailure === 'unavailable') {
       return apiError(
         'DATABASE_UNAVAILABLE',
-        'Admin sign-in is temporarily unavailable because the database connection failed. Check the DATABASE_URL configured for this service, then retry.',
+        'Admin sign-in cannot reach the database. Check that DATABASE_URL uses the correct Supabase transaction-pooler host, username, password, and port (6543), then retry.',
+        503,
+      );
+    }
+    if (databaseFailure === 'schema') {
+      return apiError(
+        'DATABASE_SCHEMA_UNAVAILABLE',
+        'Admin sign-in cannot use the current database schema. Apply the Prisma schema to the configured database, then retry.',
         503,
       );
     }
