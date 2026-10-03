@@ -7,53 +7,19 @@ import { ProductFilters } from '@/components/products/ProductFilters';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
-interface ProductsPageProps {
-  searchParams: Promise<{
-    page?: string;
-    category?: string;
-    collection?: string;
-    gender?: string;
-    occasion?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    size?: string;
-    color?: string;
-    inStock?: string;
-    featured?: string;
-    new?: string;
-    sort?: string;
-    search?: string;
-  }>;
-}
-
-export default function ProductsPage({ searchParams }: ProductsPageProps) {
+export default function ProductsPage() {
   const searchParamsSync = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const [categories, setCategories] = useState<{ id: string; slug: string; name: string }[]>([]);
-  const [collections, setCollections] = useState<{ id: string; slug: string; name: string; heroImage: string | null }[]>([]);
   const [mounted, setMounted] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     setMounted(true);
-    async function loadData() {
-      try {
-        const [catRes, colRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/collections'),
-        ]);
-        const catJson = catRes.ok ? await catRes.json() : { data: [] };
-        const colJson = colRes.ok ? await colRes.json() : { data: [] };
-        setCategories(Array.isArray(catJson.data) ? catJson.data : []);
-        setCollections(Array.isArray(colJson.data) ? colJson.data : []);
-      } catch {
-        setCategories([]);
-        setCollections([]);
-      }
-    }
-    loadData();
   }, []);
 
   if (!mounted) {
@@ -101,7 +67,7 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
   }
 
   const params = Object.fromEntries(searchParamsSync.entries());
-  const page = parseInt(params.page || '1', 10);
+  const currentPage = parseInt(params.page || '1', 10);
   const limit = 24;
 
   const handleFilterChange = (newParams: Record<string, string>) => {
@@ -152,10 +118,11 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
           {/* Sidebar Filters - Desktop */}
           <aside className="hidden lg:block lg:w-64 flex-shrink-0">
             <ProductFilters
-              categories={categories}
-              collections={collections}
-              initialParams={params}
-              onChange={handleFilterChange}
+              minPrice={minPrice || ''}
+              maxPrice={maxPrice || ''}
+              onMinPriceChange={(v) => setMinPrice(v)}
+              onMaxPriceChange={(v) => setMaxPrice(v)}
+              onPageChange={(page) => setPage(page)}
             />
           </aside>
 
@@ -174,10 +141,11 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
               </div>
               <div className="p-4">
                 <ProductFilters
-                  categories={categories}
-                  collections={collections}
-                  initialParams={params}
-                  onChange={handleFilterChange}
+                  minPrice={minPrice || ''}
+                  maxPrice={maxPrice || ''}
+                  onMinPriceChange={(v) => setMinPrice(v)}
+                  onMaxPriceChange={(v) => setMaxPrice(v)}
+                  onPageChange={(page) => setPage(page)}
                 />
               </div>
             </div>

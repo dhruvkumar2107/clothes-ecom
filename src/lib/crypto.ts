@@ -1,4 +1,5 @@
 import 'server-only';
+import * as cryptoNode from 'node:crypto';
 
 /**
  * Cryptographic primitives.
@@ -7,26 +8,7 @@ import 'server-only';
  * This module should only be imported in server components or API routes.
  */
 
-// Server-side crypto (Node.js) - lazy loaded with opaque require to avoid bundling issues
-let cryptoNode: any = null;
 let cachedKey: Buffer | null = null;
-
-const getNodeCrypto = () => {
-  if (cryptoNode !== null) return cryptoNode;
-  
-  if (typeof process !== 'undefined' && process.versions?.node) {
-    try {
-      // Use a computed string to avoid static analysis by Webpack
-      const cryptoModule = 'node:crypto';
-      cryptoNode = require(cryptoModule);
-      return cryptoNode;
-    } catch {
-      cryptoNode = null;
-      return null;
-    }
-  }
-  return null;
-};
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;

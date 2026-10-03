@@ -77,8 +77,6 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
 
-RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
-
 USER nextjs
 
 EXPOSE 3000

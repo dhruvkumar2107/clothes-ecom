@@ -22,6 +22,15 @@ export const db =
         : [{ emit: 'stdout', level: 'error' }],
   });
 
+// Warn if connection pool is too small — homepage fires 6 parallel queries.
+if (process.env.DATABASE_URL?.includes('connection_limit=1')) {
+  console.warn(
+    '[Prisma] WARNING: connection_limit=1 detected in DATABASE_URL. ' +
+    'This WILL cause pool exhaustion on pages with parallel queries. ' +
+    'Set connection_limit=5&pool_timeout=20 instead.'
+  );
+}
+
 // Alias for backward compatibility
 export const prisma = db;
 

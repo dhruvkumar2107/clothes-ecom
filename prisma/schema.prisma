@@ -402,6 +402,9 @@ model Product {
   @@index([featured])
   @@index([occasion])
   @@index([gender])
+  @@index([basePrice])
+  @@index([createdAt])
+  @@index([soldCount])
 }
 
 model ProductImage {
@@ -446,6 +449,7 @@ model ProductVariant {
 
   @@unique([productId, size, color])
   @@index([productId])
+  @@index([productId, active])
   @@index([stock])
 }
 

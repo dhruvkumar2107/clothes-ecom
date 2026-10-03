@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { create } from 'zustand';
 
 /* ────────────────────────────────────────────────────────────────────────── */
@@ -195,6 +195,56 @@ export function useLocale() {
   if (!ctx) return { locale: 'en', currency: 'INR' };
   return ctx;
 }
+
+/* Search state for storefront */
+
+export interface SearchState {
+  open: boolean;
+  openSearch: () => void;
+  closeSearch: () => void;
+  toggleSearch: () => void;
+  query: string;
+  setQuery: (q: string) => void;
+}
+
+export const useSearch = create<SearchState>()((set) => ({
+  open: false,
+  openSearch: () => set({ open: true }),
+  closeSearch: () => set({ open: false }),
+  toggleSearch: () => set((s) => ({ open: !s.open })),
+  query: '',
+  setQuery: (q) => set({ query: q }),
+}));
+
+/* Product state for product detail page */
+
+interface ProductDetailState {
+  product: any;
+  setProduct: (p: any) => void;
+  wishlisted: boolean;
+  toggleWishlist: () => void;
+}
+
+export const useProduct = (productId: string) => {
+  const [product, setProduct] = useState<any>(null);
+  const [wishlisted, setWishlisted] = useState<boolean>(false);
+
+  useEffect(() => {
+    // In a real implementation, fetch product data from API
+    const fetchProduct = async () => {
+      // const res = await fetch(`/api/products/${productId}`);
+      // const data = await res.json();
+      // setProduct(data);
+    };
+    fetchProduct();
+  }, [productId]);
+
+  const toggleWishlist = useCallback(() => {
+    setWishlisted(prev => !prev);
+  }, []);
+
+  return { product, setProduct, wishlisted, toggleWishlist };
+};
 
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Providers barrel — mount once in root layout */

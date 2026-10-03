@@ -1,4 +1,5 @@
 import { db } from './db';
+import { cached, cacheInvalidate, keys } from './cache';
 
 export async function getCategories() {
   return db.category.findMany({
@@ -453,27 +454,64 @@ async function loadHomepage() {
 }
 
 /**
- * Short-lived process cache. The landing page is dynamically rendered (the root
- * layout needs live theme settings), so without this every visitor would pay a
- * round-trip to the database region. 60s is short enough that a merchandising
- * change lands almost immediately and long enough to flatten a traffic spike.
+ * Two-layer cache:
+ *   L1 — in-process Map (survives across requests within the same container)
+ *   L2 — Upstash Redis (survives across containers, shared across deployments)
+ *
+ * Without Redis the app works fine — L1 alone is enough for low traffic.
+ * With Redis, cold starts on a new container still get cache hits.
  */
 const HOME_TTL_MS = 60_000;
+const HOME_REDIS_TTL = 120; // seconds
+
 let homeCache: Awaited<ReturnType<typeof loadHomepage>> | null = null;
 let homeCacheExpiresAt = 0;
 
 export type HomepageData = Awaited<ReturnType<typeof loadHomepage>>;
 
 export async function getHomepage(): Promise<HomepageData> {
+  // L1: in-process cache
   const now = Date.now();
   if (homeCache && now < homeCacheExpiresAt) return homeCache;
-  homeCache = await loadHomepage();
+
+  // L2: Redis cache
+  const redisKey = keys.homepage();
+  const redisHit = await cached<HomepageData>(redisKey, HOME_REDIS_TTL, loadHomepage);
+
+  // Populate L1
+  homeCache = redisHit;
   homeCacheExpiresAt = now + HOME_TTL_MS;
-  return homeCache;
+  return redisHit;
 }
 
 /** Call after any catalogue/CMS write so the next request re-reads. */
-export function invalidateHomepage() {
+export async function invalidateHomepage() {
   homeCache = null;
   homeCacheExpiresAt = 0;
+  await cacheInvalidate(keys.homepage());
+}
+
+/* ---------------------------------------------------------------------------
+ * Related Products
+ * ------------------------------------------------------------------------- */
+
+export async function getRelatedProducts(
+  productId: string,
+  categoryId: string,
+  limit = 4,
+): Promise<ProductCardData[]> {
+  const rows = await db.product.findMany({
+    where: {
+      id: { not: productId },
+      status: 'active',
+      OR: [
+        { categoryId },
+        { collections: { some: { collection: { products: { some: { productId } } } } } },
+      ],
+    },
+    orderBy: [{ soldCount: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+    select: CARD_SELECT,
+  });
+  return rows.map(toCard);
 }

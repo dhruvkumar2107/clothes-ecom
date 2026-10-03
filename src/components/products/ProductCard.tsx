@@ -136,7 +136,7 @@ export function ProductCard({
         aria-label={'View ' + name}
       >
         {/* Primary Image */}
-        <div className="absolute inset-0 transition-opacity duration-500" style={{ opacity: hovered && hoverImage?.url !== activeImage?.url ? 0 : 1 }}>
+        <div className="absolute inset-0 transition-opacity duration-500 ease-out" style={{ opacity: hovered && hoverImage?.url !== activeImage?.url ? 0 : 1 }}>
           {activeImage ? (
             <SmartImage
               src={activeImage.url}
@@ -145,8 +145,7 @@ export function ProductCard({
               className="object-cover"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               loading="lazy"
-              placeholder="blur"
-              blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTYwJz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjZjRmMWUnLz48L3N2Zz4="
+              fetchPriority="high"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted">
@@ -159,7 +158,7 @@ export function ProductCard({
 
         {/* Hover Image */}
         {hoverImage && hoverImage.url !== activeImage?.url && (
-          <div className="absolute inset-0 transition-opacity duration-500" style={{ opacity: hovered ? 1 : 0 }}>
+          <div className="absolute inset-0 transition-opacity duration-500 ease-out" style={{ opacity: hovered ? 1 : 0 }}>
             <SmartImage
               src={hoverImage.url}
               alt={hoverImage.alt || name}

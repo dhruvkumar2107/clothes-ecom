@@ -1,10 +1,23 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore, useSearchOverlay, useMobileNav } from '@/app/providers';
-import { Search, Menu, X, User, Heart, ShoppingBag } from 'lucide-react';
+import { Search, Menu, X, User, Heart, ShoppingBag, ChevronDown, ChevronRight } from 'lucide-react';
+
+interface MegaMenuItem {
+  label: string;
+  href?: string;
+  sublinks?: MegaMenuSublink[];
+}
+
+interface MegaMenuSublink {
+  label: string;
+  href?: string;
+  sublinks?: MegaMenuSublink[];
+}
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -40,6 +53,87 @@ export function Header() {
     useSearchOverlay.getState().openOverlay();
   }, []);
 
+  const megaMenus: Record<string, MegaMenuItem[]> = {
+    women: [
+      {
+        label: 'Women',
+        sublinks: [
+          { label: 'Clothing', sublinks: [
+            { label: 'Dresses', href: '/products?category=women-dresses' },
+            { label: 'Tops', href: '/products?category=women-tops' },
+            { label: 'Shirts', href: '/products?category=women-tops' },
+            { label: 'Co-ords', href: '/products?category=women-tops' },
+            { label: 'Bottoms', href: '/products?category=women-bottoms' },
+            { label: 'Jackets', href: '/products?category=women-outerwear' },
+            { label: 'Ethnic', href: '/products?category=women-outerwear' },
+            { label: 'Accessories', href: '/products?category=unisex-accessories' },
+          ]},
+          { label: 'Shop by:', sublinks: [
+            { label: 'New Arrivals', href: '/products?sort=newest' },
+            { label: 'Best Sellers', href: '/products?featured=true' },
+            { label: 'Trending', href: '/products?new=true' },
+            { label: 'Under ₹1999', href: '/products?minPrice=0&maxPrice=199999' },
+            { label: 'Limited Edition', href: '/collections?kind=drop' },
+          ]},
+        ],
+      },
+      {
+        label: 'Men',
+        sublinks: [
+          { label: 'Clothing', sublinks: [
+            { label: 'Shirts', href: '/products?category=men-shirts' },
+            { label: 'Trousers', href: '/products?category=men-trousers' },
+            { label: 'Outerwear', href: '/products?category=men-outerwear' },
+            { label: 'Knitwear', href: '/products?category=men-knitwear' },
+          ]},
+          { label: 'Shop by:', sublinks: [
+            { label: 'New Arrivals', href: '/products?sort=newest' },
+            { label: 'Best Sellers', href: '/products?featured=true' },
+            { label: 'Under ₹1999', href: '/products?minPrice=0&maxPrice=199999' },
+          ]},
+        ],
+      },
+    ],
+    men: [
+      {
+        label: 'Men',
+        sublinks: [
+          { label: 'Clothing', sublinks: [
+            { label: 'Shirts', href: '/products?category=men-shirts' },
+            { label: 'Trousers', href: '/products?category=men-trousers' },
+            { label: 'Outerwear', href: '/products?category=men-outerwear' },
+            { label: 'Knitwear', href: '/products?category=men-knitwear' },
+          ]},
+          { label: 'Shop by:', sublinks: [
+            { label: 'New Arrivals', href: '/products?sort=newest' },
+            { label: 'Best Sellers', href: '/products?featured=true' },
+            { label: 'Under ₹1999', href: '/products?minPrice=0&maxPrice=199999' },
+          ]},
+        ],
+      },
+      {
+        label: 'Women',
+        sublinks: [
+          { label: 'Clothing', sublinks: [
+            { label: 'Dresses', href: '/products?category=women-dresses' },
+            { label: 'Tops', href: '/products?category=women-tops' },
+            { label: 'Bottoms', href: '/products?category=women-bottoms' },
+            { label: 'Jackets', href: '/products?category=women-outerwear' },
+          ]},
+          { label: 'Shop by:', sublinks: [
+            { label: 'New Arrivals', href: '/products?sort=newest' },
+            { label: 'Best Sellers', href: '/products?featured=true' },
+            { label: 'Under ₹1999', href: '/products?minPrice=0&maxPrice=199999' },
+          ]},
+        ],
+      },
+    ],
+  };
+
+  const navigate = (href: string) => {
+    router.push(href);
+  };
+
   return (
     <header
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
@@ -48,7 +142,6 @@ export function Header() {
       style={{ top: 0 }}
       role="banner"
     >
-      {/* Main Navigation */}
       <div className="u-container">
         <div className="flex items-center justify-between h-14 md:h-16 gap-4">
           {/* Mobile Menu */}
@@ -71,26 +164,13 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation with Mega Menus */}
           <nav className="hidden md:flex items-center gap-8 ml-8" role="navigation" aria-label="Main navigation">
-            <Link href="/products" className="u-label hover:text-ink transition-colors u-focus">
-              Women
-            </Link>
-            <Link href="/products?gender=men" className="u-label hover:text-ink transition-colors u-focus">
-              Men
-            </Link>
-            <Link href="/products?new=true" className="u-label hover:text-ink transition-colors u-focus">
-              New Arrivals
-            </Link>
-            <Link href="/collections" className="u-label hover:text-ink transition-colors u-focus">
-              Collections
-            </Link>
-            <Link href="/products?featured=true" className="u-label hover:text-ink transition-colors u-focus">
-              Best Sellers
-            </Link>
-            <Link href="/products?sale=true" className="u-label text-danger hover:text-danger/80 transition-colors u-focus">
-              Sale
-            </Link>
+            <MegaNav
+              megaMenus={megaMenus}
+              navigate={navigate}
+              isMobile={false}
+            />
           </nav>
 
           {/* Right Actions */}
@@ -139,5 +219,136 @@ export function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function MegaNav({ megaMenus, navigate, isMobile }: { megaMenus: Record<string, MegaMenuItem[]>; navigate: (href: string) => void; isMobile: boolean }) {
+  return (
+    <div className="relative">
+      <ul className="flex items-center gap-8 md:gap-0">
+        {['women', 'men'].map((gender) => (
+          <li key={gender} className="relative group">
+            <button
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isMobile ? 'hidden' : ''} u-focus`}
+              aria-label={gender === 'women' ? 'Women' : 'Men'}
+            >
+              {gender === 'women' ? 'Women' : 'Men'}
+              <ChevronDown className="w-3 h-3 ml-1 transition-transform" aria-hidden="true" />
+            </button>
+
+            {isMobile ? (
+              <MobileMegaMenu
+                gender={gender}
+                menus={megaMenus[gender] ?? []}
+                navigate={navigate}
+              />
+            ) : (
+              <DesktopMegaMenu
+                gender={gender}
+                menus={megaMenus[gender] ?? []}
+                navigate={navigate}
+              />
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DesktopMegaMenu({ gender, menus, navigate }: { gender: string; menus: MegaMenuItem[]; navigate: (href: string) => void }) {
+  return (
+    <div className="hidden sm:block w-44 md:w-auto bg-ink p-6 md:p-8 rounded-lg border border-line min-w-64">
+      {menus.map((menu, mi) => (
+        <div key={mi} className="mb-8">
+          <h3 className="u-label text-accent text-xs uppercase tracking-wider mb-4">{menu.label}</h3>
+          <div className="space-y-3">
+            {menu.sublinks?.map((sublink, si) => (
+              <React.Fragment key={si}>
+                {sublink.href ? (
+                  <Link
+                    key={si}
+                    href={sublink.href}
+                    className={`flex items-center gap-2 text-paper/60 hover:text-ink transition-colors text-sm ${
+                      si === 0 ? 'pb-2 border-b border-line' : 'pt-2'
+                    }`}
+                    aria-label={sublink.label}
+                  >
+                    {sublink.label}
+                    <ChevronRight className="w-3 h-3" aria-hidden="true" />
+                  </Link>
+                ) : null}
+                {!sublink.href && sublink.sublinks && (
+                  <div key={si} className="flex items-center gap-2 text-paper/60 hover:text-ink transition-colors text-sm">
+                    {sublink.label}
+                    <ChevronRight className="w-3 h-3" aria-hidden="true" />
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+            {!menu.sublinks && (
+              <Link
+                href="/products?gender="
+                  className="flex items-center gap-2 text-paper/60 hover:text-ink transition-colors text-sm"
+                >
+                  Shop All
+                  <ChevronRight className="w-3 h-3" aria-hidden="true" />
+                </Link>
+              )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MobileMegaMenu({ gender, menus, navigate }: { gender: string; menus: MegaMenuItem[]; navigate: (href: string) => void }) {
+  return (
+    <div className="fixed inset-0 z-40 bg-ink/95 backdrop-blur-md left top w-full md:translate-x-full md:translate-x-0 transition-transform duration-300">
+      <div className="flex flex-col h-full p-8 pt-16">
+        <button
+          onClick={() => useMobileNav.getState().closeNav()}
+          className="absolute top-6 right-6 p-2 rounded-full hover:bg-paper/80 transition-colors"
+          aria-label="Close menu"
+        >
+          <X className="w-6 h-6" aria-hidden="true" />
+        </button>
+
+        <h2 className="u-display text-2xl md:text-3xl font-light text-ink mb-8">
+          {gender === 'women' ? 'Women' : 'Men'}
+        </h2>
+
+        {menus.map((menu, mi) => (
+          <div key={mi} className="mb-10">
+            <h3 className="u-label text-accent text-xs uppercase tracking-wider mb-4">{menu.label}</h3>
+            <ul className="space-y-2">
+              {menu.sublinks?.map((sublink, si) => (
+                <li key={si}>
+                  {sublink.href ? (
+                    <Link
+                      href={sublink.href}
+                      className="block text-paper/60 hover:text-ink transition-colors text-sm py-1.5"
+                      aria-label={sublink.label}
+                    >
+                      {sublink.label}
+                    </Link>
+                  ) : null}
+                </li>
+              ))}
+              {!menu.sublinks && (
+                <li>
+                  <Link
+                    href="/products?gender="
+                      className="block text-paper/60 hover:text-ink transition-colors text-sm py-1.5"
+                    >
+                      Shop All
+                    </Link>
+                  </li>
+                )}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

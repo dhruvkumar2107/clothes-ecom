@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
 
   compress: true,
 
+  // Run `ANALYZE=true next build` to generate bundle report
+  ...(process.env.ANALYZE === 'true'
+    ? { bundleAnalyzer: { enabled: true } as any }
+    : {}),
+
   serverExternalPackages: [
     '@prisma/client',
     '@aws-sdk/client-s3',
@@ -29,13 +34,15 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
       { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
     ],
     formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60 * 60 * 24 * 30,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 365,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512],
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+
   },
 
   poweredByHeader: false,
@@ -104,6 +111,24 @@ const nextConfig: NextConfig = {
         source: '/manifest.json',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=86400' },
+        ],
+      },
+      {
+        source: '/products/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, stale-while-revalidate=60',
+          },
+        ],
+      },
+      {
+        source: '/collections/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, stale-while-revalidate=60',
+          },
         ],
       },
     ];

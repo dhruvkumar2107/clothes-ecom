@@ -6,6 +6,8 @@
   "display": "standalone",
   "background_color": "#0b0b0c",
   "theme_color": "#0b0b0c",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "fashion"],
   "icons": [
     {
       "src": "/favicon-32x32.png",
@@ -16,6 +18,18 @@
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/api/img/og?title=LUMEN%26CO&w=192&h=192",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/api/img/og?title=LUMEN%26CO&w=512&h=512",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

@@ -30,8 +30,9 @@ services:
     envVars:
       # ── Required ──────────────────────────────────────────────────────────
       # Supabase connection string. Use the POOLER URI (port 6543) with
-      # ?pgbouncer=true&connection_limit=1 — Render containers are short-lived
-      # and the direct 5432 connection will exhaust Supabase's limit.
+      # ?pgbouncer=true&connection_limit=5&pool_timeout=20 — Render containers
+      # are short-lived and the direct 5432 connection will exhaust Supabase's limit.
+      # connection_limit=5 allows parallel queries; pool_timeout=20 extends the wait.
       - key: DATABASE_URL
         sync: false
 
@@ -79,6 +80,22 @@ services:
         value: "false"
       - key: ENABLE_360
         value: "false"
+
+      # ── Storage — Cloudinary (required for persistent image uploads on Render) ──
+      - key: STORAGE_PROVIDER
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # ── Upstash Redis (optional, for homepage caching across containers) ──
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
 
       # ── Optional secrets — set in the dashboard when you wire providers up ─
       - key: SMTP_HOST

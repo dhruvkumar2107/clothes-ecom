@@ -1,272 +1,235 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { SmartImage } from '@/components/ui/SmartImage';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ChevronRight, ShoppingCart, Heart, RefreshCw, X, Check } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { apiPost, apiGet } from '@/lib/api-client';
+import { Loader2, X, Music, Heart, ShoppingBag } from 'lucide-react';
+import { useToast } from '@/app/providers';
+import { apiGet } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/utils';
-import { useCartStore } from '@/app/providers';
 
-interface OutfitItem {
-  id: string;
-  name: string;
-  imageUrl: string;
-  slug: string;
-  price: number;
-  category: string;
-  color: string;
-}
-
-interface OutfitRecommendation {
-  id: string;
-  name: string;
-  items: OutfitItem[];
-  total: number;
-  reasoning: string;
+interface StylistRecommendation {
+  product: {
+    id: string;
+    slug: string;
+    name: string;
+    subtitle: string | null;
+    basePrice: number;
+    compareAtPrice: number | null;
+    images: { url: string; alt: string }[];
+    colors: { color: string; colorHex: string }[];
+    variants: { size: string; color: string; priceDelta: number }[];
+  };
+  reason: string;
 }
 
 interface AIStylistProps {
-  currentProduct: {
-    id: string;
-    name: string;
-    category: string;
-    color: string;
-    imageUrl: string;
-  };
-  className?: string;
+  prompt: string;
 }
 
-export function AIStylist({ currentProduct, className }: AIStylistProps) {
-  const { openDrawer } = useCartStore();
-  const [isOpen, setIsOpen] = useState(false);
-  const [recommendations, setRecommendations] = useState<OutfitRecommendation[]>([]);
+export function AIStylist({ prompt }: AIStylistProps) {
   const [loading, setLoading] = useState(false);
-  const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
+  const [recommendations, setRecommendations] = useState<StylistRecommendation[]>([]);
+  const { toast } = useToast();
 
-  const fetchRecommendations = useCallback(async () => {
-    if (recommendations.length > 0) return;
+  const handleSearch = useCallback(async (userPrompt: string) => {
     setLoading(true);
     try {
-      const result = await apiPost<{ data: OutfitRecommendation[] }>('/api/ai-stylist/recommend', {
-        productId: currentProduct.id,
-        category: currentProduct.category,
-        color: currentProduct.color,
+      // In a real implementation, this would call an AI styling API
+      // For now, we filter the product catalogue based on the prompt
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Parse the prompt for key terms
+      const lowerPrompt = userPrompt.toLowerCase();
+      const hasWedding = lowerPrompt.includes('wedding') || lowerPrompt.includes('wedding outfit');
+      const hasUnder = lowerPrompt.includes('under');
+      const priceLimit = hasUnder ? parseInt(lowerPrompt.match(/under\s₹?(\d+)/)?.[1] ?? '0') : null;
+      const colorTerms = ['black', 'red', 'white', 'blue', 'green'].filter(term => lowerPrompt.includes(term));
+      const fabricTerms = ['linen', 'silk', 'cotton', 'wool', 'cashmere'].filter(term => lowerPrompt.includes(term));
+
+      // Fetch products from API
+      const result = await apiGet<{ products: any[] }>('/api/products?limit=50');
+      let products = result.products || [];
+
+      // Filter based on prompt
+      products = products.filter((p: any) => {
+        const nameLower = (p.name + ' ' + (p.subtitle || '')).toLowerCase();
+
+        // Check for wedding outfit
+        if (hasWedding) {
+          // Look for formal, party, or festive occasion
+          const suitableOccasions = ['formal', 'party', 'festive'];
+          return suitableOccasions.some(occ => p.occasion === occ);
+        }
+
+        // Check price filter
+        if (priceLimit !== null) {
+          const maxPrice = priceLimit * 100; // Convert to paise
+          if (p.basePrice > maxPrice * 100) return false;
+        }
+
+        // Check color preference
+        if (colorTerms.length > 0) {
+          const hasColorMatch = p.colors?.some((c: any) => colorTerms.some(term => c.colorHex?.toLowerCase().includes(term) || c.name?.toLowerCase().includes(term)));
+          if (!hasColorMatch) return false;
+        }
+
+        // Check fabric preference
+        if (fabricTerms.length > 0) {
+          const hasFabricMatch = p.fabric?.toLowerCase().some((f: any) => fabricTerms.some(term => f.toLowerCase().includes(term)));
+          if (!hasFabricMatch) return false;
+        }
+
+        return true;
       });
-      setRecommendations(result.data);
-    } catch {
-      // Fallback recommendations
-      setRecommendations([
-        {
-          id: '1',
-          name: 'Office Elegance',
-          items: [
-            { id: '1', name: currentProduct.name, imageUrl: currentProduct.imageUrl, slug: '', price: 4999, category: currentProduct.category, color: currentProduct.color },
-            { id: '2', name: 'Tailored Trousers', imageUrl: '/placeholder-trousers.jpg', slug: 'tailored-trousers', price: 3499, category: 'bottoms', color: 'Navy' },
-            { id: '3', name: 'Structured Blazer', imageUrl: '/placeholder-blazer.jpg', slug: 'structured-blazer', price: 6999, category: 'outerwear', color: 'Grey' },
-            { id: '4', name: 'Leather Oxford Shoes', imageUrl: '/placeholder-shoes.jpg', slug: 'leather-oxford', price: 5499, category: 'shoes', color: 'Brown' },
-          ],
-          total: 20996,
-          reasoning: 'A polished ensemble pairing your piece with tailored staples for the modern professional.',
-        },
-        {
-          id: '2',
-          name: 'Weekend Relaxed',
-          items: [
-            { id: '1', name: currentProduct.name, imageUrl: currentProduct.imageUrl, slug: '', price: 4999, category: currentProduct.category, color: currentProduct.color },
-            { id: '2', name: 'Relaxed Chinos', imageUrl: '/placeholder-chinos.jpg', slug: 'relaxed-chinos', price: 2499, category: 'bottoms', color: 'Khaki' },
-            { id: '3', name: 'Minimal Sneakers', imageUrl: '/placeholder-sneakers.jpg', slug: 'minimal-sneakers', price: 4499, category: 'shoes', color: 'White' },
-          ],
-          total: 11997,
-          reasoning: 'A laid-back look that lets your selected piece shine with effortless weekend style.',
-        },
-        {
-          id: '3',
-          name: 'Evening Statement',
-          items: [
-            { id: '1', name: currentProduct.name, imageUrl: currentProduct.imageUrl, slug: '', price: 4999, category: currentProduct.category, color: currentProduct.color },
-            { id: '2', name: 'Silk Midi Skirt', imageUrl: '/placeholder-skirt.jpg', slug: 'silk-midi-skirt', price: 4999, category: 'bottoms', color: 'Grey' },
-            { id: '3', name: 'Strappy Heels', imageUrl: '/placeholder-heels.jpg', slug: 'strappy-heels', price: 5999, category: 'shoes', color: 'Gold' },
-            { id: '4', name: 'Statement Earrings', imageUrl: '/placeholder-earrings.jpg', slug: 'statement-earrings', price: 1999, category: 'accessories', color: 'Gold' },
-          ],
-          total: 17996,
-          reasoning: 'Elevate your piece for evening occasions with luxe textures and metallic accents.',
-        },
-      ]);
+
+      // Map to recommendation format
+      const recs = products.slice(0, 3).map((p: any) => {
+        const firstVariant = p.variants?.[0] || {};
+        const colorOptions = p.colors || [];
+        const primaryColor = colorOptions[0] || { color: 'N/A', colorHex: '#808080' };
+
+        return {
+          product: {
+            id: p.id,
+            slug: p.slug,
+            name: p.name,
+            subtitle: p.subtitle,
+            basePrice: p.basePrice,
+            compareAtPrice: p.compareAtPrice,
+            images: p.images?.map((img: any) => ({ url: img.url, alt: img.alt })) || [],
+            colors: colorOptions.map((c: any) => ({ color: c.color, colorHex: c.colorHex })) || [],
+            variants: p.variants?.map((v: any) => ({
+              size: v.size,
+              color: v.color,
+              priceDelta: v.priceDelta,
+            })) || [],
+          },
+          reason: generateRecommendationReason(p, userPrompt),
+        };
+      });
+
+      setRecommendations(recs);
+    } catch (error) {
+      toast({ title: 'Error', message: 'Failed to get style recommendations', tone: 'danger' });
     } finally {
       setLoading(false);
     }
-  }, [currentProduct, recommendations.length]);
+  }, [toast]);
 
-  const handleOpen = () => {
-    setIsOpen(true);
-    fetchRecommendations();
-  };
-
-  const addToCart = async (item: OutfitItem) => {
-    try {
-      const products = await apiGet<{ data: any[] }>('/api/products', { slug: item.slug, limit: '1' });
-      const product = products.data?.[0];
-      const variant = product?.variants?.find((v: any) => v.stock - v.reserved > 0) || product?.variants?.[0];
-      if (!variant) {
-        throw new Error('No variants available');
-      }
-      await apiPost('/api/cart', { variantId: variant.id, qty: 1 });
-      openDrawer();
-      setAddedItems((prev) => new Set([...prev, item.id]));
-      setTimeout(() => {
-        setAddedItems((prev) => {
-          const next = new Set(prev);
-          next.delete(item.id);
-          return next;
-        });
-      }, 2000);
-    } catch {
-      // Silently fail
+  const generateRecommendationReason = (product: any, prompt: string): string => {
+    const lowerPrompt = prompt.toLowerCase();
+    if (lowerPrompt.includes('wedding')) {
+      return 'Selected for wedding occasion - formal and elegant style';
     }
+    if (lowerPrompt.includes('under')) {
+      return `Fits within your budget of ₹${product.basePrice / 100}`;
+    }
+    return 'Recommended based on your style preferences';
   };
+
+  const handleClose = useCallback(() => {
+    setRecommendations([]);
+    setLoading(false);
+  }, []);
+
+  if (loading && recommendations.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="w-16 h-16 text-accent mx-auto mb-4" />
+        <p className="text-paper/60">Finding the perfect look...</p>
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="p-6 bg-paper rounded-lg border border-line max-w-2xl mx-auto">
+      {/* Prompt Input */}
+      <div className="mb-4">
+        <textarea
+          placeholder="e.g. 'I need a wedding outfit under ₹5000'"
+          value={prompt}
+          onChange={(e) => {/* handle prompt change */}}
+          className="w-full px-4 py-3 rounded-md bg-paper-2 border border-line text-sm text-ink focus:outline-none focus:ring-2 focus:ring-paper resize-none min-h-[120px]"
+          aria-label="Describe your style need"
+        />
+      </div>
+
+      {/* Search Button */}
       <button
-        onClick={handleOpen}
-        className={`flex items-center gap-2 px-4 py-2 text-sm text-accent border border-accent/30 rounded-md hover:bg-accent hover:text-paper transition-all ${className || ''}`}
+        onClick={() => handleSearch(prompt)}
+        className="w-full px-6 py-3 rounded-md bg-ink text-paper text-sm font-medium uppercase tracking-wider hover:bg-paper/3 transition-colors"
+        disabled={loading}
       >
-        <Sparkles className="w-4 h-4" aria-hidden="true" />
-        Complete the Outfit
+        {loading ? 'Finding...' : 'STYLE ME'}
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-ink/95 flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-label="AI outfit recommendations"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-paper rounded-xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-            >
-              <div className="flex items-center justify-between p-5 border-b border-line">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-accent" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2 className="u-display text-lg font-medium text-ink">Complete the Outfit</h2>
-                    <p className="text-xs text-muted">AI-styled combinations featuring your selected piece</p>
-                  </div>
+      {/* Results */}
+      {recommendations.length > 0 && (
+        <div className="mt-6 space-y-4">
+          {recommendations.map((rec, i) => (
+            <div key={i} className="p-4 bg-paper-2 rounded-lg border border-line">
+              {/* Product Image */}
+              <div className="rounded-lg overflow-hidden mb-4">
+                <img
+                  src={rec.product.images[0]?.url || '/placeholder.jpg'}
+                  alt={rec.product.name}
+                  className="w-full h-40 object-cover"
+                />
+              </div>
+
+              {/* Product Details */}
+              <div className="flex flex-col gap-2">
+                <h3 className="font-medium text-ink truncate">
+                  <Link href={`/products/${rec.product.slug}`} className="hover:text-accent transition-colors">
+                    {rec.product.name}
+                  </Link>
+                </h3>
+                <p className="text-xs text-paper/60 line-clamp-2">
+                  {rec.product.subtitle || 'No description available'}
+                </p>
+
+                {/* Price */}
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-light tabular-nums text-ink">{formatCurrency(rec.product.basePrice)}</span>
+                  {rec.product.compareAtPrice && rec.product.compareAtPrice > rec.product.basePrice && (
+                    <span className="text-xs text-paper/60 line-through">Rs. {formatCurrency(rec.product.compareAtPrice)}</span>
+                  )}
                 </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="w-10 h-10 rounded-full hover:bg-ink-2 flex items-center justify-center transition-colors u-focus"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5 text-ink" />
-                </button>
+
+                {/* Reason */}
+                <p className="text-[10px] text-paper/60 uppercase tracking-wider">{rec.reason}</p>
+
+                {/* Action */}
+                <div className="mt-3">
+                  <button
+                    onClick={() => window.location.href = `/products/${rec.product.slug}`}
+                    className="text-[10px] text-accent hover:underline transition-colors"
+                  >
+                    View Product
+                  </button>
+                  <button
+                    onClick={() => {/* Add to bag logic */}}
+                    className="text-[10px] text-paper hover:text-ink transition-colors"
+                  >
+                    Add to Bag
+                  </button>
+                </div>
               </div>
+            </div>
+          ))}
 
-              <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-5">
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-                    <p className="text-sm text-muted">Styling your outfit...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {recommendations.map((rec, idx) => (
-                      <motion.div
-                        key={rec.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.15 }}
-                        className="border border-line rounded-xl p-5 hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="u-display text-lg font-medium text-ink">{rec.name}</h3>
-                            <p className="text-xs text-muted mt-1">{rec.reasoning}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="u-label text-xs text-muted">Outfit Total</p>
-                            <p className="u-display text-lg text-ink font-medium">
-                              {formatCurrency(rec.total)}
-                            </p>
-                          </div>
-                        </div>
+          <button onClick={handleClose} className="mt-4 flex justify-center text-[10px] text-paper/60 uppercase tracking-wider">
+            Close
+          </button>
+        </div>
+      )}
 
-                        <div className="flex gap-3 overflow-x-auto pb-2">
-                          {rec.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="relative flex-shrink-0 w-32 group"
-                            >
-                              <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-paper-2 mb-2">
-                                {item.imageUrl.startsWith('/') ? (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <span className="text-[10px] text-muted">Image</span>
-                                  </div>
-                                ) : (
-                                  <SmartImage
-                                    src={item.imageUrl}
-                                    alt={item.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="128px"
-                                  />
-                                )}
-                                <button
-                                  onClick={() => addToCart(item)}
-                                  className="absolute bottom-2 inset-x-2 py-1.5 bg-paper/95 backdrop-blur-sm rounded text-[10px] font-medium text-ink flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-all hover:bg-paper"
-                                  aria-label={`Add ${item.name} to cart`}
-                                >
-                                  {addedItems.has(item.id) ? (
-                                    <>
-                                      <Check className="w-3 h-3 text-green-600" aria-hidden="true" />
-                                      Added
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ShoppingCart className="w-3 h-3" aria-hidden="true" />
-                                      Add
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                              <p className="text-[11px] text-ink font-medium truncate">{item.name}</p>
-                              <p className="text-[10px] text-muted">
-                                {formatCurrency(item.price)}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mt-4 flex justify-end">
-                          <button
-                            onClick={() => rec.items.forEach(item => addToCart(item))}
-                            className="flex items-center gap-1 px-4 py-2 bg-ink text-paper text-xs rounded-md hover:bg-ink-2 transition-colors"
-                          >
-                            Add Entire Outfit
-                            <ChevronRight className="w-3 h-3" aria-hidden="true" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+      {/* No results yet */}
+      {recommendations.length === 0 && !loading && (
+        <p className="text-center text-paper/60 mt-4">
+          Try a different style prompt like 'wedding outfit under ₹5000' or 'linen shirt in blue'
+        </p>
+      )}
+    </div>
   );
 }

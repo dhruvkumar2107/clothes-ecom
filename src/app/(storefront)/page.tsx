@@ -6,7 +6,8 @@ import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 import { CountdownDrop } from '@/components/products/CountdownDrop';
 import { RecentlyViewed } from '@/components/products/RecentlyViewed';
 import { getHomepage } from '@/lib/api-server';
-import { ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronRight, ArrowRight, Search, Heart, ShoppingBag, User } from 'lucide-react';
+import { useSearch } from '@/app/providers';
 
 export const revalidate = 30;
 
@@ -44,9 +45,9 @@ export default async function HomePage() {
 
   return (
     <div className="flex-1">
-      {/* ═══════════════════════════════════════════════════════════════════
-       * HERO — Full-viewport editorial
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * HERO — Full-viewport editorial with intelligent loading
+         * ══════════════════════════════════════════════════════════ */}
       <section
         className="relative min-h-[100dvh] flex items-end md:items-center overflow-hidden bg-ink"
         aria-labelledby="hero-title"
@@ -118,9 +119,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * EDITORIAL GRID — Asymmetric magazine layout
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * EDITORIAL GRID — Asymmetric magazine layout
+         * ══════════════════════════════════════════════════════════ */}
       {editorialPicks.length >= 2 && (
         <section className="section-padding u-content-visibility" aria-labelledby="editorial-title">
           <div className="u-container">
@@ -203,9 +204,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * NEW ARRIVALS
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * NEW ARRIVALS
+         * ═════════════════════════════════════════════════════════ */}
       {arrivals.length > 0 && (
         <section className="section-padding bg-paper-2 u-content-visibility" aria-labelledby="arrivals-title">
           <div className="u-container">
@@ -251,9 +252,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * FULL-BLEED COLLECTION — Editorial spread
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * FULL-BLEED COLLECTION — Editorial spread
+         * ═════════════════════════════════════════════════════════ */}
       {showcase && (
         <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center overflow-hidden u-content-visibility" aria-labelledby="collection-title">
           {showcase.heroImage ? (
@@ -297,9 +298,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * SHOP BY CATEGORY
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * SHOP BY CATEGORY — Mega menu style
+         * ═════════════════════════════════════════════════════════ */}
       {liveCategories.length > 0 && (
         <section className="section-padding u-content-visibility" aria-labelledby="categories-title">
           <div className="u-container">
@@ -321,7 +322,7 @@ export default async function HomePage() {
                     alt=""
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.03] fetch-high"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" aria-hidden="true" />
                   <div className="absolute inset-x-0 bottom-0 p-6">
@@ -337,9 +338,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * BRAND STORY — Editorial typography
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * BRAND STORY — Editorial typography
+         * ═════════════════════════════════════════════════════════ */}
       <section className="section-padding bg-ink text-paper u-content-visibility">
         <div className="u-container">
           <div className="max-w-3xl mx-auto text-center">
@@ -361,9 +362,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * COLLECTIONS
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * COLLECTIONS
+         * ═════════════════════════════════════════════════════════ */}
       {collections.length > 1 && (
         <section className="section-padding u-content-visibility" aria-labelledby="collections-title">
           <div className="u-container">
@@ -383,7 +384,7 @@ export default async function HomePage() {
               </Link>
             </div>
             <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {collections.slice(1).map((c) => (
+              {collections.slice(1).map((c, i) => (
                 <li key={c.slug}>
                   <Link
                     href={`/collections/${c.slug}`}
@@ -395,7 +396,8 @@ export default async function HomePage() {
                         alt=""
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        className="object-cover transition-transform duration-700 ease-lux group-hover:scale-[1.04]"
+                        priority={i < 3}
                       />
                     ) : (
                       <div
@@ -421,9 +423,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * REVIEWS — Social proof
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * REVIEWS — Social proof
+         * ═════════════════════════════════════════════════════════ */}
       {reviews.length > 0 && (
         <section className="section-padding bg-paper-2 u-content-visibility" aria-labelledby="reviews-title">
           <div className="u-container">
@@ -456,9 +458,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-       * NEWSLETTER
-       * ═══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════
+         * NEWSLETTER
+         * ════════════════════════════════════════════════════════ */}
       <section className="section-padding border-t border-line u-content-visibility" aria-labelledby="newsletter-title">
         <div className="u-container">
           <div className="max-w-xl mx-auto text-center">
