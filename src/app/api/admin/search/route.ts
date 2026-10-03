@@ -7,14 +7,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin(['products.read']);
+    const staff = await requireAdmin(['products.read', 'orders.read', 'customers.read']);
     const q = request.nextUrl.searchParams.get('q')?.trim().slice(0, 80) || '';
-    if (!q) return apiOk({ data: { results: [] } });
+    if (!q) return apiOk({ results: [] });
 
     const results: { type: string; label: string; href: string }[] = [];
 
     const [products, orders, users, collections] = await Promise.all([
-      db.product.findMany({
+      staff.permissions.includes('products.read') ? db.product.findMany({
         where: {
           OR: [
             { name: { contains: q, mode: 'insensitive' } },
@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
         },
         take: 5,
         select: { id: true, name: true, slug: true },
-      }),
-      db.order.findMany({
+      }) : Promise.resolve([]),
+      staff.permissions.includes('orders.read') ? db.order.findMany({
         where: {
           OR: [
             { orderNumber: { contains: q, mode: 'insensitive' } },
@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
         },
         take: 5,
         select: { id: true, orderNumber: true, grandTotal: true },
-      }),
-      db.user.findMany({
+      }) : Promise.resolve([]),
+      staff.permissions.includes('customers.read') ? db.user.findMany({
         where: {
           OR: [
             { name: { contains: q, mode: 'insensitive' } },
@@ -44,8 +44,8 @@ export async function GET(request: NextRequest) {
         },
         take: 5,
         select: { id: true, name: true, email: true },
-      }),
-      db.collection.findMany({
+      }) : Promise.resolve([]),
+      staff.permissions.includes('products.read') ? db.collection.findMany({
         where: {
           OR: [
             { name: { contains: q, mode: 'insensitive' } },
@@ -54,15 +54,15 @@ export async function GET(request: NextRequest) {
         },
         take: 3,
         select: { id: true, name: true, slug: true },
-      }),
+      }) : Promise.resolve([]),
     ]);
 
-    products.forEach((p) => results.push({ type: 'Product', label: p.name, href: `/admin/products/${p.id}` }));
+    products.forEach((p) => results.push({ type: 'Product', label: p.name, href: `/admin/products/${p.id}/edit` }));
     orders.forEach((o) => results.push({ type: 'Order', label: `#${o.orderNumber}`, href: `/admin/orders/${o.id}` }));
-    users.forEach((u) => results.push({ type: 'Customer', label: `${u.name || 'Unnamed'} (${u.email || ''})`, href: `/admin/users/${u.id}` }));
+    users.forEach((u) => results.push({ type: 'Customer', label: `${u.name || 'Unnamed'} (${u.email || ''})`, href: `/admin/users?q=${encodeURIComponent(u.email || u.name || '')}` }));
     collections.forEach((c) => results.push({ type: 'Collection', label: c.name, href: `/admin/collections/${c.id}/edit` }));
 
-    return apiOk({ data: { results: results.slice(0, 15) } });
+    return apiOk({ results: results.slice(0, 15) });
   } catch (error: any) {
     if (error?.code) return apiError(error.code, error.message, error.status || 500);
     return apiError('INTERNAL_ERROR', 'Search failed', 500);

@@ -108,6 +108,7 @@ export function AdminSidebar() {
               <div key={item.name}>
                 <button
                   onClick={() => toggleExpand(item.name)}
+                  aria-expanded={isExpanded}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all group ${
                     active
                       ? 'bg-[#9C7C4E]/8 text-[#0A0A0A]'
@@ -127,6 +128,7 @@ export function AdminSidebar() {
                         <Link
                           key={child.name}
                           href={child.href}
+                          onClick={() => setMobileOpen(false)}
                           className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
                             childActive
                               ? 'bg-[#9C7C4E]/8 text-[#0A0A0A]'
@@ -148,6 +150,7 @@ export function AdminSidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all group ${
                 active
                   ? 'bg-[#9C7C4E]/8 text-[#0A0A0A]'
@@ -185,6 +188,8 @@ export function AdminSidebar() {
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
+        aria-label={mobileOpen ? 'Close admin navigation' : 'Open admin navigation'}
+        aria-expanded={mobileOpen}
         className="lg:hidden fixed top-3 left-3 z-50 p-2 bg-white rounded-lg shadow-sm border border-[#E8E5DE]"
       >
         {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}

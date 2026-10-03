@@ -32,8 +32,12 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // After staff login, redirect to dashboard
-      router.push('/admin/dashboard');
+      const requestedRedirect = new URLSearchParams(window.location.search).get('redirect');
+      const redirectTo = requestedRedirect?.startsWith('/admin/')
+        && !requestedRedirect.startsWith('/admin/login')
+        ? requestedRedirect
+        : '/admin/dashboard';
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError('An unexpected error occurred');
@@ -73,7 +77,7 @@ export default function AdminLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@lumen.co"
+                placeholder="admin@lumenandco.example"
                 required
                 className="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-amber-500/60 focus:border-amber-500/60"
               />

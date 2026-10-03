@@ -22,8 +22,13 @@ import { PERMISSIONS, type Permission } from '../enums';
 export function parsePermissions(csv: string | null | undefined): string[] {
   if (!csv) return [];
   const seen = new Set<string>();
+  const legacyAliases: Record<string, string> = {
+    'users.read': 'customers.read',
+    'users.write': 'customers.write',
+  };
   for (const raw of csv.split(',')) {
-    const value = raw.trim();
+    const token = raw.trim();
+    const value = legacyAliases[token] ?? token;
     if (value) seen.add(value);
   }
   return [...seen];

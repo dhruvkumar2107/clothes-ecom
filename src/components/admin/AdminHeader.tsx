@@ -3,23 +3,25 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
-import { Search, Bell, Plus, ChevronDown, LogOut, User, Settings, ExternalLink, Command } from 'lucide-react';
+import { Search, Bell, Plus, ChevronDown, LogOut, Settings, ExternalLink, Command } from 'lucide-react';
 
 export function AdminHeader() {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ type: string; label: string; href: string }[]>([]);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [staff, setStaff] = useState<{ name: string; email: string; roleName: string } | null>(null);
+  const [profileError, setProfileError] = useState('');
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState('');
   const searchRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotificationsOpen(false);
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -34,7 +36,6 @@ export function AdminHeader() {
       }
       if (e.key === 'Escape') {
         setSearchOpen(false);
-        setNotificationsOpen(false);
         setProfileOpen(false);
       }
     }
@@ -43,26 +44,80 @@ export function AdminHeader() {
   }, []);
 
   useEffect(() => {
-    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    let cancelled = false;
+
+    async function loadStaff() {
+      try {
+        const response = await fetch('/api/auth/staff-me', { cache: 'no-store' });
+        const body = await response.json();
+        if (cancelled) return;
+        if (response.status === 401) {
+          router.replace('/admin/login');
+          return;
+        }
+        if (!response.ok || !body.ok) {
+          throw new Error(body.error?.message ?? 'Unable to load staff profile.');
+        }
+        setStaff(body.data.staff);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Admin profile request failed:', error);
+          setProfileError(error instanceof Error ? error.message : 'Unable to load staff profile.');
+        }
+      }
+    }
+
+    void loadStaff();
+    return () => { cancelled = true; };
+  }, [router]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearchError('');
+      return;
+    }
+
+    let cancelled = false;
+    setSearchError('');
     const timeout = setTimeout(async () => {
       try {
         const res = await fetch(`/api/admin/search?q=${encodeURIComponent(searchQuery.trim())}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.results || []);
+        const body = await res.json();
+        if (!res.ok || !body.ok) {
+          throw new Error(body.error?.message ?? 'Search is unavailable.');
         }
-      } catch {}
+        if (!cancelled) setSearchResults(body.data?.results ?? []);
+      } catch (error) {
+        if (!cancelled) {
+          setSearchResults([]);
+          setSearchError(error instanceof Error ? error.message : 'Search is unavailable.');
+        }
+      }
     }, 300);
-    return () => clearTimeout(timeout);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [searchQuery]);
 
-  const notifications = [
-    { id: '1', text: '3 products low in stock', time: '5m ago', read: false },
-    { id: '2', text: '2 new orders received', time: '12m ago', read: false },
-    { id: '3', text: 'Review awaiting approval', time: '1h ago', read: true },
-  ];
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  async function handleSignOut() {
+    setSigningOut(true);
+    setSignOutError('');
+    try {
+      const response = await fetch('/api/auth/staff-logout', { method: 'POST' });
+      const body = await response.json();
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error?.message ?? 'Unable to sign out.');
+      }
+      router.replace('/admin/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Admin sign out failed:', error);
+      setSignOutError(error instanceof Error ? error.message : 'Unable to sign out. Please try again.');
+      setSigningOut(false);
+    }
+  }
 
   return (
     <>
@@ -109,7 +164,10 @@ export function AdminHeader() {
                   ))}
                 </div>
               )}
-              {searchQuery && searchResults.length === 0 && (
+              {searchError && (
+                <div className="p-4 text-center text-[12px] text-red-600" role="alert">{searchError}</div>
+              )}
+              {searchQuery && !searchError && searchResults.length === 0 && (
                 <div className="p-6 text-center text-[12px] text-[#9E9789]">No results found</div>
               )}
               {!searchQuery && (
@@ -146,58 +204,35 @@ export function AdminHeader() {
             New Product
           </Link>
 
-          {/* Notifications */}
-          <div ref={notifRef} className="relative">
-            <button
-              onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }}
-              className="relative p-2 text-[#7A7468] hover:text-[#0A0A0A] hover:bg-[#F3F1ED] rounded-lg transition-colors"
-            >
-              <Bell className="w-4 h-4" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#9C7C4E] ring-2 ring-white" />
-              )}
-            </button>
-            {notificationsOpen && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-[#E8E5DE] rounded-xl shadow-lg shadow-black/5 overflow-hidden z-50">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#F3F1ED]">
-                  <span className="text-[12px] font-semibold text-[#0A0A0A]">Notifications</span>
-                  <span className="text-[10px] text-[#9C7C4E] font-medium cursor-pointer hover:underline">Mark all read</span>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {notifications.map((n) => (
-                    <div key={n.id} className={`px-4 py-3 border-b border-[#F3F1ED] last:border-0 hover:bg-[#FAF9F7] transition-colors ${!n.read ? 'bg-[#FAF9F7]' : ''}`}>
-                      <p className="text-[12px] text-[#0A0A0A]">{n.text}</p>
-                      <p className="text-[10px] text-[#9E9789] mt-0.5">{n.time}</p>
-                    </div>
-                  ))}
-                </div>
-                <Link
-                  href="/admin/notifications"
-                  onClick={() => setNotificationsOpen(false)}
-                  className="block text-center py-2.5 text-[11px] font-medium text-[#9C7C4E] hover:bg-[#FAF9F7] border-t border-[#F3F1ED] transition-colors"
-                >
-                  View All Notifications
-                </Link>
-              </div>
-            )}
-          </div>
+          <Link
+            href="/admin/notifications"
+            aria-label="View admin notifications"
+            className="p-2 text-[#7A7468] hover:text-[#0A0A0A] hover:bg-[#F3F1ED] rounded-lg transition-colors"
+          >
+            <Bell className="w-4 h-4" />
+          </Link>
 
           {/* Profile */}
           <div ref={profileRef} className="relative">
             <button
-              onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); }}
+              onClick={() => setProfileOpen(!profileOpen)}
+              aria-label="Open staff profile menu"
+              aria-expanded={profileOpen}
               className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg hover:bg-[#F3F1ED] transition-colors"
             >
               <div className="w-7 h-7 rounded-full bg-[#9C7C4E]/10 flex items-center justify-center text-[#9C7C4E] text-[10px] font-bold font-mono">
-                AD
+                {(staff?.name || staff?.email || 'Admin').slice(0, 2).toUpperCase()}
               </div>
               <ChevronDown className="w-3 h-3 text-[#9E9789]" />
             </button>
             {profileOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#E8E5DE] rounded-xl shadow-lg shadow-black/5 overflow-hidden z-50">
                 <div className="px-4 py-3 border-b border-[#F3F1ED]">
-                  <p className="text-[12px] font-medium text-[#0A0A0A]">Admin User</p>
-                  <p className="text-[10px] text-[#9C7C4E]">Administrator</p>
+                  <p className="text-[12px] font-medium text-[#0A0A0A]">{staff?.name || staff?.email || 'Staff account'}</p>
+                  {staff?.name && <p className="text-[10px] text-[#7A7468]">{staff.email}</p>}
+                  <p className="text-[10px] text-[#9C7C4E]">{staff?.roleName || 'Staff'}</p>
+                  {profileError && <p role="alert" className="mt-1 text-[10px] text-red-600">{profileError}</p>}
+                  {signOutError && <p role="alert" className="mt-1 text-[10px] text-red-600">{signOutError}</p>}
                 </div>
                 <div className="p-1.5">
                   {[
@@ -217,11 +252,12 @@ export function AdminHeader() {
                 </div>
                 <div className="p-1.5 border-t border-[#F3F1ED]">
                   <button
-                    onClick={() => { setProfileOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-red-50 text-[12px] text-red-600 transition-colors"
+                    onClick={() => { setProfileOpen(false); void handleSignOut(); }}
+                    disabled={signingOut}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-red-50 text-[12px] text-red-600 transition-colors disabled:opacity-60"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    Sign Out
+                    {signingOut ? 'Signing out…' : 'Sign Out'}
                   </button>
                 </div>
               </div>

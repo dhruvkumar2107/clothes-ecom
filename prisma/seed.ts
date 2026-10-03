@@ -109,8 +109,8 @@ async function main() {
   ] });
 
   // ── Staff ───────────────────────────────────────────────────
-  const adminRole = await prisma.staffRole.create({ data: { name: 'Administrator', slug: 'admin', description: 'Full system access', permissionsCsv: 'orders.read,orders.write,products.read,products.write,users.read,users.write,settings.read,settings.write,payouts.approve,analytics.read', isSystem: true } });
-  await prisma.staffRole.create({ data: { name: 'Support Agent', slug: 'support', description: 'Customer support', permissionsCsv: 'orders.read,orders.write,users.read,refunds.process', isSystem: false } });
+  const adminRole = await prisma.staffRole.create({ data: { name: 'Administrator', slug: 'admin', description: 'Full system access', permissionsCsv: 'orders.read,orders.write,products.read,products.write,customers.read,customers.write,settings.read,settings.write,payouts.approve,analytics.read', isSystem: true } });
+  await prisma.staffRole.create({ data: { name: 'Support Agent', slug: 'support', description: 'Customer support', permissionsCsv: 'orders.read,orders.write,customers.read,refunds.process', isSystem: false } });
   await prisma.staffUser.create({ data: { email: 'admin@lumenandco.example', passwordHash: await hashPassword('Admin@12345'), name: 'Admin User', roleId: adminRole.id, status: 'active' } });
 
   // ── Categories ──────────────────────────────────────────────
