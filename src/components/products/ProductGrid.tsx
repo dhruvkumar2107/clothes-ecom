@@ -40,34 +40,37 @@ export function ProductGrid({ initialParams }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0, limit: 24 });
   const [params, setParams] = useState<Record<string, string>>(initialParams);
 
-  useEffect(() => {
-    loadProducts();
-  }, [params]);
-
-  const loadProducts = async (page = 1, append = false) => {
+  const loadProducts = useCallback(async (page = 1, append = false) => {
     if (append) setLoadingMore(true);
     else setLoading(true);
+    setLoadError(false);
     try {
       const searchParams = new URLSearchParams({ ...params, page: page.toString() });
       const data = await apiGet<{ data: Product[]; meta: any }>(`/api/products?${searchParams.toString()}`);
       const newProducts = Array.isArray(data?.data) ? data.data : [];
       setProducts(prev => append ? [...prev, ...newProducts] : newProducts);
       setMeta(data?.meta ?? { page: 1, totalPages: 1, total: 0, limit: 24 });
-    } catch (error) {
+    } catch {
       if (!append) setProducts([]);
-      setMeta({ page: 1, totalPages: 1, total: 0, limit: 24 });
+      if (!append) setMeta({ page: 1, totalPages: 1, total: 0, limit: 24 });
+      setLoadError(true);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [params]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleLoadMore = useCallback(() => {
     if (meta.page < meta.totalPages) loadProducts(meta.page + 1, true);
-  }, [meta.page, meta.totalPages, params]);
+  }, [loadProducts, meta.page, meta.totalPages]);
 
   const handleFilterChange = useCallback((newParams: Record<string, string>) => {
     const searchParams = new URLSearchParams(params);
@@ -81,6 +84,21 @@ export function ProductGrid({ initialParams }: ProductGridProps) {
   }, [params]);
 
   if (loading && products.length === 0) return <ProductGridSkeleton count={8} />;
+
+  if (products.length === 0 && loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center" role="alert">
+        <p className="u-display text-xl mb-2">Products couldn&apos;t be loaded</p>
+        <p className="text-sm text-muted mb-6">Please check your connection and try again.</p>
+        <button
+          onClick={() => loadProducts()}
+          className="text-xs font-medium text-accent hover:underline u-focus"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   if (products.length === 0) {
     return (
@@ -131,6 +149,11 @@ export function ProductGrid({ initialParams }: ProductGridProps) {
           </div>
         ))}
       </div>
+      {loadError && (
+        <p className="mt-6 text-center text-sm text-muted" role="alert">
+          More products couldn&apos;t be loaded. Please try loading more again.
+        </p>
+      )}
 
       {/* Pagination */}
       {meta.totalPages > 1 && (
